@@ -16,8 +16,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.RobotState.RELATIVE_SCORE_POSITION;
 import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
@@ -52,11 +55,32 @@ public class RobotContainer {
     private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
     private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
 
+    private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, Subsystem... subsystems) {
+        return new InstantCommand(() -> m_robotState.setTargetScorePosition(desiredPosition), subsystems);
+    }
+    public final InstantCommand setTargetScorePosition_NONE;
+    public final InstantCommand setTargetScorePosition_L1;
+    public final InstantCommand setTargetScorePosition_L2_L;
+    public final InstantCommand setTargetScorePosition_L2_R;
+    public final InstantCommand setTargetScorePosition_L3_L;
+    public final InstantCommand setTargetScorePosition_L3_R;
+    public final InstantCommand setTargetScorePosition_L4_L;
+    public final InstantCommand setTargetScorePosition_L4_R;
+
     private final SendableChooser<Command> m_autoChooser;
 
     public RobotContainer() {
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
         SmartDashboard.putData("AutoChooser", m_autoChooser);
+
+        setTargetScorePosition_NONE = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, m_elevatorSubsystem);
+        setTargetScorePosition_L1 = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L1, m_elevatorSubsystem);
+        setTargetScorePosition_L2_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_L, m_elevatorSubsystem);
+        setTargetScorePosition_L2_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_R, m_elevatorSubsystem);
+        setTargetScorePosition_L3_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_L, m_elevatorSubsystem);
+        setTargetScorePosition_L3_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_R, m_elevatorSubsystem);
+        setTargetScorePosition_L4_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_L, m_elevatorSubsystem);
+        setTargetScorePosition_L4_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_R, m_elevatorSubsystem);
 
         configureBindings();
     }
@@ -102,6 +126,8 @@ public class RobotContainer {
 
         OPERATOR_CONTROLS.INTAKE_FORWARD.whileTrue(m_intakeOuttakeSubsystem.m_forwardCommand);
         OPERATOR_CONTROLS.INTAKE_BACKWARD.whileTrue(m_intakeOuttakeSubsystem.m_backwardCommand);
+
+        OPERATOR_CONTROLS.SCORE_L1.onTrue(setTargetScorePosition_L1);
 
         m_swerveSubsystem.registerTelemetry(logger::telemeterize);
     }

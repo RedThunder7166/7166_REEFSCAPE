@@ -27,15 +27,15 @@ public final class RobotState {
         L4_R
     }
 
-    private RELATIVE_SCORE_POSITION m_targetBranchPosition = RELATIVE_SCORE_POSITION.NONE;
+    private RELATIVE_SCORE_POSITION m_targetScorePosition = RELATIVE_SCORE_POSITION.NONE;
 
     public RELATIVE_SCORE_POSITION getTargetScorePosition() {
-        return m_targetBranchPosition;
+        return m_targetScorePosition;
     }
-    public boolean setTargetBranchPosition(RELATIVE_SCORE_POSITION desiredPosition) {
+    public boolean setTargetScorePosition(RELATIVE_SCORE_POSITION desiredPosition) {
         // FIXME: ask subsystems if we can switch to this position; if we can't, don't set target position (or set it to NONE) and return false
         // ^ e.g: we are trying to score a piece, we are intaking a piece
-        m_targetBranchPosition = desiredPosition;
+        m_targetScorePosition = desiredPosition;
         return true;
     }
 
