@@ -34,6 +34,9 @@ public class ElevatorSubsystem extends SubsystemBase {
         CORAL_STATION
     }
     private ElevatorState m_state = ElevatorState.HOME;
+    public void setState(ElevatorState desiredState) {
+        m_state = desiredState;
+    }
 
     private static enum ElevatorPosition {
         HOME,

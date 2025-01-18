@@ -11,15 +11,11 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.RobotState.RELATIVE_SCORE_POSITION;
 import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
@@ -29,6 +25,8 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorState;
+import frc.robot.subsystems.GantrySubsystem.GantryState;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -38,10 +36,10 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
-    private final SwerveRequest.RobotCentric forwardStraightRequest = new SwerveRequest.RobotCentric()
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+    // private final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
+    // private final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
+    // private final SwerveRequest.RobotCentric forwardStraightRequest = new SwerveRequest.RobotCentric()
+    //         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -55,10 +53,16 @@ public class RobotContainer {
     private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
     private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
 
-    private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, Subsystem... subsystems) {
-        return new InstantCommand(() -> m_robotState.setTargetScorePosition(desiredPosition), subsystems);
+    private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
+        return new InstantCommand(() -> {
+            m_robotState.setTargetScorePosition(desiredPosition);
+            m_elevatorSubsystem.setState(desiredElevatorState);
+            m_gantrySubsystem.setState(desiredGantryState);
+        }, m_elevatorSubsystem, m_gantrySubsystem);
     }
+    public final InstantCommand positionCoralStation;
     public final InstantCommand setTargetScorePosition_NONE;
+
     public final InstantCommand setTargetScorePosition_L1;
     public final InstantCommand setTargetScorePosition_L2_L;
     public final InstantCommand setTargetScorePosition_L2_R;
@@ -73,14 +77,16 @@ public class RobotContainer {
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
-        setTargetScorePosition_NONE = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, m_elevatorSubsystem);
-        setTargetScorePosition_L1 = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L1, m_elevatorSubsystem);
-        setTargetScorePosition_L2_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_L, m_elevatorSubsystem);
-        setTargetScorePosition_L2_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_R, m_elevatorSubsystem);
-        setTargetScorePosition_L3_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_L, m_elevatorSubsystem);
-        setTargetScorePosition_L3_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_R, m_elevatorSubsystem);
-        setTargetScorePosition_L4_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_L, m_elevatorSubsystem);
-        setTargetScorePosition_L4_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_R, m_elevatorSubsystem);
+        positionCoralStation = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.CORAL_STATION, GantryState.LOADING);
+        setTargetScorePosition_NONE = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.IDLE, GantryState.IDLE);
+
+        setTargetScorePosition_L1 = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L1, ElevatorState.SCORE, GantryState.SCORE);
+        setTargetScorePosition_L2_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_L, ElevatorState.SCORE, GantryState.SCORE);
+        setTargetScorePosition_L2_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_R, ElevatorState.SCORE, GantryState.SCORE);
+        setTargetScorePosition_L3_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_L, ElevatorState.SCORE, GantryState.SCORE);
+        setTargetScorePosition_L3_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_R, ElevatorState.SCORE, GantryState.SCORE);
+        setTargetScorePosition_L4_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_L, ElevatorState.SCORE, GantryState.SCORE);
+        setTargetScorePosition_L4_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_R, ElevatorState.SCORE, GantryState.SCORE);
 
         configureBindings();
     }
@@ -127,7 +133,15 @@ public class RobotContainer {
         OPERATOR_CONTROLS.INTAKE_FORWARD.whileTrue(m_intakeOuttakeSubsystem.m_forwardCommand);
         OPERATOR_CONTROLS.INTAKE_BACKWARD.whileTrue(m_intakeOuttakeSubsystem.m_backwardCommand);
 
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(positionCoralStation);
+
         OPERATOR_CONTROLS.SCORE_L1.onTrue(setTargetScorePosition_L1);
+        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(setTargetScorePosition_L2_L);
+        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(setTargetScorePosition_L2_R);
+        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(setTargetScorePosition_L3_L);
+        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(setTargetScorePosition_L3_R);
+        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(setTargetScorePosition_L4_L);
+        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(setTargetScorePosition_L4_R);
 
         m_swerveSubsystem.registerTelemetry(logger::telemeterize);
     }

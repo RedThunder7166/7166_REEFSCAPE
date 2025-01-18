@@ -32,6 +32,9 @@ public class GantrySubsystem extends SubsystemBase {
         LOADING
     }
     private GantryState m_state = GantryState.IDLE;
+    public void setState(GantryState desiredState) {
+        m_state = desiredState;
+    }
 
     private static enum GantryPosition {
         IDLE,
