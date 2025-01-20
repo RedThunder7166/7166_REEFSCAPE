@@ -147,7 +147,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        /* Run the path selected from the auto chooser */
         return m_autoChooser.getSelected();
     }
 }

@@ -29,7 +29,6 @@ public class Constants {
             TunerConstants.kSlipCurrent.in(Amp),
             4
         ),
-        // Meters.convertFrom(18.5, Inches),
         Meters.convertFrom(18.5, Inches)
     );
 
