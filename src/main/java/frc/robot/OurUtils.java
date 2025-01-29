@@ -5,7 +5,9 @@
 package frc.robot;
 
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 public final class OurUtils {
@@ -14,6 +16,16 @@ public final class OurUtils {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = motor.getConfigurator().apply(config);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.out.println("Could not apply configs, error code: " + status.toString());
+        }
+    }
+    public static void tryApplyConfig(CANcoder encoder, CANcoderConfiguration config) {
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = encoder.getConfigurator().apply(config);
             if (status.isOK()) break;
         }
         if (!status.isOK()) {
