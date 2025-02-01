@@ -5,13 +5,13 @@
 package frc.robot;
 
 public final class RobotState {
-    private static RobotState singleton = null;
+    // private static RobotState singleton = null;
 
-    public static RobotState getSingleton() {
-        if (singleton == null)
-            singleton = new RobotState();
-        return singleton;
-    }
+    // public static RobotState getSingleton() {
+    //     if (singleton == null)
+    //         singleton = new RobotState();
+    //     return singleton;
+    // }
 
     public static enum RELATIVE_SCORE_POSITION {
         NONE,
@@ -27,12 +27,12 @@ public final class RobotState {
         L4_R
     }
 
-    private RELATIVE_SCORE_POSITION m_targetScorePosition = RELATIVE_SCORE_POSITION.NONE;
+    private static RELATIVE_SCORE_POSITION m_targetScorePosition = RELATIVE_SCORE_POSITION.NONE;
 
-    public RELATIVE_SCORE_POSITION getTargetScorePosition() {
+    public static RELATIVE_SCORE_POSITION getTargetScorePosition() {
         return m_targetScorePosition;
     }
-    public boolean setTargetScorePosition(RELATIVE_SCORE_POSITION desiredPosition) {
+    public static boolean setTargetScorePosition(RELATIVE_SCORE_POSITION desiredPosition) {
         // FIXME: ask subsystems if we can switch to this position; if we can't, don't set target position (or set it to NONE) and return false
         // ^ e.g: we are trying to score a piece, we are intaking a piece
         m_targetScorePosition = desiredPosition;
@@ -45,16 +45,16 @@ public final class RobotState {
         BACKWARD
     }
 
-    private INTAKE_STATE m_intakeState = INTAKE_STATE.IDLE;
+    private static INTAKE_STATE m_intakeState = INTAKE_STATE.IDLE;
 
-    public INTAKE_STATE getIntakeState() {
+    public static INTAKE_STATE getIntakeState() {
         return m_intakeState;
     }
 
-    public void startIntake(boolean isForward) {
+    public static void startIntake(boolean isForward) {
         m_intakeState = isForward ? INTAKE_STATE.FORWARD : INTAKE_STATE.BACKWARD;
     }
-    public void stopIntake() {
+    public static void stopIntake() {
         m_intakeState = INTAKE_STATE.IDLE;
     }
 }

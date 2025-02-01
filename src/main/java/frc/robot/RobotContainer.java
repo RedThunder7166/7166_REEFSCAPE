@@ -45,7 +45,6 @@ public class RobotContainer {
 
     private final CommandXboxController m_joystick = new CommandXboxController(0);
 
-    private final RobotState m_robotState = RobotState.getSingleton();
     private final CommandSwerveDrivetrain m_swerveSubsystem = TunerConstants.createDrivetrain();
 
     private final CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
@@ -55,7 +54,7 @@ public class RobotContainer {
 
     private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
         return new InstantCommand(() -> {
-            m_robotState.setTargetScorePosition(desiredPosition);
+            RobotState.setTargetScorePosition(desiredPosition);
             m_elevatorSubsystem.setState(desiredElevatorState);
             m_gantrySubsystem.setState(desiredGantryState);
         }, m_elevatorSubsystem, m_gantrySubsystem);

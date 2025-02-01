@@ -8,8 +8,8 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -33,8 +33,9 @@ public class ElevatorSubsystem extends SubsystemBase {
         CORAL_STATION
     }
     private ElevatorState m_state = ElevatorState.HOME;
+    private ElevatorState m_desiredState = ElevatorState.HOME;
     public void setState(ElevatorState desiredState) {
-        m_state = desiredState;
+        m_desiredState = desiredState;
     }
 
     private static enum ElevatorPosition {
@@ -49,10 +50,10 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
     private ElevatorPosition m_position = ElevatorPosition.HOME;
 
-    private final RobotState m_robotState = RobotState.getSingleton();
+    private final CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
 
     private final TalonFX m_motor = new TalonFX(ElevatorConstants.MOTOR_ID);
-    private final PositionVoltage m_positionVoltage = new PositionVoltage(0).withSlot(0);
+    private final MotionMagicVoltage m_positionVoltage = new MotionMagicVoltage(0).withSlot(0);
     private final NeutralOut m_brake = new NeutralOut();
 
     public ElevatorSubsystem() {
@@ -65,11 +66,21 @@ public class ElevatorSubsystem extends SubsystemBase {
         motorConfig.Voltage.withPeakForwardVoltage(Volts.of(8))
             .withPeakReverseVoltage(Volts.of(-8));
 
+        // FIXME: tune elevator Motion Magic
+        // set Motion Magic settings
+        var motionMagicConfigs = motorConfig.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 80; // rps
+        motionMagicConfigs.MotionMagicAcceleration = 160; // rps/s
+        motionMagicConfigs.MotionMagicJerk = 1600; // rps/s/s
+
         OurUtils.tryApplyConfig(m_motor, motorConfig);
     }
 
 @Override
     public void periodic() {
+        // TODO: verify this should be IDLE
+        m_state = m_cameraSubsystem.getRobotInsideReefZone() ? m_desiredState : ElevatorState.IDLE;
+
         switch (m_state) {
             case HOME:
                 setPosition(ElevatorPosition.HOME);
@@ -78,7 +89,7 @@ public class ElevatorSubsystem extends SubsystemBase {
                 setPosition(ElevatorPosition.IDLE);
                 break;
             case SCORE:
-                switch (m_robotState.getTargetScorePosition()) {
+                switch (RobotState.getTargetScorePosition()) {
                     case NONE:
                         setPosition(ElevatorPosition.IDLE);
                         break;

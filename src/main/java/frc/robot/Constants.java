@@ -74,7 +74,7 @@ public class Constants {
         // FIXME: INTAKEOUTTAKE MOTOR ID
         public static final int MOTOR_ID = -1;
 
-        public static final double FORWARD_VELOCITY = 70 / 10;
-        public static final double BACKWARD_VELOCITY = -FORWARD_VELOCITY;
+        public static final double FORWARD_VELOCITY_RPS = 1;
+        public static final double BACKWARD_VELOCITY_RPS = -FORWARD_VELOCITY_RPS;
     }
 }

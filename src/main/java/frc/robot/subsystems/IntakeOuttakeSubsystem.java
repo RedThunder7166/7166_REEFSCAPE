@@ -6,7 +6,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -15,7 +14,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.GantryConstants;
 import frc.robot.Constants.IntakeOuttakeConstants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
@@ -28,8 +26,6 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
             singleton = new IntakeOuttakeSubsystem();
         return singleton;
     }
-
-    private final RobotState m_robotState = RobotState.getSingleton();
 
     private final TalonFX m_motor = new TalonFX(IntakeOuttakeConstants.MOTOR_ID);
     private final VelocityVoltage m_velocityVoltage = new VelocityVoltage(0).withSlot(0);
@@ -55,15 +51,15 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         ControlRequest targetRequest = m_brake;
-        switch (m_robotState.getIntakeState()) {
+        switch (RobotState.getIntakeState()) {
             case IDLE:
                 targetRequest = m_brake; // redundant?
                 break;
             case FORWARD:
-                targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.FORWARD_VELOCITY);
+                targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.FORWARD_VELOCITY_RPS);
                 break;
             case BACKWARD:
-                targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.BACKWARD_VELOCITY);
+                targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.BACKWARD_VELOCITY_RPS);
                 break;
         }
 
@@ -72,9 +68,9 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
 
     private Command makeCommand(boolean isForward) {
         return this.startEnd(() -> {
-            m_robotState.startIntake(isForward);
+            RobotState.startIntake(isForward);
         }, () -> {
-            m_robotState.stopIntake();
+            RobotState.stopIntake();
         });
     }
     public final Command m_forwardCommand = makeCommand(true);

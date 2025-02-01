@@ -17,12 +17,18 @@ public class CameraSubsystem extends SubsystemBase {
         return singleton;
     }
 
+    private boolean m_robotInsideReefZone = false;
+
     public CameraSubsystem() {
     }
 
     @Override
     public void periodic() {
-        // This method will be called once per scheduler run
+        // FIXME: determine m_robotInsideReefZone
+    }
+
+    public boolean getRobotInsideReefZone() {
+        return m_robotInsideReefZone;
     }
 
     public final Command localizeToReefCommand = Commands.startEnd(() -> {
