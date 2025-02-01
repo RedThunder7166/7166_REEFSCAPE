@@ -32,17 +32,35 @@ public class Constants {
         Meters.convertFrom(18.5, Inches)
     );
 
-    public static final int CANDLE_ID = 20;
-    public static final int CANDLE_LED_COUNT = 47;
-
     public static final class ControllerConstants {
         public static final int DRIVER_PORT = 0;
         public static final int OPERATOR_PORT = 1;
     }
 
+    public static final class LEDConstants {
+        // FIXME: LED CANDLE ID
+        public static final int CANDLE_ID = -1;
+
+        // FIXME: LED COUNT
+        public static final int LED_COUNT = 47;
+
+        public static final int COUNT_PER_GROUP = (int) Math.floor(LED_COUNT / 3);
+
+        public static final int GROUP_1_START = 0;
+        private static final int GROUP_1_END = COUNT_PER_GROUP;
+
+        public static final int GROUP_2_START = GROUP_1_END + 1;
+        private static final int GROUP_2_END = GROUP_2_START + GROUP_1_END;
+
+        public static final int GROUP_3_START = GROUP_2_END + 1;
+        // private static final int GROUP_3_END = LED_COUNT;
+    }
+
     public static final class ElevatorConstants {
-        // FIXME: ELEVATOR MOTOR ID
-        public static final int MOTOR_ID = -1;
+        // FIXME: ELEVATOR LEADER MOTOR ID
+        public static final int LEADER_MOTOR_ID = -1;
+        // FIXME: ELEVATOR FOLLOWER MOTOR ID
+        public static final int FOLLOWER_MOTOR_ID = -1;
 
         // TODO: ideally, home and coral station are the same
         // FIXME: ELEVATOR HOME POSITION
@@ -58,6 +76,10 @@ public class Constants {
         public static final double L3_POSITION = HOME_POSITION;
         // FIXME: ELEVATOR L4 POSITION
         public static final double L4_POSITION = HOME_POSITION;
+
+        // FIXME: ELEVATOR MANUAL VELOCITY
+        public static final double MANUAL_VELOCITY_FORWARD_RPS = 1;
+        public static final double MANUAL_VELOCITY_BACKWARD_RPS = -MANUAL_VELOCITY_FORWARD_RPS;
     }
     public static final class GantryConstants {
         // FIXME: GANTRY MOTOR ID

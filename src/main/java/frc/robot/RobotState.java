@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import frc.robot.subsystems.CameraSubsystem;
+
 public final class RobotState {
     // private static RobotState singleton = null;
 
@@ -56,5 +58,11 @@ public final class RobotState {
     }
     public static void stopIntake() {
         m_intakeState = INTAKE_STATE.IDLE;
+    }
+
+    private static CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
+    public static boolean getCanMoveScoringMechanisms() {
+        // TODO: sensor logic
+        return m_cameraSubsystem.getRobotInsideReefZone();
     }
 }

@@ -25,4 +25,10 @@ public final class OPERATOR_CONTROLS {
     public static final Trigger SCORE_L4_R = operatorController.button(10);
 
     public static final Trigger SCORE_PIECE = operatorController.button(11);
+
+    public static final Trigger ELEVATOR_MANUAL_DOWN = operatorController.button(20);
+    public static final Trigger ELEVATOR_MANUAL_UP = operatorController.button(21);
+
+    public static final Trigger GANTRY_MANUAL_LEFT = operatorController.button(30);
+    public static final Trigger GANTRY_MANUAL_RIGHT = operatorController.button(31);
 }

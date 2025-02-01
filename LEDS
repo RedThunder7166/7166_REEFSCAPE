@@ -1,0 +1,18 @@
+There will be 2 sections of LED:
+  FRONT & BACK SECTION (SECTION 1, representing group 1 & 3)
+  MID SECTION (SECTION 2, representing group 2)
+
+SECTION 1 will relay EVENTS.
+  EVENTS trigger a certain color to flash on SECTION 1 for a few seconds
+  EVENTS refer to specific actions that may occur such as the Robot rejecting or delaying user input
+    example: User presses L4 button, but there's a piece going through the robot and thus
+    the scoring mechanisms will not move until the piece is in a better position.
+    Thi
+  SECTION 1 will be look identical to SECTION 2 unless an EVENT has occured
+  EVENTS will not have a queue, so when an action occurs, it will instantly override any previous EVENT being displayed.
+
+SECTION 2 will relay STATE.
+  STATE represents how able the Robot is to score a piece
+  RED means no piece
+  YELLOW means a piece is going through the Robot (think sensors)
+  GREEN means a piece is ready to be scored

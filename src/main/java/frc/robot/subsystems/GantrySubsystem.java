@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorManualDirection;
 
 public class GantrySubsystem extends SubsystemBase {
     private static GantrySubsystem singleton = null;
@@ -32,7 +33,7 @@ public class GantrySubsystem extends SubsystemBase {
         LOADING
     }
     private GantryState m_state = GantryState.IDLE;
-    public void setState(GantryState desiredState) {
+    public void setAutomaticState(GantryState desiredState) {
         m_state = desiredState;
     }
 
@@ -43,9 +44,22 @@ public class GantrySubsystem extends SubsystemBase {
         REEF_RIGHT
     }
     private GantryPosition m_position = GantryPosition.CORAL_STATION;
+    private void setAutomaticPosition(GantryPosition desiredPosition) {
+        m_position = desiredPosition;
+    }
+
+    public static enum GantryManualDirection {
+        NONE,
+        LEFT,
+        RIGHT
+    }
+    private GantryManualDirection m_manualDirection = GantryManualDirection.NONE;
+    public void setManualDirecion(GantryManualDirection desiredManualDirection) {
+        m_manualDirection = desiredManualDirection;
+    }
 
     private final TalonFX m_motor = new TalonFX(GantryConstants.MOTOR_ID);
-    private final MotionMagicVoltage m_positionVoltage = new MotionMagicVoltage(0).withSlot(0);
+    private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final NeutralOut m_brake = new NeutralOut();
 
     public GantrySubsystem() {
@@ -70,36 +84,43 @@ public class GantrySubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        if (m_manualDirection == GantryManualDirection.NONE)
+            handleAutomatic();
+        else
+            handleManual();
+    }
+
+    private void handleAutomatic() {
         switch (m_state) {
             case IDLE:
-                setPosition(GantryPosition.IDLE);
+                setAutomaticPosition(GantryPosition.IDLE);
                 break;
             case SCORE:
                 switch (RobotState.getTargetScorePosition()) {
                     case NONE:
-                        setPosition(GantryPosition.IDLE);
+                        setAutomaticPosition(GantryPosition.IDLE);
                         break;
 
                     case L1:
                         // FIXME: GANTRY TROUGH POSITIONS
-                        setPosition(GantryPosition.CORAL_STATION);
+                        setAutomaticPosition(GantryPosition.CORAL_STATION);
                         break;
 
                     case L2_L:
                     case L3_L:
                     case L4_L:
-                        setPosition(GantryPosition.REEF_LEFT);
+                        setAutomaticPosition(GantryPosition.REEF_LEFT);
                         break;
 
                     case L2_R:
                     case L3_R:
                     case L4_R:
-                        setPosition(GantryPosition.REEF_RIGHT);
+                        setAutomaticPosition(GantryPosition.REEF_RIGHT);
                         break;
                 }
                 break;
             case LOADING:
-                setPosition(GantryPosition.CORAL_STATION);
+                setAutomaticPosition(GantryPosition.CORAL_STATION);
                 break;
         }
 
@@ -110,20 +131,19 @@ public class GantrySubsystem extends SubsystemBase {
                 desiredControl = m_brake; // redundant?
                 break;
             case CORAL_STATION:
-                desiredControl = m_positionVoltage.withPosition(GantryConstants.CORAL_STATION_POSITION);
+                desiredControl = m_positionControl.withPosition(GantryConstants.CORAL_STATION_POSITION);
                 break;
             case REEF_LEFT:
-                desiredControl = m_positionVoltage.withPosition(GantryConstants.REEF_LEFT_POSITION);
+                desiredControl = m_positionControl.withPosition(GantryConstants.REEF_LEFT_POSITION);
                 break;
             case REEF_RIGHT:
-                desiredControl = m_positionVoltage.withPosition(GantryConstants.REEF_RIGHT_POSITION);
+                desiredControl = m_positionControl.withPosition(GantryConstants.REEF_RIGHT_POSITION);
                 break;
         }
 
         m_motor.setControl(desiredControl);
     }
+    private void handleManual() {
 
-    private void setPosition(GantryPosition desiredPosition) {
-        m_position = desiredPosition;
     }
 }

@@ -14,6 +14,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.RobotState.RELATIVE_SCORE_POSITION;
@@ -25,7 +26,9 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorManualDirection;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorState;
+import frc.robot.subsystems.GantrySubsystem.GantryManualDirection;
 import frc.robot.subsystems.GantrySubsystem.GantryState;
 
 public class RobotContainer {
@@ -55,12 +58,29 @@ public class RobotContainer {
     private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
         return new InstantCommand(() -> {
             RobotState.setTargetScorePosition(desiredPosition);
-            m_elevatorSubsystem.setState(desiredElevatorState);
-            m_gantrySubsystem.setState(desiredGantryState);
+            m_elevatorSubsystem.setAutomaticState(desiredElevatorState);
+            m_gantrySubsystem.setAutomaticState(desiredGantryState);
         }, m_elevatorSubsystem, m_gantrySubsystem);
     }
     public final InstantCommand positionCoralStation;
     public final InstantCommand setTargetScorePosition_NONE;
+
+    private Command makeElevatorManualCommand(ElevatorManualDirection desiredDirection) {
+        return Commands.startEnd(() -> {
+            m_elevatorSubsystem.setManualDirecion(desiredDirection);
+        }, () -> {
+            m_elevatorSubsystem.setAutomaticState(ElevatorState.IDLE);
+            m_elevatorSubsystem.setManualDirecion(ElevatorManualDirection.NONE);
+        }, m_elevatorSubsystem);
+    }
+    private Command makeGantryManualCommand(GantryManualDirection desiredDirection) {
+        return Commands.startEnd(() -> {
+            m_gantrySubsystem.setManualDirecion(desiredDirection);
+        }, () -> {
+            m_gantrySubsystem.setAutomaticState(GantryState.IDLE);
+            m_gantrySubsystem.setManualDirecion(GantryManualDirection.NONE);
+        }, m_gantrySubsystem);
+    }
 
     public final InstantCommand setTargetScorePosition_L1;
     public final InstantCommand setTargetScorePosition_L2_L;
@@ -141,6 +161,12 @@ public class RobotContainer {
         OPERATOR_CONTROLS.SCORE_L3_R.onTrue(setTargetScorePosition_L3_R);
         OPERATOR_CONTROLS.SCORE_L4_L.onTrue(setTargetScorePosition_L4_L);
         OPERATOR_CONTROLS.SCORE_L4_R.onTrue(setTargetScorePosition_L4_R);
+
+        OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(makeElevatorManualCommand(ElevatorManualDirection.UP));
+        OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(makeElevatorManualCommand(ElevatorManualDirection.DOWN));
+
+        OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(makeGantryManualCommand(GantryManualDirection.LEFT));
+        OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(makeGantryManualCommand(GantryManualDirection.RIGHT));
 
         m_swerveSubsystem.registerTelemetry(logger::telemeterize);
     }
