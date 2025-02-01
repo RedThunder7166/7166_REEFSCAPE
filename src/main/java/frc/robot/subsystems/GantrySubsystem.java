@@ -85,7 +85,7 @@ public class GantrySubsystem extends SubsystemBase {
         OurUtils.tryApplyConfig(m_motor, motorConfig);
     }
 
-    private Command makeGantryManualCommand(GantryManualDirection desiredDirection) {
+    private Command makeManualCommand(GantryManualDirection desiredDirection) {
         return startEnd(() -> {
             setManualDirection(desiredDirection);
         }, () -> {
@@ -93,8 +93,8 @@ public class GantrySubsystem extends SubsystemBase {
             setManualDirection(GantryManualDirection.NONE);
         });
     }
-    public final Command m_manualLeftCommand = makeGantryManualCommand(GantryManualDirection.LEFT);
-    public final Command m_manualRightCommand = makeGantryManualCommand(GantryManualDirection.RIGHT);
+    public final Command m_manualLeftCommand = makeManualCommand(GantryManualDirection.LEFT);
+    public final Command m_manualRightCommand = makeManualCommand(GantryManualDirection.RIGHT);
 
     @Override
     public void periodic() {

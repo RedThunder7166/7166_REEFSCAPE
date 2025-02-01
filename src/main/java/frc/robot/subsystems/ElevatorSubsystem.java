@@ -98,7 +98,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_followerMotor.setControl(new Follower(m_leaderMotor.getDeviceID(), false));
     }
 
-    private Command makeElevatorManualCommand(ElevatorManualDirection desiredDirection) {
+    private Command makeManualCommand(ElevatorManualDirection desiredDirection) {
         return startEnd(() -> {
             setManualDirection(desiredDirection);
         }, () -> {
@@ -106,8 +106,8 @@ public class ElevatorSubsystem extends SubsystemBase {
             setManualDirection(ElevatorManualDirection.NONE);
         });
     }
-    public final Command m_manualUpCommand = makeElevatorManualCommand(ElevatorManualDirection.UP);
-    public final Command m_manualDownCommand = makeElevatorManualCommand(ElevatorManualDirection.DOWN);
+    public final Command m_manualUpCommand = makeManualCommand(ElevatorManualDirection.UP);
+    public final Command m_manualDownCommand = makeManualCommand(ElevatorManualDirection.DOWN);
 
     @Override
     public void periodic() {
