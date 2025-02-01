@@ -65,23 +65,6 @@ public class RobotContainer {
     public final InstantCommand positionCoralStation;
     public final InstantCommand setTargetScorePosition_NONE;
 
-    private Command makeElevatorManualCommand(ElevatorManualDirection desiredDirection) {
-        return Commands.startEnd(() -> {
-            m_elevatorSubsystem.setManualDirecion(desiredDirection);
-        }, () -> {
-            m_elevatorSubsystem.setAutomaticState(ElevatorState.IDLE);
-            m_elevatorSubsystem.setManualDirecion(ElevatorManualDirection.NONE);
-        }, m_elevatorSubsystem);
-    }
-    private Command makeGantryManualCommand(GantryManualDirection desiredDirection) {
-        return Commands.startEnd(() -> {
-            m_gantrySubsystem.setManualDirecion(desiredDirection);
-        }, () -> {
-            m_gantrySubsystem.setAutomaticState(GantryState.IDLE);
-            m_gantrySubsystem.setManualDirecion(GantryManualDirection.NONE);
-        }, m_gantrySubsystem);
-    }
-
     public final InstantCommand setTargetScorePosition_L1;
     public final InstantCommand setTargetScorePosition_L2_L;
     public final InstantCommand setTargetScorePosition_L2_R;
@@ -162,11 +145,11 @@ public class RobotContainer {
         OPERATOR_CONTROLS.SCORE_L4_L.onTrue(setTargetScorePosition_L4_L);
         OPERATOR_CONTROLS.SCORE_L4_R.onTrue(setTargetScorePosition_L4_R);
 
-        OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(makeElevatorManualCommand(ElevatorManualDirection.UP));
-        OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(makeElevatorManualCommand(ElevatorManualDirection.DOWN));
+        OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(m_elevatorSubsystem.m_manualUpCommand);
+        OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(m_elevatorSubsystem.m_manualDownCommand);
 
-        OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(makeGantryManualCommand(GantryManualDirection.LEFT));
-        OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(makeGantryManualCommand(GantryManualDirection.RIGHT));
+        OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.m_manualLeftCommand);
+        OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.m_manualRightCommand);
 
         m_swerveSubsystem.registerTelemetry(logger::telemeterize);
     }

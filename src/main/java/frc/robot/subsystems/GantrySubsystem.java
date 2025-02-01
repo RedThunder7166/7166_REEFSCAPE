@@ -12,11 +12,14 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
-import frc.robot.subsystems.ElevatorSubsystem.ElevatorManualDirection;
+import frc.robot.subsystems.GantrySubsystem.GantryManualDirection;
+import frc.robot.subsystems.GantrySubsystem.GantryState;
 
 public class GantrySubsystem extends SubsystemBase {
     private static GantrySubsystem singleton = null;
@@ -54,7 +57,7 @@ public class GantrySubsystem extends SubsystemBase {
         RIGHT
     }
     private GantryManualDirection m_manualDirection = GantryManualDirection.NONE;
-    public void setManualDirecion(GantryManualDirection desiredManualDirection) {
+    public void setManualDirection(GantryManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
 
@@ -81,6 +84,17 @@ public class GantrySubsystem extends SubsystemBase {
 
         OurUtils.tryApplyConfig(m_motor, motorConfig);
     }
+
+    private Command makeGantryManualCommand(GantryManualDirection desiredDirection) {
+        return startEnd(() -> {
+            setManualDirection(desiredDirection);
+        }, () -> {
+            setAutomaticState(GantryState.IDLE);
+            setManualDirection(GantryManualDirection.NONE);
+        });
+    }
+    public final Command m_manualLeftCommand = makeGantryManualCommand(GantryManualDirection.LEFT);
+    public final Command m_manualRightCommand = makeGantryManualCommand(GantryManualDirection.RIGHT);
 
     @Override
     public void periodic() {

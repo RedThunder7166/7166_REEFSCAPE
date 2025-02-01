@@ -14,10 +14,14 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorManualDirection;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorState;
 
 public class ElevatorSubsystem extends SubsystemBase {
     private static ElevatorSubsystem singleton = null;
@@ -61,7 +65,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         DOWN
     }
     private ElevatorManualDirection m_manualDirection = ElevatorManualDirection.NONE;
-    public void setManualDirecion(ElevatorManualDirection desiredManualDirection) {
+    public void setManualDirection(ElevatorManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
 
@@ -93,6 +97,17 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         m_followerMotor.setControl(new Follower(m_leaderMotor.getDeviceID(), false));
     }
+
+    private Command makeElevatorManualCommand(ElevatorManualDirection desiredDirection) {
+        return startEnd(() -> {
+            setManualDirection(desiredDirection);
+        }, () -> {
+            setAutomaticState(ElevatorState.IDLE);
+            setManualDirection(ElevatorManualDirection.NONE);
+        });
+    }
+    public final Command m_manualUpCommand = makeElevatorManualCommand(ElevatorManualDirection.UP);
+    public final Command m_manualDownCommand = makeElevatorManualCommand(ElevatorManualDirection.DOWN);
 
     @Override
     public void periodic() {
