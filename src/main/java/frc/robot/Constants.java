@@ -4,78 +4,35 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Amp;
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Meters;
-
-import com.pathplanner.lib.config.ModuleConfig;
-import com.pathplanner.lib.config.RobotConfig;
-
-import edu.wpi.first.math.system.plant.DCMotor;
-import frc.robot.generated.TunerConstants;
-
 public class Constants {
-    public static final double ROBOT_MASS_KG = 38.782;
-    public static final double ROBOT_MOMENT_OF_INTERTIA = 3.414;
-
-    public static final RobotConfig ROBOT_CONFIG = new RobotConfig(
-        ROBOT_MASS_KG,
-        ROBOT_MOMENT_OF_INTERTIA,
-        new ModuleConfig(
-            Meters.convertFrom(2.224, Inches),
-            5.21208,
-            1.542,
-            DCMotor.getKrakenX60(4),
-            TunerConstants.kSlipCurrent.in(Amp),
-            4
-        ),
-        Meters.convertFrom(18.5, Inches)
-    );
+    public static final String CANIVORE_NAME = "Canivore";
 
     public static final class ControllerConstants {
         public static final int DRIVER_PORT = 0;
         public static final int OPERATOR_PORT = 1;
     }
 
-    public static final class LEDConstants {
-        // FIXME: LED CANDLE ID
-        public static final int CANDLE_ID = -1;
-
-        // FIXME: LED COUNT
-        public static final int LED_COUNT = 47;
-
-        public static final int COUNT_PER_GROUP = (int) Math.floor(LED_COUNT / 3);
-
-        public static final int GROUP_1_START = 0;
-        private static final int GROUP_1_END = COUNT_PER_GROUP;
-
-        public static final int GROUP_2_START = GROUP_1_END + 1;
-        private static final int GROUP_2_END = GROUP_2_START + GROUP_1_END;
-
-        public static final int GROUP_3_START = GROUP_2_END + 1;
-        // private static final int GROUP_3_END = LED_COUNT;
-    }
-
     public static final class ElevatorConstants {
-        // FIXME: ELEVATOR LEADER MOTOR ID
-        public static final int LEADER_MOTOR_ID = -1;
-        // FIXME: ELEVATOR FOLLOWER MOTOR ID
-        public static final int FOLLOWER_MOTOR_ID = -1;
+        public static final int LEADER_MOTOR_ID = 11; // left
+        public static final int FOLLOWER_MOTOR_ID = 14; // right
+
+        public static final double MIN_POSITION_ROTATIONS = 0.01; // essentially the error, since ideal min position is 0
+        public static final double MAX_POSITION_ROTATIONS = 36;
 
         // TODO: ideally, home and coral station are the same
         // FIXME: ELEVATOR HOME POSITION
-        public static final double HOME_POSITION = 0;
+        public static final double HOME_POSITION = MIN_POSITION_ROTATIONS;
         // FIXME: ELEVATOR CORAL STATION POSITION
         public static final double CORAL_STATION_POSITION = HOME_POSITION;
 
         // FIXME: ELEVATOR L1 POSITION
         public static final double L1_POSITION = HOME_POSITION;
         // FIXME: ELEVATOR L2 POSITION
-        public static final double L2_POSITION = HOME_POSITION;
+        public static final double L2_POSITION = HOME_POSITION + 3;
         // FIXME: ELEVATOR L3 POSITION
-        public static final double L3_POSITION = HOME_POSITION;
+        public static final double L3_POSITION = HOME_POSITION + 6;
         // FIXME: ELEVATOR L4 POSITION
-        public static final double L4_POSITION = HOME_POSITION;
+        public static final double L4_POSITION = HOME_POSITION + 9;
 
         // FIXME: ELEVATOR MANUAL VELOCITY
         public static final double MANUAL_VELOCITY_FORWARD_RPS = 1;

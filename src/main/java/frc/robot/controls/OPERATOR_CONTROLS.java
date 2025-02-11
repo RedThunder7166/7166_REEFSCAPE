@@ -11,8 +11,8 @@ import frc.robot.Constants.ControllerConstants;
 public final class OPERATOR_CONTROLS {
     private static final CommandGenericHID operatorController = new CommandGenericHID(ControllerConstants.OPERATOR_PORT);
 
-    public static final Trigger INTAKE_FORWARD = operatorController.button(1);
-    public static final Trigger INTAKE_BACKWARD = operatorController.button(2);
+    public static final Trigger INTAKE_OUT = operatorController.button(1);
+    public static final Trigger INTAKE_IN = operatorController.button(2);
 
     public static final Trigger POSITION_CORAL_STATION = operatorController.button(3);
 

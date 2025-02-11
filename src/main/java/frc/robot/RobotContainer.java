@@ -11,12 +11,14 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
 import frc.robot.RobotState.RELATIVE_SCORE_POSITION;
 import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
@@ -48,19 +50,25 @@ public class RobotContainer {
 
     private final CommandXboxController m_joystick = new CommandXboxController(0);
 
-    private final CommandSwerveDrivetrain m_swerveSubsystem = TunerConstants.createDrivetrain();
+    // private final CommandSwerveDrivetrain m_swerveSubsystem = TunerConstants.createDrivetrain();
 
     private final CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
     private final ElevatorSubsystem m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
-    private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
-    private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
+    // private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
+    // private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
 
     private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
+        // return new InstantCommand(() -> {
+        //     RobotState.setTargetScorePosition(desiredPosition);
+        //     m_elevatorSubsystem.setAutomaticState(desiredElevatorState);
+        //     m_gantrySubsystem.setAutomaticState(desiredGantryState);
+        // }, m_elevatorSubsystem, m_gantrySubsystem);
         return new InstantCommand(() -> {
             RobotState.setTargetScorePosition(desiredPosition);
+            m_elevatorSubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC);
+
             m_elevatorSubsystem.setAutomaticState(desiredElevatorState);
-            m_gantrySubsystem.setAutomaticState(desiredGantryState);
-        }, m_elevatorSubsystem, m_gantrySubsystem);
+        }, m_elevatorSubsystem);
     }
     public final InstantCommand positionCoralStation;
     public final InstantCommand setTargetScorePosition_NONE;
@@ -73,11 +81,11 @@ public class RobotContainer {
     public final InstantCommand setTargetScorePosition_L4_L;
     public final InstantCommand setTargetScorePosition_L4_R;
 
-    private final SendableChooser<Command> m_autoChooser;
+    // private final SendableChooser<Command> m_autoChooser;
 
     public RobotContainer() {
-        m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
-        SmartDashboard.putData("AutoChooser", m_autoChooser);
+        // m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
+        // SmartDashboard.putData("AutoChooser", m_autoChooser);
 
         positionCoralStation = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.CORAL_STATION, GantryState.LOADING);
         setTargetScorePosition_NONE = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.IDLE, GantryState.IDLE);
@@ -94,16 +102,18 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        DriverStation.silenceJoystickConnectionWarning(true);
+
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        m_swerveSubsystem.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            m_swerveSubsystem.applyRequest(() ->
-                driveRequest.withVelocityX(-m_joystick.getLeftY() * MaxSpeed)
-                    .withVelocityY(-m_joystick.getLeftX() * MaxSpeed)
-                    .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate)
-            )
-        );
+        // m_swerveSubsystem.setDefaultCommand(
+        //     // Drivetrain will execute this command periodically
+        //     m_swerveSubsystem.applyRequest(() ->
+        //         driveRequest.withVelocityX(-m_joystick.getLeftY() * MaxSpeed)
+        //             .withVelocityY(-m_joystick.getLeftX() * MaxSpeed)
+        //             .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate)
+        //     )
+        // );
 
         // joystick.a().whileTrue(swerveSubsystem.applyRequest(() -> brakeRequest));
         // joystick.b().whileTrue(swerveSubsystem.applyRequest(() ->
@@ -127,13 +137,13 @@ public class RobotContainer {
         // DRIVER CONTROLS
 
         // reset the field-centric heading
-        DRIVER_CONTROLS.seedFieldCentric.onTrue(m_swerveSubsystem.runOnce(() -> m_swerveSubsystem.seedFieldCentric()));
+        // DRIVER_CONTROLS.seedFieldCentric.onTrue(m_swerveSubsystem.runOnce(() -> m_swerveSubsystem.seedFieldCentric()));
         DRIVER_CONTROLS.localizeToReef.whileTrue(m_cameraSubsystem.localizeToReefCommand);
 
         // OPERATOR CONTROLS
 
-        OPERATOR_CONTROLS.INTAKE_FORWARD.whileTrue(m_intakeOuttakeSubsystem.m_forwardCommand);
-        OPERATOR_CONTROLS.INTAKE_BACKWARD.whileTrue(m_intakeOuttakeSubsystem.m_backwardCommand);
+        // OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.m_outCommand);
+        // OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.m_inCommand);
 
         OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(positionCoralStation);
 
@@ -148,13 +158,21 @@ public class RobotContainer {
         OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(m_elevatorSubsystem.m_manualUpCommand);
         OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(m_elevatorSubsystem.m_manualDownCommand);
 
-        OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.m_manualLeftCommand);
-        OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.m_manualRightCommand);
+        // OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.m_manualLeftCommand);
+        // OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.m_manualRightCommand);
 
-        m_swerveSubsystem.registerTelemetry(logger::telemeterize);
+        // m_swerveSubsystem.registerTelemetry(logger::telemeterize);
     }
 
     public Command getAutonomousCommand() {
-        return m_autoChooser.getSelected();
+        // return m_autoChooser.getSelected();
+        return Commands.none();
+    }
+
+    public void teleopInit() {
+        RobotState.setTargetScorePosition(RELATIVE_SCORE_POSITION.NONE);
+
+        m_elevatorSubsystem.resetManualPosition();
+        // m_elevatorSubsystem.resetMotorPositions();
     }
 }

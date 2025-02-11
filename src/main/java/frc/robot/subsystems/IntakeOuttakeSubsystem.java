@@ -55,10 +55,10 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
             case IDLE:
                 targetRequest = m_brake; // redundant?
                 break;
-            case FORWARD:
+            case OUT:
                 targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.FORWARD_VELOCITY_RPS);
                 break;
-            case BACKWARD:
+            case IN:
                 targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.BACKWARD_VELOCITY_RPS);
                 break;
         }
@@ -73,6 +73,6 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
             RobotState.stopIntake();
         });
     }
-    public final Command m_forwardCommand = makeCommand(true);
-    public final Command m_backwardCommand = makeCommand(false);
+    public final Command m_outCommand = makeCommand(true);
+    public final Command m_inCommand = makeCommand(false);
 }

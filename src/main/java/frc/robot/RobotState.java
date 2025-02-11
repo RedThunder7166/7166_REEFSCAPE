@@ -4,6 +4,9 @@
 
 package frc.robot;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StringPublisher;
 import frc.robot.subsystems.CameraSubsystem;
 
 public final class RobotState {
@@ -14,6 +17,19 @@ public final class RobotState {
     //         singleton = new RobotState();
     //     return singleton;
     // }
+
+    private static final boolean ENABLE_AUTOMATIC_CONTROL = true;
+    public static boolean ENABLE_AUTOMATIC_CLAW_CONTROL = false;
+    public static boolean ENABLE_AUTOMATIC_ELEVATOR_CONTROL = false;
+    static {
+        if (!ENABLE_AUTOMATIC_CONTROL) {
+            ENABLE_AUTOMATIC_CLAW_CONTROL = false;
+            ENABLE_AUTOMATIC_ELEVATOR_CONTROL = false;
+        }
+    }
+
+    public static final NetworkTableInstance NETWORK_TABLE_INSTANCE = NetworkTableInstance.getDefault();
+    public static final NetworkTable m_robotStateTable = NETWORK_TABLE_INSTANCE.getTable("RobotState");
 
     public static enum RELATIVE_SCORE_POSITION {
         NONE,
@@ -30,6 +46,7 @@ public final class RobotState {
     }
 
     private static RELATIVE_SCORE_POSITION m_targetScorePosition = RELATIVE_SCORE_POSITION.NONE;
+    private static final StringPublisher m_targetScorePositionPublisher = m_robotStateTable.getStringTopic("TargetScorePosition").publish();
 
     public static RELATIVE_SCORE_POSITION getTargetScorePosition() {
         return m_targetScorePosition;
@@ -41,20 +58,26 @@ public final class RobotState {
         return true;
     }
 
+    public static enum DESIRED_CONTROL_TYPE {
+        AUTOMATIC,
+        MANUAL
+    }
+
     public static enum INTAKE_STATE {
         IDLE,
-        FORWARD,
-        BACKWARD
+        OUT,
+        IN
     }
 
     private static INTAKE_STATE m_intakeState = INTAKE_STATE.IDLE;
+    private static final StringPublisher m_intakeStatePublisher = m_robotStateTable.getStringTopic("IntakeState").publish();
 
     public static INTAKE_STATE getIntakeState() {
         return m_intakeState;
     }
 
     public static void startIntake(boolean isForward) {
-        m_intakeState = isForward ? INTAKE_STATE.FORWARD : INTAKE_STATE.BACKWARD;
+        m_intakeState = isForward ? INTAKE_STATE.OUT : INTAKE_STATE.IN;
     }
     public static void stopIntake() {
         m_intakeState = INTAKE_STATE.IDLE;
@@ -63,6 +86,11 @@ public final class RobotState {
     private static CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
     public static boolean getCanMoveScoringMechanisms() {
         // TODO: sensor logic
-        return m_cameraSubsystem.getRobotInsideReefZone();
+        return true;
+    }
+
+    public static void updateNetworkTables() {
+        m_targetScorePositionPublisher.set(m_targetScorePosition.toString());
+        m_intakeStatePublisher.set(m_intakeState.toString());
     }
 }
