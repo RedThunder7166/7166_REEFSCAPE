@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
 import frc.robot.RobotState.RELATIVE_SCORE_POSITION;
@@ -167,6 +168,7 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         // return m_autoChooser.getSelected();
         return Commands.none();
+        // return m_elevatorSubsystem.getTempGoUntilTargetIncreaseCommand(2.54).andThen(m_elevatorSubsystem.getTempHoldPositionCommand());
     }
 
     public void teleopInit() {

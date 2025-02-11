@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Volts;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -23,6 +24,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants;
@@ -111,8 +113,12 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final StatusSignal<Angle> m_leaderMotorPosition = m_leaderMotor.getPosition();
     private final StatusSignal<Angle> m_followerMotorPosition = m_followerMotor.getPosition();
 
+    private final StatusSignal<Double> m_PIDPositionReference = m_leaderMotor.getClosedLoopReference();
+
     private final DoublePublisher m_leaderMotorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorLeaderMotorPosition").publish();
     private final DoublePublisher m_followerMotorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorFollowerMotorPosition").publish();
+
+    private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorPIDPositionReferencePosition").publish();
 
     private DESIRED_CONTROL_TYPE m_desiredControlType = DESIRED_CONTROL_TYPE.AUTOMATIC;
     public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) {
@@ -126,10 +132,25 @@ public class ElevatorSubsystem extends SubsystemBase {
         minimum kG before elevator goes down: -0.175
 
         2.4 inches per rotation of the motor
+        11.81 inches per rotation of the gearbox (post gearbox)
      */
-    private double m_kg = 0;
-    private double m_kv = 4.89; // 1.6
-    private double m_ka = 0;
+    private double m_kg = 0.32; // 0.47
+    private double m_kv = 0.6; // 1.96
+    private double m_ka = 0.03; // 0.07
+
+    private double m_kp = 70;
+    private double m_ki = 0;
+    private double m_kd = 0;
+
+    {
+        SmartDashboard.putNumber("ELEVATOR_KG", m_kg);
+        SmartDashboard.putNumber("ELEVATOR_KV", m_kv);
+        SmartDashboard.putNumber("ELEVATOR_KA", m_ka);
+
+        SmartDashboard.putNumber("ELEVATOR_KP", m_kp);
+        SmartDashboard.putNumber("ELEVATOR_KI", m_ki);
+        SmartDashboard.putNumber("ELEVATOR_KD", m_kd);
+    }
 
     public ElevatorSubsystem() {
         // FIXME: tune elevator PID
@@ -139,7 +160,10 @@ public class ElevatorSubsystem extends SubsystemBase {
         motorConfig.Slot0.kG = SmartDashboard.getNumber("ELEVATOR_KG", m_kg);
         motorConfig.Slot0.kV = SmartDashboard.getNumber("ELEVATOR_KV", m_kv);
         motorConfig.Slot0.kA = SmartDashboard.getNumber("ELEVATOR_KA", m_ka);
-        // motorConfig.kP
+
+        motorConfig.Slot0.kP = SmartDashboard.getNumber("ELEVATOR_KP", m_kp);
+        motorConfig.Slot0.kI = SmartDashboard.getNumber("ELEVATOR_KI", m_ki);
+        motorConfig.Slot0.kD = SmartDashboard.getNumber("ELEVATOR_KD", m_kd);
 
         // TODO: once tuned, find peak voltage and set
         // motorConfig.Voltage.withPeakForwardVoltage(Volts.of(8))
@@ -160,9 +184,9 @@ public class ElevatorSubsystem extends SubsystemBase {
         // motionMagicConfigs.MotionMagicAcceleration = velo * 2; // rps/s
         // motionMagicConfigs.MotionMagicJerk = (velo * 2) * 10; // rps/s/s
 
-        motionMagicConfigs.MotionMagicCruiseVelocity = 0.3;
-        motionMagicConfigs.MotionMagicAcceleration = 0.3;
-        motionMagicConfigs.MotionMagicJerk = 0.3;
+        var a = 9;
+        motionMagicConfigs.MotionMagicCruiseVelocity = a;
+        motionMagicConfigs.MotionMagicAcceleration = a;
 
         OurUtils.tryApplyConfig(m_leaderMotor, motorConfig);
         OurUtils.tryApplyConfig(m_followerMotor, motorConfig);
@@ -191,18 +215,16 @@ public class ElevatorSubsystem extends SubsystemBase {
     public final Command m_manualUpCommand = makeManualCommand(ElevatorManualDirection.UP);
     public final Command m_manualDownCommand = makeManualCommand(ElevatorManualDirection.DOWN);
 
-    {
-        SmartDashboard.putNumber("ELEVATOR_KG", m_kg);
-        SmartDashboard.putNumber("ELEVATOR_KV", m_kv);
-        SmartDashboard.putNumber("ELEVATOR_KA", m_ka);
-    }
-
     @Override
     public void periodic() {
         {
             var kG = SmartDashboard.getNumber("ELEVATOR_KG", m_kg);
             var kV = SmartDashboard.getNumber("ELEVATOR_KV", m_kv);
             var kA = SmartDashboard.getNumber("ELEVATOR_KA", m_ka);
+
+            var kP = SmartDashboard.getNumber("ELEVATOR_KP", m_kp);
+            var kI = SmartDashboard.getNumber("ELEVATOR_KI", m_ki);
+            var kD = SmartDashboard.getNumber("ELEVATOR_KD", m_kd);
 
             var apply = false;
             if (kG != m_kg) {
@@ -218,6 +240,19 @@ public class ElevatorSubsystem extends SubsystemBase {
                 apply = true;
             }
 
+            if (kP != m_kp) {
+                m_kp = kP;
+                apply = true;
+            }
+            if (kI != m_ki) {
+                m_ki = kI;
+                apply = true;
+            }
+            if (kD != m_kd) {
+                m_kd = kD;
+                apply = true;
+            }
+
             if (apply) {
                 var config = new TalonFXConfiguration();
                 var leader_configurator = m_leaderMotor.getConfigurator();
@@ -227,6 +262,10 @@ public class ElevatorSubsystem extends SubsystemBase {
                 config.Slot0.kG = kG;
                 config.Slot0.kV = kV;
                 config.Slot0.kA = kA;
+
+                config.Slot0.kP = kP;
+                config.Slot0.kI = kI;
+                config.Slot0.kD = kD;
 
                 leader_configurator.apply(config);
                 follower_configurator.apply(config);
@@ -244,8 +283,12 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_leaderMotorPosition.refresh();
         m_followerMotorPosition.refresh();
 
+        m_PIDPositionReference.refresh();
+
         m_followerMotorPositionPublisher.set(m_followerMotorPosition.getValueAsDouble());
         m_leaderMotorPositionPublisher.set(m_leaderMotorPosition.getValueAsDouble());
+
+        m_PIDPositionReferencePublisher.set(m_PIDPositionReference.getValueAsDouble());
 
         m_desiredStatePublisher.set(m_state.toString());
         m_statePublisher.set(m_state.toString());
@@ -344,5 +387,38 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         // m_leaderMotor.setControl(m_positionControl.withPosition(m_manualPosition));
         m_leaderMotor.setControl(m_brake);
+    }
+
+    public Command getTempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition) {
+        return new Command() {
+            private double m_initialPosition;
+            @Override
+            public void initialize() {
+                m_initialPosition = m_leaderMotorPosition.refresh().getValueAsDouble();
+            }
+
+            @Override
+            public void execute() {
+                m_leaderMotor.setControl(new DutyCycleOut(0.04));
+            }
+
+            @Override
+            public boolean isFinished() {
+                var position = m_leaderMotorPosition.refresh().getValueAsDouble();
+                return position >= (m_initialPosition + targetIncreaseInPosition);
+            }
+
+            @Override
+            public void end(boolean isInterrupted) {
+                m_leaderMotor.setControl(m_brake);
+            }
+        };
+    }
+    public Command getTempHoldPositionCommand() {
+        return run(() -> {
+            m_leaderMotor.setControl(new DutyCycleOut(0.025));
+            // reaches 16 13/16 inches
+            // bottom is 
+        });
     }
 }
