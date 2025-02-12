@@ -167,8 +167,9 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         // return m_autoChooser.getSelected();
-        return Commands.none();
+        // return Commands.none();
         // return m_elevatorSubsystem.getTempGoUntilTargetIncreaseCommand(2.54).andThen(m_elevatorSubsystem.getTempHoldPositionCommand());
+        return m_elevatorSubsystem.getTimeTravelCommand(4.2);
     }
 
     public void teleopInit() {

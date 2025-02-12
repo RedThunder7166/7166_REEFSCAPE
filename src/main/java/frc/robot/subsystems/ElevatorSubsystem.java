@@ -22,6 +22,7 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -129,16 +130,16 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     /* SOME NOTES
-        minimum kG before elevator goes down: -0.175
-
         2.4 inches per rotation of the motor
         11.81 inches per rotation of the gearbox (post gearbox)
      */
-    private double m_kg = 0.32; // 0.47
-    private double m_kv = 0.6; // 1.96
-    private double m_ka = 0.03; // 0.07
+    private double m_kg = 0.32;
+    private double m_kv = 0.6;
+    private double m_ka = 0.03;
 
-    private double m_kp = 70;
+    private double m_ks = 0;
+
+    private double m_kp = 100;
     private double m_ki = 0;
     private double m_kd = 0;
 
@@ -146,6 +147,8 @@ public class ElevatorSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("ELEVATOR_KG", m_kg);
         SmartDashboard.putNumber("ELEVATOR_KV", m_kv);
         SmartDashboard.putNumber("ELEVATOR_KA", m_ka);
+
+        SmartDashboard.putNumber("ELEVATOR_KS", m_ks);
 
         SmartDashboard.putNumber("ELEVATOR_KP", m_kp);
         SmartDashboard.putNumber("ELEVATOR_KI", m_ki);
@@ -160,6 +163,8 @@ public class ElevatorSubsystem extends SubsystemBase {
         motorConfig.Slot0.kG = SmartDashboard.getNumber("ELEVATOR_KG", m_kg);
         motorConfig.Slot0.kV = SmartDashboard.getNumber("ELEVATOR_KV", m_kv);
         motorConfig.Slot0.kA = SmartDashboard.getNumber("ELEVATOR_KA", m_ka);
+
+        motorConfig.Slot0.kS = SmartDashboard.getNumber("ELEVATOR_KS", m_ks);
 
         motorConfig.Slot0.kP = SmartDashboard.getNumber("ELEVATOR_KP", m_kp);
         motorConfig.Slot0.kI = SmartDashboard.getNumber("ELEVATOR_KI", m_ki);
@@ -184,7 +189,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         // motionMagicConfigs.MotionMagicAcceleration = velo * 2; // rps/s
         // motionMagicConfigs.MotionMagicJerk = (velo * 2) * 10; // rps/s/s
 
-        var a = 9;
+        var a = 20;
         motionMagicConfigs.MotionMagicCruiseVelocity = a;
         motionMagicConfigs.MotionMagicAcceleration = a;
 
@@ -222,6 +227,8 @@ public class ElevatorSubsystem extends SubsystemBase {
             var kV = SmartDashboard.getNumber("ELEVATOR_KV", m_kv);
             var kA = SmartDashboard.getNumber("ELEVATOR_KA", m_ka);
 
+            var kS = SmartDashboard.getNumber("ELEVATOR_KS", m_ks);
+
             var kP = SmartDashboard.getNumber("ELEVATOR_KP", m_kp);
             var kI = SmartDashboard.getNumber("ELEVATOR_KI", m_ki);
             var kD = SmartDashboard.getNumber("ELEVATOR_KD", m_kd);
@@ -237,6 +244,11 @@ public class ElevatorSubsystem extends SubsystemBase {
             }
             if (kA != m_ka) {
                 m_ka = kA;
+                apply = true;
+            }
+
+            if (kS != m_ks) {
+                m_ks = kS;
                 apply = true;
             }
 
@@ -263,6 +275,8 @@ public class ElevatorSubsystem extends SubsystemBase {
                 config.Slot0.kV = kV;
                 config.Slot0.kA = kA;
 
+                config.Slot0.kS = kS;
+
                 config.Slot0.kP = kP;
                 config.Slot0.kI = kI;
                 config.Slot0.kD = kD;
@@ -276,7 +290,6 @@ public class ElevatorSubsystem extends SubsystemBase {
             handleAutomatic();
         else
             handleManual();
-            // DriverStation.reportWarning("ELEVATOR MANUAL MODE NOT ACTIVATING SINCE IT DOES NOT WORK; TUNE THE PID!!!", false); // this is if we use velocity control :skull:
 
         m_manualPositionPublisher.set(m_manualPosition);
 
@@ -416,9 +429,35 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
     public Command getTempHoldPositionCommand() {
         return run(() -> {
-            m_leaderMotor.setControl(new DutyCycleOut(0.025));
-            // reaches 16 13/16 inches
-            // bottom is 
+            m_leaderMotor.setControl(new DutyCycleOut(0.025)); // about kG / 12
         });
+    }
+
+    public Command getTimeTravelCommand(double targetPosition) {
+        return new Command() {
+            private Timer m_timer = new Timer();
+            @Override
+            public void initialize() {
+                m_timer.start();
+            }
+
+            @Override
+            public void execute() {
+                m_leaderMotor.setControl(m_positionControl.withPosition(targetPosition));
+            }
+
+            @Override
+            public boolean isFinished() {
+                var position = m_leaderMotorPosition.refresh().getValueAsDouble();
+                return position >= targetPosition;
+            }
+
+            @Override
+            public void end(boolean isInterrupted) {
+                m_timer.stop();
+                m_leaderMotor.setControl(m_brake);
+                SmartDashboard.putNumber("ELEVATOR_TIME_TAKEN", m_timer.get());
+            }
+        };
     }
 }
