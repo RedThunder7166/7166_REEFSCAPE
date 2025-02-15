@@ -19,7 +19,7 @@ public final class RobotState {
     // }
 
     public static final boolean ENABLE_AUTOMATIC_ELEVATOR_CONTROL = true;
-    public static final boolean ENABLE_AUTOMATIC_GANTRY_CONTROL = false;
+    public static final boolean ENABLE_AUTOMATIC_GANTRY_CONTROL = true;
 
     public static final NetworkTableInstance NETWORK_TABLE_INSTANCE = NetworkTableInstance.getDefault();
     public static final NetworkTable m_robotStateTable = NETWORK_TABLE_INSTANCE.getTable("RobotState");
