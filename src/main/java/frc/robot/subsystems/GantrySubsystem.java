@@ -114,7 +114,8 @@ public class GantrySubsystem extends SubsystemBase {
     public GantrySubsystem() {
         // FIXME: tune gantry PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
-        motorConfig.Slot0.kP = 16;
+        motorConfig.Slot0.kP = 0.7;
+        motorConfig.Slot0.kI = 0.05;
 
         // set Motion Magic settings
         var motionMagicConfigs = motorConfig.MotionMagic;
@@ -122,6 +123,8 @@ public class GantrySubsystem extends SubsystemBase {
         motionMagicConfigs.MotionMagicAcceleration = 120;
 
         OurUtils.tryApplyConfig(m_motor, motorConfig);
+
+        m_motor.setPosition(0);
     }
 
     private Command makeManualCommand(GantryManualDirection desiredDirection) {

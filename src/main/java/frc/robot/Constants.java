@@ -25,13 +25,9 @@ public class Constants {
         // FIXME: ELEVATOR CORAL STATION POSITION
         public static final double CORAL_STATION_POSITION = HOME_POSITION;
 
-        // FIXME: ELEVATOR L1 POSITION
         public static final double L1_POSITION = HOME_POSITION;
-        // FIXME: ELEVATOR L2 POSITION
         public static final double L2_POSITION = 0.71;
-        // FIXME: ELEVATOR L3 POSITION
         public static final double L3_POSITION = 2.01;
-        // FIXME: ELEVATOR L4 POSITION
         public static final double L4_POSITION = 4.05;
 
         // FIXME: ELEVATOR MANUAL VELOCITY
@@ -42,14 +38,11 @@ public class Constants {
         public static final int MOTOR_ID = 51;
 
         public static final double MIN_POSITION_ROTATIONS = -7.4;
-        public static final double MAX_POSITION_ROTATIONS = 6.7;
+        public static final double MAX_POSITION_ROTATIONS = 8.8;
 
-        // FIXME: GANTRY CORAL_STATION POSITION
         public static final double CORAL_STATION_POSITION = 0;
-        // FIXME: GANTRY REEF_LEFT POSITION
-        public static final double REEF_LEFT_POSITION = -7.4155;
-        // FIXME: GANTRY REEF_RIGHT POSITION
-        public static final double REEF_RIGHT_POSITION = 6.37;
+        public static final double REEF_LEFT_POSITION = MIN_POSITION_ROTATIONS;
+        public static final double REEF_RIGHT_POSITION = MAX_POSITION_ROTATIONS;
     }
     public static final class IntakeOuttakeConstants {
         public static final int SCORE_MOTOR_ID = 53;
