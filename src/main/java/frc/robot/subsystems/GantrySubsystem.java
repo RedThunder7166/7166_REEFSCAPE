@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Volts;
-
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -13,13 +11,11 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
-import frc.robot.subsystems.GantrySubsystem.GantryManualDirection;
-import frc.robot.subsystems.GantrySubsystem.GantryState;
+import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
 
 public class GantrySubsystem extends SubsystemBase {
     private static GantrySubsystem singleton = null;
@@ -39,12 +35,24 @@ public class GantrySubsystem extends SubsystemBase {
     public void setAutomaticState(GantryState desiredState) {
         m_state = desiredState;
     }
+    public void setIdle() {
+        setAutomaticState(GantryState.IDLE);
+        m_state = GantryState.IDLE;
+        m_position = GantryPosition.IDLE;
+    }
 
     private static enum GantryPosition {
-        IDLE,
-        CORAL_STATION, // aka loading
-        REEF_LEFT,
-        REEF_RIGHT
+        IDLE(GantryConstants.CORAL_STATION_POSITION),
+        CORAL_STATION(GantryConstants.CORAL_STATION_POSITION), // // this position should never be used, so we have it coral station to be safe
+        REEF_LEFT(GantryConstants.REEF_LEFT_POSITION),
+        REEF_RIGHT(GantryConstants.REEF_RIGHT_POSITION)
+
+        ;
+        private final double m_position;
+
+        GantryPosition(double position) {
+            m_position = position;
+        }
     }
     private GantryPosition m_position = GantryPosition.CORAL_STATION;
     private void setAutomaticPosition(GantryPosition desiredPosition) {
@@ -61,6 +69,27 @@ public class GantrySubsystem extends SubsystemBase {
         m_manualDirection = desiredManualDirection;
     }
 
+        private double m_manualPosition = 0;
+    private void setManualPosition(double newValue) {
+        if (newValue < GantryConstants.MIN_POSITION_ROTATIONS)
+            newValue = GantryConstants.MIN_POSITION_ROTATIONS;
+        if (newValue > GantryConstants.MAX_POSITION_ROTATIONS)
+            newValue = GantryConstants.MAX_POSITION_ROTATIONS;
+
+        m_manualPosition = newValue;
+    }
+    public void incrementManualPosition(double value) {
+        setManualPosition(m_manualPosition + value);
+    }
+    public void resetManualPosition() {
+        setManualPosition(0);
+    }
+
+    private DESIRED_CONTROL_TYPE m_desiredControlType = DESIRED_CONTROL_TYPE.AUTOMATIC;
+    public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) {
+        m_desiredControlType = desiredControlType;
+    }
+
     private final TalonFX m_motor = new TalonFX(GantryConstants.MOTOR_ID);
     private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final NeutralOut m_brake = new NeutralOut();
@@ -68,28 +97,28 @@ public class GantrySubsystem extends SubsystemBase {
     public GantrySubsystem() {
         // FIXME: tune gantry PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
-        motorConfig.Slot0.kP = 2.4; // An error of 1 rotation results in 2.4 V output
-        motorConfig.Slot0.kI = 0; // No output for integrated error
-        motorConfig.Slot0.kD = 0.1; // A velocity of 1 rps results in 0.1 V output
-        // Peak output of 8 V
-        motorConfig.Voltage.withPeakForwardVoltage(Volts.of(8))
-            .withPeakReverseVoltage(Volts.of(-8));
+        motorConfig.Slot0.kP = 16;
 
-        // FIXME: tune gantry Motion Magic
         // set Motion Magic settings
         var motionMagicConfigs = motorConfig.MotionMagic;
-        motionMagicConfigs.MotionMagicCruiseVelocity = 80; // rps
-        motionMagicConfigs.MotionMagicAcceleration = 160; // rps/s
-        motionMagicConfigs.MotionMagicJerk = 1600; // rps/s/s
+        motionMagicConfigs.MotionMagicCruiseVelocity = 40; // rps
+        motionMagicConfigs.MotionMagicAcceleration = 120; // rps/s
 
         OurUtils.tryApplyConfig(m_motor, motorConfig);
     }
 
     private Command makeManualCommand(GantryManualDirection desiredDirection) {
         return startEnd(() -> {
+            switch (m_position) {
+                case IDLE:
+                    break;
+                default:
+                    setManualPosition(m_position.m_position);
+            }
+            setDesiredControlType(DESIRED_CONTROL_TYPE.MANUAL);
+            setIdle();
             setManualDirection(desiredDirection);
         }, () -> {
-            setAutomaticState(GantryState.IDLE);
             setManualDirection(GantryManualDirection.NONE);
         });
     }
@@ -98,9 +127,13 @@ public class GantrySubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (m_manualDirection == GantryManualDirection.NONE)
-            handleAutomatic();
-        else
+        // looks ugly, but compiler optimizes nicely
+        if (RobotState.ENABLE_AUTOMATIC_GANTRY_CONTROL) {
+            if (m_desiredControlType == DESIRED_CONTROL_TYPE.AUTOMATIC)
+                handleAutomatic();
+            else
+                handleManual();
+        } else
             handleManual();
     }
 
@@ -144,20 +177,28 @@ public class GantrySubsystem extends SubsystemBase {
             case IDLE:
                 desiredControl = m_brake; // redundant?
                 break;
-            case CORAL_STATION:
-                desiredControl = m_positionControl.withPosition(GantryConstants.CORAL_STATION_POSITION);
-                break;
-            case REEF_LEFT:
-                desiredControl = m_positionControl.withPosition(GantryConstants.REEF_LEFT_POSITION);
-                break;
-            case REEF_RIGHT:
-                desiredControl = m_positionControl.withPosition(GantryConstants.REEF_RIGHT_POSITION);
+            default:
+                desiredControl = m_positionControl.withPosition(m_position.m_position);
                 break;
         }
 
         m_motor.setControl(desiredControl);
     }
     private void handleManual() {
+        // final double increment = 0.05;
 
+        // switch (m_manualDirection) {
+        //     case NONE:
+        //         break;
+        //     case LEFT:
+        //         incrementManualPosition(increment);
+        //         break;
+        //     case RIGHT:
+        //         incrementManualPosition(-increment);
+        //         break;
+        // }
+
+        // m_motor.setControl(m_positionControl.withPosition(m_manualPosition));
+        m_motor.setControl(m_brake);
     }
 }

@@ -39,54 +39,51 @@ public class RobotContainer {
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
-    private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric()
+    private final SwerveRequest.FieldCentric m_fieldCentricDrive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
     // private final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
     // private final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
-    // private final SwerveRequest.RobotCentric forwardStraightRequest = new SwerveRequest.RobotCentric()
-    //         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+    private final SwerveRequest.RobotCentric m_robotCentricDrive = new SwerveRequest.RobotCentric()
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    // private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController m_joystick = new CommandXboxController(0);
 
-    // private final CommandSwerveDrivetrain m_swerveSubsystem = TunerConstants.createDrivetrain();
+    private final CommandSwerveDrivetrain m_swerveSubsystem = TunerConstants.createDrivetrain();
 
     private final CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
     private final ElevatorSubsystem m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
-    // private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
-    // private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
+    private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
+    private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
 
-    private InstantCommand makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
-        // return new InstantCommand(() -> {
-        //     RobotState.setTargetScorePosition(desiredPosition);
-        //     m_elevatorSubsystem.setAutomaticState(desiredElevatorState);
-        //     m_gantrySubsystem.setAutomaticState(desiredGantryState);
-        // }, m_elevatorSubsystem, m_gantrySubsystem);
-        return new InstantCommand(() -> {
-            RobotState.setTargetScorePosition(desiredPosition);
-            m_elevatorSubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC);
+    private Command makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
+        return new InstantCommand(() -> { 
+            RobotState.setTargetScorePosition(desiredPosition); 
+            m_elevatorSubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC); 
+            m_gantrySubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC); 
 
-            m_elevatorSubsystem.setAutomaticState(desiredElevatorState);
-        }, m_elevatorSubsystem);
+            m_elevatorSubsystem.setAutomaticState(desiredElevatorState); 
+            m_gantrySubsystem.setAutomaticState(desiredGantryState); 
+        }, m_elevatorSubsystem, m_gantrySubsystem, m_intakeOuttakeSubsystem); 
     }
-    public final InstantCommand positionCoralStation;
-    public final InstantCommand setTargetScorePosition_NONE;
+    public final Command positionCoralStation;
+    public final Command setTargetScorePosition_NONE;
 
-    public final InstantCommand setTargetScorePosition_L1;
-    public final InstantCommand setTargetScorePosition_L2_L;
-    public final InstantCommand setTargetScorePosition_L2_R;
-    public final InstantCommand setTargetScorePosition_L3_L;
-    public final InstantCommand setTargetScorePosition_L3_R;
-    public final InstantCommand setTargetScorePosition_L4_L;
-    public final InstantCommand setTargetScorePosition_L4_R;
+    public final Command setTargetScorePosition_L1;
+    public final Command setTargetScorePosition_L2_L;
+    public final Command setTargetScorePosition_L2_R;
+    public final Command setTargetScorePosition_L3_L;
+    public final Command setTargetScorePosition_L3_R;
+    public final Command setTargetScorePosition_L4_L;
+    public final Command setTargetScorePosition_L4_R;
 
-    // private final SendableChooser<Command> m_autoChooser;
+    private final SendableChooser<Command> m_autoChooser;
 
     public RobotContainer() {
-        // m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
-        // SmartDashboard.putData("AutoChooser", m_autoChooser);
+        m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
+        SmartDashboard.putData("AutoChooser", m_autoChooser);
 
         positionCoralStation = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.CORAL_STATION, GantryState.LOADING);
         setTargetScorePosition_NONE = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.IDLE, GantryState.IDLE);
@@ -102,19 +99,34 @@ public class RobotContainer {
         configureBindings();
     }
 
+    private boolean m_robotCentricForward = false;
+    private boolean m_robotCentricRight = false;
+    private boolean m_robotCentricBackward = false;
+    private boolean m_robotCentricLeft = false;
+    private static final double robotCentricSpeed = 0.6;
+
     private void configureBindings() {
         DriverStation.silenceJoystickConnectionWarning(true);
 
-        // Note that X is defined as forward according to WPILib convention,
-        // and Y is defined as to the left according to WPILib convention.
-        // m_swerveSubsystem.setDefaultCommand(
-        //     // Drivetrain will execute this command periodically
-        //     m_swerveSubsystem.applyRequest(() ->
-        //         driveRequest.withVelocityX(-m_joystick.getLeftY() * MaxSpeed)
-        //             .withVelocityY(-m_joystick.getLeftX() * MaxSpeed)
-        //             .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate)
-        //     )
-        // );
+        m_swerveSubsystem.setDefaultCommand(
+            m_swerveSubsystem.applyRequest(() -> {
+                    if (m_robotCentricForward || m_robotCentricRight || m_robotCentricBackward || m_robotCentricLeft) {
+                        double x = 0;
+                        double y = 0;
+                        if (m_robotCentricForward) x = robotCentricSpeed;
+                        if (m_robotCentricRight) y = -robotCentricSpeed;
+                        if (m_robotCentricBackward) x = -robotCentricSpeed;
+                        if (m_robotCentricLeft) y = robotCentricSpeed;
+                        return m_robotCentricDrive.withVelocityX(x).withVelocityY(y)
+                            .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate);
+                    } else
+                        return m_fieldCentricDrive.withVelocityX(-m_joystick.getLeftY() * MaxSpeed)
+                            .withVelocityY(-m_joystick.getLeftX() * MaxSpeed)
+                            .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate);
+                    
+                }
+            )
+        );
 
         // joystick.a().whileTrue(swerveSubsystem.applyRequest(() -> brakeRequest));
         // joystick.b().whileTrue(swerveSubsystem.applyRequest(() ->
@@ -138,13 +150,34 @@ public class RobotContainer {
         // DRIVER CONTROLS
 
         // reset the field-centric heading
-        // DRIVER_CONTROLS.seedFieldCentric.onTrue(m_swerveSubsystem.runOnce(() -> m_swerveSubsystem.seedFieldCentric()));
+        DRIVER_CONTROLS.seedFieldCentric.onTrue(m_swerveSubsystem.runOnce(() -> m_swerveSubsystem.seedFieldCentric()));
         DRIVER_CONTROLS.localizeToReef.whileTrue(m_cameraSubsystem.localizeToReefCommand);
+
+        DRIVER_CONTROLS.robotCentricForward.whileTrue(Commands.startEnd(() -> {
+            m_robotCentricForward = true;
+        }, () -> {
+            m_robotCentricForward = false;
+        }));
+        DRIVER_CONTROLS.robotCentricRight.whileTrue(Commands.startEnd(() -> {
+            m_robotCentricRight = true;
+        }, () -> {
+            m_robotCentricRight = false;
+        }));
+        DRIVER_CONTROLS.robotCentricBackward.whileTrue(Commands.startEnd(() -> {
+            m_robotCentricBackward = true;
+        }, () -> {
+            m_robotCentricBackward = false;
+        }));
+        DRIVER_CONTROLS.robotCentricLeft.whileTrue(Commands.startEnd(() -> {
+            m_robotCentricLeft = true;
+        }, () -> {
+            m_robotCentricLeft = false;
+        }));
 
         // OPERATOR CONTROLS
 
-        // OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.m_outCommand);
-        // OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.m_inCommand);
+        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.m_outCommand);
+        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.m_inCommand);
 
         OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(positionCoralStation);
 
@@ -166,16 +199,14 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        // return m_autoChooser.getSelected();
-        // return Commands.none();
+        return m_autoChooser.getSelected();
         // return m_elevatorSubsystem.getTempGoUntilTargetIncreaseCommand(2.54).andThen(m_elevatorSubsystem.getTempHoldPositionCommand());
-        return m_elevatorSubsystem.getTimeTravelCommand(4.2);
+        // return m_elevatorSubsystem.getTimeTravelCommand(4.2);
     }
 
     public void teleopInit() {
         RobotState.setTargetScorePosition(RELATIVE_SCORE_POSITION.NONE);
 
         m_elevatorSubsystem.resetManualPosition();
-        // m_elevatorSubsystem.resetMotorPositions();
     }
 }

@@ -13,11 +13,11 @@ public class Constants {
     }
 
     public static final class ElevatorConstants {
-        public static final int LEADER_MOTOR_ID = 11; // left
-        public static final int FOLLOWER_MOTOR_ID = 14; // right
+        public static final int LEADER_MOTOR_ID = 31; // left
+        public static final int FOLLOWER_MOTOR_ID = 32; // right
 
         public static final double MIN_POSITION_ROTATIONS = 0.01; // essentially the error, since ideal min position is 0
-        public static final double MAX_POSITION_ROTATIONS = 36;
+        public static final double MAX_POSITION_ROTATIONS = 4.3;
 
         // TODO: ideally, home and coral station are the same
         // FIXME: ELEVATOR HOME POSITION
@@ -28,32 +28,35 @@ public class Constants {
         // FIXME: ELEVATOR L1 POSITION
         public static final double L1_POSITION = HOME_POSITION;
         // FIXME: ELEVATOR L2 POSITION
-        public static final double L2_POSITION = HOME_POSITION + 3;
+        public static final double L2_POSITION = 0.71;
         // FIXME: ELEVATOR L3 POSITION
-        public static final double L3_POSITION = HOME_POSITION + 6;
+        public static final double L3_POSITION = 2.01;
         // FIXME: ELEVATOR L4 POSITION
-        public static final double L4_POSITION = HOME_POSITION + 9;
+        public static final double L4_POSITION = 4.05;
 
         // FIXME: ELEVATOR MANUAL VELOCITY
         public static final double MANUAL_VELOCITY_FORWARD_RPS = 1;
         public static final double MANUAL_VELOCITY_BACKWARD_RPS = -MANUAL_VELOCITY_FORWARD_RPS;
     }
     public static final class GantryConstants {
-        // FIXME: GANTRY MOTOR ID
-        public static final int MOTOR_ID = -1;
+        public static final int MOTOR_ID = 51;
+
+        public static final double MIN_POSITION_ROTATIONS = 0.01; // essentially the error, since ideal min position is 0
+        public static final double MAX_POSITION_ROTATIONS = 0.1;
 
         // FIXME: GANTRY CORAL_STATION POSITION
-        public static final double CORAL_STATION_POSITION = 0;
+        public static final double CORAL_STATION_POSITION = MIN_POSITION_ROTATIONS;
         // FIXME: GANTRY REEF_LEFT POSITION
-        public static final double REEF_LEFT_POSITION = CORAL_STATION_POSITION;
+        public static final double REEF_LEFT_POSITION = -7.4155;
         // FIXME: GANTRY REEF_RIGHT POSITION
-        public static final double REEF_RIGHT_POSITION = CORAL_STATION_POSITION;
+        public static final double REEF_RIGHT_POSITION = 6.37;
     }
     public static final class IntakeOuttakeConstants {
-        // FIXME: INTAKEOUTTAKE MOTOR ID
-        public static final int MOTOR_ID = -1;
+        public static final int SCORE_MOTOR_ID = 53;
+        public static final int INTAKE_MOTOR_ID = 52;
 
-        public static final double FORWARD_VELOCITY_RPS = 1;
-        public static final double BACKWARD_VELOCITY_RPS = -FORWARD_VELOCITY_RPS;
+        // TODO: use MotionMagicVoltage with velocity
+        public static final double FORWARD_OUTPUT = 0.2;
+        public static final double BACKWARD_OUTPUT = -FORWARD_OUTPUT;
     }
 }

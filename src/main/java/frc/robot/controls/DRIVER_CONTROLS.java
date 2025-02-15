@@ -13,4 +13,9 @@ public final class DRIVER_CONTROLS {
 
     public static final Trigger seedFieldCentric = driverController.start();
     public static final Trigger localizeToReef = driverController.a();
+
+    public static final Trigger robotCentricForward = driverController.povUp().or(driverController.povUpLeft()).or(driverController.povUpRight());
+    public static final Trigger robotCentricRight = driverController.povRight().or(driverController.povUpRight()).or(driverController.povDownRight());
+    public static final Trigger robotCentricBackward = driverController.povDown().or(driverController.povDownLeft()).or(driverController.povDownRight());
+    public static final Trigger robotCentricLeft = driverController.povLeft().or(driverController.povUpLeft()).or(driverController.povDownLeft());;
 }

@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -27,8 +29,10 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
         return singleton;
     }
 
-    private final TalonFX m_motor = new TalonFX(IntakeOuttakeConstants.MOTOR_ID);
-    private final VelocityVoltage m_velocityVoltage = new VelocityVoltage(0).withSlot(0);
+    private final TalonFX m_scoreMotor = new TalonFX(IntakeOuttakeConstants.SCORE_MOTOR_ID);
+    private final TalonFX m_intakeMotor = new TalonFX(IntakeOuttakeConstants.INTAKE_MOTOR_ID);
+    // private final VelocityVoltage m_velocityVoltage = new VelocityVoltage(0).withSlot(0);
+    private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
     private final NeutralOut m_brake = new NeutralOut();
 
     public IntakeOuttakeSubsystem() {
@@ -45,7 +49,10 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
         configs.Voltage.withPeakForwardVoltage(Volts.of(8))
             .withPeakReverseVoltage(Volts.of(-8));
 
-        OurUtils.tryApplyConfig(m_motor, configs);
+        OurUtils.tryApplyConfig(m_scoreMotor, configs);
+
+        // TODO: intakeMotor should be controlled entirely through sensors, so remove this
+        m_intakeMotor.setControl(new Follower(m_scoreMotor.getDeviceID(), true));
     }
 
     @Override
@@ -56,14 +63,14 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
                 targetRequest = m_brake; // redundant?
                 break;
             case OUT:
-                targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.FORWARD_VELOCITY_RPS);
+                targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
                 break;
             case IN:
-                targetRequest = m_velocityVoltage.withVelocity(IntakeOuttakeConstants.BACKWARD_VELOCITY_RPS);
+                targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.FORWARD_OUTPUT);
                 break;
         }
 
-        m_motor.setControl(targetRequest);
+        m_scoreMotor.setControl(targetRequest);
     }
 
     private Command makeCommand(boolean isForward) {
