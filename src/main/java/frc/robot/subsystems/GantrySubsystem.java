@@ -4,12 +4,16 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.StringPublisher;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
@@ -35,6 +39,8 @@ public class GantrySubsystem extends SubsystemBase {
     public void setAutomaticState(GantryState desiredState) {
         m_state = desiredState;
     }
+    private final StringPublisher m_statePublisher = RobotState.m_robotStateTable.getStringTopic("GantryState").publish();
+
     public void setIdle() {
         setAutomaticState(GantryState.IDLE);
         m_state = GantryState.IDLE;
@@ -54,10 +60,12 @@ public class GantrySubsystem extends SubsystemBase {
             m_position = position;
         }
     }
-    private GantryPosition m_position = GantryPosition.CORAL_STATION;
+    private GantryPosition m_position = GantryPosition.IDLE;
     private void setAutomaticPosition(GantryPosition desiredPosition) {
         m_position = desiredPosition;
     }
+    private final StringPublisher m_positionPublisher = RobotState.m_robotStateTable.getStringTopic("GantryPosition").publish();
+    private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.m_robotStateTable.getDoubleTopic("GantryAutomaticPositionRotations").publish();
 
     public static enum GantryManualDirection {
         NONE,
@@ -68,8 +76,9 @@ public class GantrySubsystem extends SubsystemBase {
     public void setManualDirection(GantryManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
+    private final StringPublisher m_manualDirectionPublisher = RobotState.m_robotStateTable.getStringTopic("GantryManualDirection").publish();
 
-        private double m_manualPosition = 0;
+    private double m_manualPosition = 0;
     private void setManualPosition(double newValue) {
         if (newValue < GantryConstants.MIN_POSITION_ROTATIONS)
             newValue = GantryConstants.MIN_POSITION_ROTATIONS;
@@ -84,15 +93,23 @@ public class GantrySubsystem extends SubsystemBase {
     public void resetManualPosition() {
         setManualPosition(0);
     }
+    private final DoublePublisher m_manualPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("GantryManualTargetPosition").publish();
 
-    private DESIRED_CONTROL_TYPE m_desiredControlType = DESIRED_CONTROL_TYPE.AUTOMATIC;
+    private DESIRED_CONTROL_TYPE m_desiredControlType = DESIRED_CONTROL_TYPE.MANUAL;
     public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) {
         m_desiredControlType = desiredControlType;
     }
+    private final StringPublisher m_desiredControlTypePublisher = RobotState.m_robotStateTable.getStringTopic("GantryDesiredControlType").publish();
 
     private final TalonFX m_motor = new TalonFX(GantryConstants.MOTOR_ID);
     private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final NeutralOut m_brake = new NeutralOut();
+
+    private final StatusSignal<Angle> m_motorPosition = m_motor.getPosition();
+    private final StatusSignal<Double> m_PIDPositionReference = m_motor.getClosedLoopReference();
+
+    private final DoublePublisher m_motorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("GantryMotorPosition").publish();
+    private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.m_robotStateTable.getDoubleTopic("GantryPIDPositionReferencePosition").publish();
 
     public GantrySubsystem() {
         // FIXME: tune gantry PID
@@ -101,8 +118,8 @@ public class GantrySubsystem extends SubsystemBase {
 
         // set Motion Magic settings
         var motionMagicConfigs = motorConfig.MotionMagic;
-        motionMagicConfigs.MotionMagicCruiseVelocity = 40; // rps
-        motionMagicConfigs.MotionMagicAcceleration = 120; // rps/s
+        motionMagicConfigs.MotionMagicCruiseVelocity = 40;
+        motionMagicConfigs.MotionMagicAcceleration = 120;
 
         OurUtils.tryApplyConfig(m_motor, motorConfig);
     }
@@ -135,6 +152,19 @@ public class GantrySubsystem extends SubsystemBase {
                 handleManual();
         } else
             handleManual();
+
+        m_manualPositionPublisher.set(m_manualPosition);
+        m_desiredControlTypePublisher.set(m_desiredControlType.toString());
+
+        m_motorPosition.refresh();
+        m_PIDPositionReference.refresh();
+
+        m_motorPositionPublisher.set(m_motorPosition.getValueAsDouble());
+        m_PIDPositionReferencePublisher.set(m_PIDPositionReference.getValueAsDouble());
+
+        m_statePublisher.set(m_state.toString());
+        m_positionPublisher.set(m_position.toString());
+        m_manualDirectionPublisher.set(m_manualDirection.toString());
     }
 
     private void handleAutomatic() {
@@ -182,23 +212,26 @@ public class GantrySubsystem extends SubsystemBase {
                 break;
         }
 
+        if (desiredControl == m_positionControl)
+            m_automaticPositionRotationsPublisher.set(m_positionControl.Position);
+
         m_motor.setControl(desiredControl);
     }
     private void handleManual() {
-        // final double increment = 0.05;
+        final double increment = 0.5;
 
-        // switch (m_manualDirection) {
-        //     case NONE:
-        //         break;
-        //     case LEFT:
-        //         incrementManualPosition(increment);
-        //         break;
-        //     case RIGHT:
-        //         incrementManualPosition(-increment);
-        //         break;
-        // }
+        switch (m_manualDirection) {
+            case NONE:
+                break;
+            case LEFT:
+                incrementManualPosition(increment);
+                break;
+            case RIGHT:
+                incrementManualPosition(-increment);
+                break;
+        }
 
-        // m_motor.setControl(m_positionControl.withPosition(m_manualPosition));
-        m_motor.setControl(m_brake);
+        m_motor.setControl(m_positionControl.withPosition(m_manualPosition));
+        // m_motor.setControl(m_brake);
     }
 }
