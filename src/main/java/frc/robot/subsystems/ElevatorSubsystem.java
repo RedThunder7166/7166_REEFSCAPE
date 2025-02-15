@@ -45,11 +45,12 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
     private ElevatorState m_state = ElevatorState.HOME;
     private ElevatorState m_desiredState = m_state;
-    private final StringPublisher m_statePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorState").publish();
-    private final StringPublisher m_desiredStatePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorDesiredState").publish();
     public void setAutomaticState(ElevatorState desiredState) {
         m_desiredState = desiredState;
     }
+    private final StringPublisher m_statePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorState").publish();
+    private final StringPublisher m_desiredStatePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorDesiredState").publish();
+
     public void setIdle() {
         setAutomaticState(ElevatorState.IDLE);
         m_state = ElevatorState.IDLE;
@@ -73,11 +74,11 @@ public class ElevatorSubsystem extends SubsystemBase {
             m_position = position;
         }
     }
-    private ElevatorPosition m_position = ElevatorPosition.HOME;
-    private final StringPublisher m_positionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorPosition").publish();
+    private ElevatorPosition m_position = ElevatorPosition.IDLE;
     private void setAutomaticPosition(ElevatorPosition desiredPosition) {
         m_position = desiredPosition;
     }
+    private final StringPublisher m_positionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorPosition").publish();
     private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorAutomaticPositionRotations").publish();
 
     public static enum ElevatorManualDirection {
@@ -86,10 +87,10 @@ public class ElevatorSubsystem extends SubsystemBase {
         DOWN
     }
     private ElevatorManualDirection m_manualDirection = ElevatorManualDirection.NONE;
-    private final StringPublisher m_manualDirectionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorManualDirection").publish();
     public void setManualDirection(ElevatorManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
+    private final StringPublisher m_manualDirectionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorManualDirection").publish();
 
     private double m_manualPosition = 0;
     private void setManualPosition(double newValue) {
@@ -331,8 +332,8 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         m_PIDPositionReferencePublisher.set(m_PIDPositionReference.getValueAsDouble());
 
-        m_desiredStatePublisher.set(m_state.toString());
         m_statePublisher.set(m_state.toString());
+        m_desiredStatePublisher.set(m_state.toString());
         m_positionPublisher.set(m_position.toString());
         m_manualDirectionPublisher.set(m_manualDirection.toString());
     }
