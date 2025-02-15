@@ -41,11 +41,11 @@ public class Constants {
     public static final class GantryConstants {
         public static final int MOTOR_ID = 51;
 
-        public static final double MIN_POSITION_ROTATIONS = 0.01; // essentially the error, since ideal min position is 0
-        public static final double MAX_POSITION_ROTATIONS = 0.1;
+        public static final double MIN_POSITION_ROTATIONS = -7.4;
+        public static final double MAX_POSITION_ROTATIONS = 6.7;
 
         // FIXME: GANTRY CORAL_STATION POSITION
-        public static final double CORAL_STATION_POSITION = MIN_POSITION_ROTATIONS;
+        public static final double CORAL_STATION_POSITION = 0;
         // FIXME: GANTRY REEF_LEFT POSITION
         public static final double REEF_LEFT_POSITION = -7.4155;
         // FIXME: GANTRY REEF_RIGHT POSITION
