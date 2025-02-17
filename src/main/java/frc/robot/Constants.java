@@ -4,8 +4,13 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+
 public class Constants {
     public static final String CANIVORE_NAME = "Canivore";
+    public static final Alliance ALLIANCE = DriverStation.getAlliance().orElse(Alliance.Blue);
 
     public static final class ControllerConstants {
         public static final int DRIVER_PORT = 0;
@@ -16,7 +21,7 @@ public class Constants {
         public static final int LEADER_MOTOR_ID = 31; // left
         public static final int FOLLOWER_MOTOR_ID = 32; // right
 
-        public static final double MIN_POSITION_ROTATIONS = 0.01; // essentially the error, since ideal min position is 0
+        public static final double MIN_POSITION_ROTATIONS = 0.005; // essentially the error, since ideal min position is 0
         public static final double MAX_POSITION_ROTATIONS = 4.3;
 
         // TODO: ideally, home and coral station are the same
@@ -52,4 +57,26 @@ public class Constants {
         public static final double FORWARD_OUTPUT = 0.2;
         public static final double BACKWARD_OUTPUT = -FORWARD_OUTPUT;
     }
+
+    public static final int REEF_AB_TAGID = ALLIANCE == Alliance.Blue ? 18 : 7;
+    public static final int REEF_CD_TAGID = ALLIANCE == Alliance.Blue ? 19 : 8;
+    public static final int REEF_EF_TAGID = ALLIANCE == Alliance.Blue ? 20 : 9;
+    public static final int REEF_GH_TAGID = ALLIANCE == Alliance.Blue ? 21 : 10;
+    public static final int REEF_IJ_TAGID = ALLIANCE == Alliance.Blue ? 22 : 11;
+    public static final int REEF_KL_TAGID = ALLIANCE == Alliance.Blue ? 17 : 6;
+
+    public static final int CORAL_STATION_LEFT_TAGID = ALLIANCE == Alliance.Blue ? 13 : 1;
+    public static final int CORAL_STATION_RIGHT_TAGID = ALLIANCE == Alliance.Blue ? 12 : 2;
+
+    // below values are in meters
+    public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
+
+    private static final double CORAL_STATION_OFFSET_HORIZONTAL = 0.3;
+    private static final double CORAL_STATION_OFFSET_VERTICAL = 0.3;
+    public static final Translation2d CORAL_STATION_LEFT_OFFSET = ALLIANCE == Alliance.Blue ?
+        new Translation2d(CORAL_STATION_OFFSET_HORIZONTAL, -CORAL_STATION_OFFSET_VERTICAL) :
+        new Translation2d(CORAL_STATION_OFFSET_HORIZONTAL, CORAL_STATION_OFFSET_VERTICAL);
+    public static final Translation2d CORAL_STATION_RIGHT_OFFSET = ALLIANCE == Alliance.Blue ?
+        new Translation2d(-CORAL_STATION_OFFSET_HORIZONTAL, -CORAL_STATION_OFFSET_VERTICAL) :
+        new Translation2d(CORAL_STATION_OFFSET_HORIZONTAL, CORAL_STATION_OFFSET_VERTICAL);
 }

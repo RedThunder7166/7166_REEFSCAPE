@@ -220,8 +220,8 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_followerMotor.setPosition(0);
     }
 
-    // TODO: this should be private and only be called on sensor trip
-    public void resetMotorPositions() {
+    // TODO: this should only be called on sensor trip
+    private void resetMotorPositions() {
         m_leaderMotor.setPosition(0);
         m_followerMotor.setPosition(0);
     }

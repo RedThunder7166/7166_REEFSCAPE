@@ -11,7 +11,9 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -25,6 +27,7 @@ import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CameraSubsystem;
+import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
@@ -39,24 +42,22 @@ public class RobotContainer {
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
-    private final SwerveRequest.FieldCentric m_fieldCentricDrive = new SwerveRequest.FieldCentric()
+    private final SwerveRequest.FieldCentric m_fieldCentricRequest = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    // private final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
+    private final SwerveRequest.SwerveDriveBrake m_brakeRequest = new SwerveRequest.SwerveDriveBrake();
     // private final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
-    private final SwerveRequest.RobotCentric m_robotCentricDrive = new SwerveRequest.RobotCentric()
+    private final SwerveRequest.RobotCentric m_robotCentricRequest = new SwerveRequest.RobotCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     // private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController m_joystick = new CommandXboxController(0);
+    private final CommandSwerveDrivetrain m_driveSubsystem;
+    private final CameraSubsystem m_cameraSubsystem;
 
-    private final CommandSwerveDrivetrain m_swerveSubsystem = TunerConstants.createDrivetrain();
-
-    private final CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
-    private final ElevatorSubsystem m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
-    private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
-    private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
+    private final ElevatorSubsystem m_elevatorSubsystem;
+    private final GantrySubsystem m_gantrySubsystem;
+    private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem;
 
     private Command makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
         return new InstantCommand(() -> { 
@@ -79,9 +80,19 @@ public class RobotContainer {
     public final Command setTargetScorePosition_L4_L;
     public final Command setTargetScorePosition_L4_R;
 
+    private final Rotation2d m_initialSwerveRotation;
+
     private final SendableChooser<Command> m_autoChooser;
 
     public RobotContainer() {
+        m_driveSubsystem = TunerConstants.createDrivetrain();
+        m_cameraSubsystem = CameraSubsystem.getSingleton();
+        m_cameraSubsystem.setDriveSubsystem(m_driveSubsystem, MaxSpeed, MaxAngularRate);
+
+        m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
+        m_gantrySubsystem = GantrySubsystem.getSingleton();
+        m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
+
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
@@ -96,6 +107,16 @@ public class RobotContainer {
         setTargetScorePosition_L4_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_L, ElevatorState.SCORE, GantryState.SCORE);
         setTargetScorePosition_L4_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_R, ElevatorState.SCORE, GantryState.SCORE);
 
+        // make sure forward faces red alliance wall
+        if (Constants.ALLIANCE == Alliance.Red)
+            m_initialSwerveRotation = Rotation2d.kZero;
+        else
+            m_initialSwerveRotation = Rotation2d.k180deg;
+
+        m_driveSubsystem.resetCustomEstimatedRotation(m_initialSwerveRotation);
+
+        m_driveSubsystem.ensureThisFileHasBeenModified();
+
         configureBindings();
     }
 
@@ -105,11 +126,12 @@ public class RobotContainer {
     private boolean m_robotCentricLeft = false;
     private static final double robotCentricSpeed = 0.6;
 
+    private RelativeReefLocation m_targetReefLocation = RelativeReefLocation.AB;
     private void configureBindings() {
         DriverStation.silenceJoystickConnectionWarning(true);
 
-        m_swerveSubsystem.setDefaultCommand(
-            m_swerveSubsystem.applyRequest(() -> {
+        m_driveSubsystem.setDefaultCommand(
+            m_driveSubsystem.applyRequest(() -> {
                     if (m_robotCentricForward || m_robotCentricRight || m_robotCentricBackward || m_robotCentricLeft) {
                         double x = 0;
                         double y = 0;
@@ -117,41 +139,26 @@ public class RobotContainer {
                         if (m_robotCentricRight) y = -robotCentricSpeed;
                         if (m_robotCentricBackward) x = -robotCentricSpeed;
                         if (m_robotCentricLeft) y = robotCentricSpeed;
-                        return m_robotCentricDrive.withVelocityX(x).withVelocityY(y)
-                            .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate);
+                        return m_robotCentricRequest.withVelocityX(x).withVelocityY(y)
+                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * MaxAngularRate);
                     } else
-                        return m_fieldCentricDrive.withVelocityX(-m_joystick.getLeftY() * MaxSpeed)
-                            .withVelocityY(-m_joystick.getLeftX() * MaxSpeed)
-                            .withRotationalRate(-m_joystick.getRightX() * MaxAngularRate);
+                        return m_fieldCentricRequest.withVelocityX(-DRIVER_CONTROLS.getLeftY() * MaxSpeed)
+                            .withVelocityY(-DRIVER_CONTROLS.getLeftX() * MaxSpeed)
+                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * MaxAngularRate);
                     
                 }
             )
         );
 
-        // joystick.a().whileTrue(swerveSubsystem.applyRequest(() -> brakeRequest));
-        // joystick.b().whileTrue(swerveSubsystem.applyRequest(() ->
-        //     pointRequest.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        // ));
-
-        // joystick.pov(0).whileTrue(swerveSubsystem.applyRequest(() ->
-        //     forwardStraightRequest.withVelocityX(0.5).withVelocityY(0))
-        // );
-        // joystick.pov(180).whileTrue(swerveSubsystem.applyRequest(() ->
-        //     forwardStraightRequest.withVelocityX(-0.5).withVelocityY(0))
-        // );
-
-        // Run SysId routines when holding back/start and X/Y.
-        // Note that each routine should be run exactly once in a single log.
-        // joystick.back().and(joystick.y()).whileTrue(swerveSubsystem.sysIdDynamic(Direction.kForward));
-        // joystick.back().and(joystick.x()).whileTrue(swerveSubsystem.sysIdDynamic(Direction.kReverse));
-        // joystick.start().and(joystick.y()).whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kForward));
-        // joystick.start().and(joystick.x()).whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kReverse));
 
         // DRIVER CONTROLS
 
-        // reset the field-centric heading
-        DRIVER_CONTROLS.seedFieldCentric.onTrue(m_swerveSubsystem.runOnce(() -> m_swerveSubsystem.seedFieldCentric()));
-        DRIVER_CONTROLS.localizeToReef.whileTrue(m_cameraSubsystem.localizeToReefCommand);
+        DRIVER_CONTROLS.brake.whileTrue(m_driveSubsystem.applyRequest(() -> m_brakeRequest));
+        DRIVER_CONTROLS.seedFieldCentric.onTrue(m_driveSubsystem.runOnce(() -> m_driveSubsystem.seedFieldCentric()));
+        // reset rotation to set rotation based on alliance
+        DRIVER_CONTROLS.seedRotation.onTrue(m_driveSubsystem.runOnce(() -> {
+            m_driveSubsystem.resetCustomEstimatedRotation(m_initialSwerveRotation);
+        }));
 
         DRIVER_CONTROLS.robotCentricForward.whileTrue(Commands.startEnd(() -> {
             m_robotCentricForward = true;
@@ -172,6 +179,25 @@ public class RobotContainer {
             m_robotCentricLeft = true;
         }, () -> {
             m_robotCentricLeft = false;
+        }));
+
+        SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+        DRIVER_CONTROLS.incrementTargetReefLocation.onTrue(new InstantCommand(() -> {
+            m_targetReefLocation = m_targetReefLocation.getNext();
+            SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+        }));
+        DRIVER_CONTROLS.decrementTargetReefLocation.onTrue(new InstantCommand(() -> {
+            m_targetReefLocation = m_targetReefLocation.getPrevious();
+            SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+        }));
+
+        DRIVER_CONTROLS.localizeToReef.whileTrue(new CameraSubsystem.DynamicCommand(() -> {
+            return m_cameraSubsystem.getPathCommandFromReefTag(m_targetReefLocation);
+        }));
+
+        DRIVER_CONTROLS.TEMPORARY_resetGantryPosition.onTrue(new InstantCommand(() -> {
+            m_gantrySubsystem.resetMotorPosition();
+            m_gantrySubsystem.resetManualPosition();
         }));
 
         // OPERATOR CONTROLS
