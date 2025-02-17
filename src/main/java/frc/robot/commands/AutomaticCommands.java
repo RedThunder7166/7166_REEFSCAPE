@@ -17,7 +17,7 @@ import frc.robot.subsystems.GantrySubsystem.GantryState;
 public class AutomaticCommands {
     private static class AutomaticGoToPositionCommand extends Command {
         private final ElevatorSubsystem m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
-        // private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton(); // TODO: PUT BACK IN
+        private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
 
         private final RelativeScorePosition m_position;
         private final ElevatorState m_elevatorState;
@@ -28,7 +28,7 @@ public class AutomaticCommands {
             m_elevatorState = elevatorState;
             m_gantryState = gantryState;
 
-            addRequirements(m_elevatorSubsystem/*, m_gantrySubsystem*/); // TODO: PUT BACK IN
+            addRequirements(m_elevatorSubsystem, m_gantrySubsystem);
         }
 
         @Override
@@ -36,10 +36,10 @@ public class AutomaticCommands {
             RobotState.setTargetScorePosition(m_position);
 
             m_elevatorSubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC);
-            // m_gantrySubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC); // TODO: PUT BACK IN
+            m_gantrySubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC);
 
             m_elevatorSubsystem.setAutomaticState(m_elevatorState);
-            // m_gantrySubsystem.setAutomaticState(m_gantryState); // TODO: PUT BACK IN
+            m_gantrySubsystem.setAutomaticState(m_gantryState);
         }
 
         @Override
@@ -47,7 +47,7 @@ public class AutomaticCommands {
 
         @Override
         public boolean isFinished() {
-            return m_elevatorSubsystem.getIsAtTargetPosition(); // TODO: PUT BACK IN && m_gantrySubsystem.getIsAtTargetPosition();
+            return m_elevatorSubsystem.getIsAtTargetPosition() && m_gantrySubsystem.getIsAtTargetPosition();
         }
 
         @Override
