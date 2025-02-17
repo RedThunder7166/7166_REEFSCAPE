@@ -15,6 +15,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
@@ -128,6 +129,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final StatusSignal<Angle> m_followerMotorPosition = m_followerMotor.getPosition();
 
     private final StatusSignal<Double> m_PIDPositionReference = m_leaderMotor.getClosedLoopReference();
+    private final StatusSignal<Double> m_PIDPositionError = m_leaderMotor.getClosedLoopError();
 
     private final DoublePublisher m_leaderMotorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorLeaderMotorPosition").publish();
     private final DoublePublisher m_followerMotorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorFollowerMotorPosition").publish();
@@ -200,16 +202,11 @@ public class ElevatorSubsystem extends SubsystemBase {
         motorConfig.CurrentLimits.SupplyCurrentLimit = 60;
 
         // FIXME: tune elevator Motion Magic; may be different per motor?
-        // set Motion Magic settings
         var motionMagicConfigs = motorConfig.MotionMagic;
-        // final double velo = 0.3;
-        // motionMagicConfigs.MotionMagicCruiseVelocity = velo; // rps
-        // motionMagicConfigs.MotionMagicAcceleration = velo * 2; // rps/s
-        // motionMagicConfigs.MotionMagicJerk = (velo * 2) * 10; // rps/s/s
 
-        var a = 8;
-        motionMagicConfigs.MotionMagicCruiseVelocity = a;
-        motionMagicConfigs.MotionMagicAcceleration = a;
+        var value = 8;
+        motionMagicConfigs.MotionMagicCruiseVelocity = value;
+        motionMagicConfigs.MotionMagicAcceleration = value;
 
         OurUtils.tryApplyConfig(m_leaderMotor, motorConfig);
         OurUtils.tryApplyConfig(m_followerMotor, motorConfig);
@@ -220,11 +217,22 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_followerMotor.setPosition(0);
     }
 
-    // TODO: this should only be called on sensor trip
+    // TODO: this should be called on sensor trip
     private void resetMotorPositions() {
         m_leaderMotor.setPosition(0);
         m_followerMotor.setPosition(0);
     }
+
+    public boolean getIsAtTargetPosition() {
+        // return true if we're not actively targeting a position
+        if (m_desiredControlType == DESIRED_CONTROL_TYPE.AUTOMATIC && m_position == ElevatorPosition.IDLE)
+            return true;
+
+        double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
+        SmartDashboard.putNumber("ElevatorPIDError", err);
+        return Math.abs(m_PIDPositionError.refresh().getValueAsDouble()) <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
+    }
+    private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.m_robotStateTable.getBooleanTopic("ElevatorIsAtTargetPosition").publish();
 
     private Command makeManualCommand(ElevatorManualDirection desiredDirection) {
         return startEnd(() -> {
@@ -336,6 +344,8 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_desiredStatePublisher.set(m_state.toString());
         m_positionPublisher.set(m_position.toString());
         m_manualDirectionPublisher.set(m_manualDirection.toString());
+
+        m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
     }
 
     private void handleAutomatic() {

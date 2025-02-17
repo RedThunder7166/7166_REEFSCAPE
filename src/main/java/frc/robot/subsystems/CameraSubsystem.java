@@ -31,7 +31,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
+import frc.robot.Constants.AprilTagConstants;
 import frc.robot.LimelightHelpers;
 
 public class CameraSubsystem extends SubsystemBase {
@@ -80,23 +80,23 @@ public class CameraSubsystem extends SubsystemBase {
         }
 
         if (success) {
-            var translationAB = aprilTagMap.get(Constants.REEF_AB_TAGID).pose.getTranslation();
-            var translationCD = aprilTagMap.get(Constants.REEF_CD_TAGID).pose.getTranslation();
-            var translationEF = aprilTagMap.get(Constants.REEF_EF_TAGID).pose.getTranslation();
-            var translationGH = aprilTagMap.get(Constants.REEF_GH_TAGID).pose.getTranslation();
-            var translationIJ = aprilTagMap.get(Constants.REEF_IJ_TAGID).pose.getTranslation();
-            var translationKL = aprilTagMap.get(Constants.REEF_KL_TAGID).pose.getTranslation();
+            var translationAB = aprilTagMap.get(AprilTagConstants.REEF_AB_TAGID).pose.getTranslation();
+            var translationCD = aprilTagMap.get(AprilTagConstants.REEF_CD_TAGID).pose.getTranslation();
+            var translationEF = aprilTagMap.get(AprilTagConstants.REEF_EF_TAGID).pose.getTranslation();
+            var translationGH = aprilTagMap.get(AprilTagConstants.REEF_GH_TAGID).pose.getTranslation();
+            var translationIJ = aprilTagMap.get(AprilTagConstants.REEF_IJ_TAGID).pose.getTranslation();
+            var translationKL = aprilTagMap.get(AprilTagConstants.REEF_KL_TAGID).pose.getTranslation();
             reefCenterTranslation = new Translation2d(
                 (translationAB.getX() + translationCD.getX() + translationEF.getX() + translationGH.getX() + translationIJ.getX() + translationKL.getX()) / 6,
                 (translationAB.getY() + translationCD.getY() + translationEF.getY() + translationGH.getY() + translationIJ.getY() + translationKL.getY()) / 6
             );
 
-            success = success && tryToMapAprilTagAndLineUp(Constants.REEF_AB_TAGID, "REEF_AB_LINEUP")
-                && tryToMapAprilTagAndLineUp(Constants.REEF_CD_TAGID, "REEF_CD_LINEUP")
-                && tryToMapAprilTagAndLineUp(Constants.REEF_EF_TAGID, "REEF_EF_LINEUP")
-                && tryToMapAprilTagAndLineUp(Constants.REEF_GH_TAGID, "REEF_GH_LINEUP")
-                && tryToMapAprilTagAndLineUp(Constants.REEF_IJ_TAGID, "REEF_IJ_LINEUP")
-                && tryToMapAprilTagAndLineUp(Constants.REEF_KL_TAGID, "REEF_KL_LINEUP");
+            success = success && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_AB_TAGID, "REEF_AB_LINEUP")
+                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_CD_TAGID, "REEF_CD_LINEUP")
+                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_EF_TAGID, "REEF_EF_LINEUP")
+                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_GH_TAGID, "REEF_GH_LINEUP")
+                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_IJ_TAGID, "REEF_IJ_LINEUP")
+                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_KL_TAGID, "REEF_KL_LINEUP");
         }
     }
 
@@ -124,8 +124,8 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     public static enum CoralStationID {
-        Left(Constants.CORAL_STATION_LEFT_TAGID, Constants.CORAL_STATION_LEFT_OFFSET),
-        Right(Constants.CORAL_STATION_RIGHT_TAGID, Constants.CORAL_STATION_RIGHT_OFFSET);
+        Left(AprilTagConstants.CORAL_STATION_LEFT_TAGID, AprilTagConstants.CORAL_STATION_LEFT_OFFSET),
+        Right(AprilTagConstants.CORAL_STATION_RIGHT_TAGID, AprilTagConstants.CORAL_STATION_RIGHT_OFFSET);
 
         // private final int m_tagID;
         private final Translation2d m_translation;
@@ -142,12 +142,12 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     public static enum RelativeReefLocation {
-        AB(Constants.REEF_AB_TAGID),
-        CD(Constants.REEF_CD_TAGID),
-        EF(Constants.REEF_EF_TAGID),
-        GH(Constants.REEF_GH_TAGID),
-        IJ(Constants.REEF_IJ_TAGID),
-        KL(Constants.REEF_KL_TAGID);
+        AB(AprilTagConstants.REEF_AB_TAGID),
+        CD(AprilTagConstants.REEF_CD_TAGID),
+        EF(AprilTagConstants.REEF_EF_TAGID),
+        GH(AprilTagConstants.REEF_GH_TAGID),
+        IJ(AprilTagConstants.REEF_IJ_TAGID),
+        KL(AprilTagConstants.REEF_KL_TAGID);
 
         private int m_tagID;
         private Translation2d m_translation;
@@ -307,7 +307,7 @@ public class CameraSubsystem extends SubsystemBase {
         // final RobotContainer robotContainer = RobotContainer.getSingleton();
         final double distance = robotTranslation.getDistance(reefCenterTranslation);
         SmartDashboard.putNumber("ReefZoneDistance", distance);
-        final boolean insideReefZone = distance <= Constants.INSIDE_REEF_ZONE_THRESHOLD;
+        final boolean insideReefZone = distance <= AprilTagConstants.INSIDE_REEF_ZONE_THRESHOLD;
         if (insideReefZone != m_insideReefZone) {
             SmartDashboard.putBoolean("InsideReefZone", insideReefZone);
             // set field centric to be the opposite of if we're in the reef zone

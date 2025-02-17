@@ -11,9 +11,11 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
@@ -33,7 +35,7 @@ public class GantrySubsystem extends SubsystemBase {
     public static enum GantryState {
         IDLE,
         SCORE,
-        LOADING
+        CORAL_STATION
     }
     private GantryState m_state = GantryState.IDLE;
     public void setAutomaticState(GantryState desiredState) {
@@ -48,8 +50,8 @@ public class GantrySubsystem extends SubsystemBase {
     }
 
     private static enum GantryPosition {
-        IDLE(GantryConstants.CORAL_STATION_POSITION),
-        CORAL_STATION(GantryConstants.CORAL_STATION_POSITION), // // this position should never be used, so we have it coral station to be safe
+        IDLE(GantryConstants.CORAL_STATION_POSITION), // m_position here should never be used, so we have it coral station to be safe
+        CORAL_STATION(GantryConstants.CORAL_STATION_POSITION),
         REEF_LEFT(GantryConstants.REEF_LEFT_POSITION),
         REEF_RIGHT(GantryConstants.REEF_RIGHT_POSITION)
 
@@ -106,7 +108,9 @@ public class GantrySubsystem extends SubsystemBase {
     private final NeutralOut m_brake = new NeutralOut();
 
     private final StatusSignal<Angle> m_motorPosition = m_motor.getPosition();
+
     private final StatusSignal<Double> m_PIDPositionReference = m_motor.getClosedLoopReference();
+    private final StatusSignal<Double> m_PIDPositionError = m_motor.getClosedLoopError();
 
     private final DoublePublisher m_motorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("GantryMotorPosition").publish();
     private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.m_robotStateTable.getDoubleTopic("GantryPIDPositionReferencePosition").publish();
@@ -117,7 +121,6 @@ public class GantrySubsystem extends SubsystemBase {
         motorConfig.Slot0.kP = 0.7; // 4
         motorConfig.Slot0.kI = 0.05; // 0
 
-        // set Motion Magic settings
         var motionMagicConfigs = motorConfig.MotionMagic;
         motionMagicConfigs.MotionMagicCruiseVelocity = 40;
         motionMagicConfigs.MotionMagicAcceleration = 120;
@@ -130,6 +133,17 @@ public class GantrySubsystem extends SubsystemBase {
     public void resetMotorPosition() {
         m_motor.setPosition(0);
     }
+
+    public boolean getIsAtTargetPosition() {
+        // return true if we're not actively targeting a position
+        if (m_desiredControlType == DESIRED_CONTROL_TYPE.AUTOMATIC && m_position == GantryPosition.IDLE)
+            return true;
+
+        double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
+        SmartDashboard.putNumber("GantryPIDError", err);
+        return Math.abs(m_PIDPositionError.refresh().getValueAsDouble()) <= GantryConstants.POSITION_ERROR_THRESHOLD;
+    }
+    private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.m_robotStateTable.getBooleanTopic("GantryIsAtTargetPosition").publish();
 
     private Command makeManualCommand(GantryManualDirection desiredDirection) {
         return startEnd(() -> {
@@ -172,6 +186,8 @@ public class GantrySubsystem extends SubsystemBase {
         m_statePublisher.set(m_state.toString());
         m_positionPublisher.set(m_position.toString());
         m_manualDirectionPublisher.set(m_manualDirection.toString());
+
+        m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
     }
 
     private void handleAutomatic() {
@@ -203,7 +219,7 @@ public class GantrySubsystem extends SubsystemBase {
                         break;
                 }
                 break;
-            case LOADING:
+            case CORAL_STATION:
                 setAutomaticPosition(GantryPosition.CORAL_STATION);
                 break;
         }

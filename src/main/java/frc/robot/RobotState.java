@@ -24,7 +24,7 @@ public final class RobotState {
     public static final NetworkTableInstance NETWORK_TABLE_INSTANCE = NetworkTableInstance.getDefault();
     public static final NetworkTable m_robotStateTable = NETWORK_TABLE_INSTANCE.getTable("RobotState");
 
-    public static enum RELATIVE_SCORE_POSITION {
+    public static enum RelativeScorePosition {
         NONE,
         L1,
 
@@ -38,13 +38,13 @@ public final class RobotState {
         L4_R
     }
 
-    private static RELATIVE_SCORE_POSITION m_targetScorePosition = RELATIVE_SCORE_POSITION.NONE;
+    private static RelativeScorePosition m_targetScorePosition = RelativeScorePosition.NONE;
     private static final StringPublisher m_targetScorePositionPublisher = m_robotStateTable.getStringTopic("TargetScorePosition").publish();
 
-    public static RELATIVE_SCORE_POSITION getTargetScorePosition() {
+    public static RelativeScorePosition getTargetScorePosition() {
         return m_targetScorePosition;
     }
-    public static boolean setTargetScorePosition(RELATIVE_SCORE_POSITION desiredPosition) {
+    public static boolean setTargetScorePosition(RelativeScorePosition desiredPosition) {
         // FIXME: ask subsystems if we can switch to this position; if we can't, don't set target position (or set it to NONE) and return false
         // ^ e.g: we are trying to score a piece, we are intaking a piece
         m_targetScorePosition = desiredPosition;
@@ -76,7 +76,7 @@ public final class RobotState {
         m_intakeState = INTAKE_STATE.IDLE;
     }
 
-    private static CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
+    // private static CameraSubsystem m_cameraSubsystem = CameraSubsystem.getSingleton();
     public static boolean getCanMoveScoringMechanisms() {
         // TODO: sensor logic
         return true;

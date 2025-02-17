@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -19,10 +20,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
-import frc.robot.RobotState.RELATIVE_SCORE_POSITION;
+import frc.robot.RobotState.RelativeScorePosition;
+import frc.robot.commands.AutomaticCommands;
 import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
@@ -32,10 +31,6 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
-import frc.robot.subsystems.ElevatorSubsystem.ElevatorManualDirection;
-import frc.robot.subsystems.ElevatorSubsystem.ElevatorState;
-import frc.robot.subsystems.GantrySubsystem.GantryManualDirection;
-import frc.robot.subsystems.GantrySubsystem.GantryState;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -50,35 +45,12 @@ public class RobotContainer {
     private final SwerveRequest.RobotCentric m_robotCentricRequest = new SwerveRequest.RobotCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    // private final Telemetry logger = new Telemetry(MaxSpeed);
-
     private final CommandSwerveDrivetrain m_driveSubsystem;
     private final CameraSubsystem m_cameraSubsystem;
 
     private final ElevatorSubsystem m_elevatorSubsystem;
     private final GantrySubsystem m_gantrySubsystem;
     private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem;
-
-    private Command makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION desiredPosition, ElevatorState desiredElevatorState, GantryState desiredGantryState) {
-        return new InstantCommand(() -> { 
-            RobotState.setTargetScorePosition(desiredPosition); 
-            m_elevatorSubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC); 
-            m_gantrySubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC); 
-
-            m_elevatorSubsystem.setAutomaticState(desiredElevatorState); 
-            m_gantrySubsystem.setAutomaticState(desiredGantryState); 
-        }, m_elevatorSubsystem, m_gantrySubsystem, m_intakeOuttakeSubsystem); 
-    }
-    public final Command positionCoralStation;
-    public final Command setTargetScorePosition_NONE;
-
-    public final Command setTargetScorePosition_L1;
-    public final Command setTargetScorePosition_L2_L;
-    public final Command setTargetScorePosition_L2_R;
-    public final Command setTargetScorePosition_L3_L;
-    public final Command setTargetScorePosition_L3_R;
-    public final Command setTargetScorePosition_L4_L;
-    public final Command setTargetScorePosition_L4_R;
 
     private final Rotation2d m_initialSwerveRotation;
 
@@ -96,26 +68,26 @@ public class RobotContainer {
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
-        positionCoralStation = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.CORAL_STATION, GantryState.LOADING);
-        setTargetScorePosition_NONE = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.NONE, ElevatorState.IDLE, GantryState.IDLE);
-
-        setTargetScorePosition_L1 = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L1, ElevatorState.SCORE, GantryState.SCORE);
-        setTargetScorePosition_L2_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_L, ElevatorState.SCORE, GantryState.SCORE);
-        setTargetScorePosition_L2_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L2_R, ElevatorState.SCORE, GantryState.SCORE);
-        setTargetScorePosition_L3_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_L, ElevatorState.SCORE, GantryState.SCORE);
-        setTargetScorePosition_L3_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L3_R, ElevatorState.SCORE, GantryState.SCORE);
-        setTargetScorePosition_L4_L = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_L, ElevatorState.SCORE, GantryState.SCORE);
-        setTargetScorePosition_L4_R = makeSetTargetScorePositionCommand(RELATIVE_SCORE_POSITION.L4_R, ElevatorState.SCORE, GantryState.SCORE);
-
         // make sure forward faces red alliance wall
         if (Constants.ALLIANCE == Alliance.Red)
             m_initialSwerveRotation = Rotation2d.kZero;
         else
             m_initialSwerveRotation = Rotation2d.k180deg;
 
+        m_driveSubsystem.ensureThisFileHasBeenModified();
+
         m_driveSubsystem.resetCustomEstimatedRotation(m_initialSwerveRotation);
 
-        m_driveSubsystem.ensureThisFileHasBeenModified();
+        NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
+        NamedCommands.registerCommand("PositionCoralStation", AutomaticCommands.positionCoralStation);
+
+        NamedCommands.registerCommand("PositionL1", AutomaticCommands.position_L1);
+        NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.position_L2_L);
+        NamedCommands.registerCommand("PositionL2_R", AutomaticCommands.position_L2_R);
+        NamedCommands.registerCommand("PositionL3_L", AutomaticCommands.position_L3_L);
+        NamedCommands.registerCommand("PositionL3_R", AutomaticCommands.position_L3_R);
+        NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.position_L4_L);
+        NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.position_L4_R);
 
         configureBindings();
     }
@@ -145,11 +117,9 @@ public class RobotContainer {
                         return m_fieldCentricRequest.withVelocityX(-DRIVER_CONTROLS.getLeftY() * MaxSpeed)
                             .withVelocityY(-DRIVER_CONTROLS.getLeftX() * MaxSpeed)
                             .withRotationalRate(-DRIVER_CONTROLS.getRightX() * MaxAngularRate);
-                    
                 }
             )
         );
-
 
         // DRIVER CONTROLS
 
@@ -198,30 +168,28 @@ public class RobotContainer {
         DRIVER_CONTROLS.TEMPORARY_resetGantryPosition.onTrue(new InstantCommand(() -> {
             m_gantrySubsystem.resetMotorPosition();
             m_gantrySubsystem.resetManualPosition();
-        }));
+        }, m_gantrySubsystem));
 
         // OPERATOR CONTROLS
 
         OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.m_outCommand);
         OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.m_inCommand);
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(positionCoralStation);
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.positionCoralStation);
 
-        OPERATOR_CONTROLS.SCORE_L1.onTrue(setTargetScorePosition_L1);
-        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(setTargetScorePosition_L2_L);
-        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(setTargetScorePosition_L2_R);
-        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(setTargetScorePosition_L3_L);
-        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(setTargetScorePosition_L3_R);
-        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(setTargetScorePosition_L4_L);
-        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(setTargetScorePosition_L4_R);
+        OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.position_L1);
+        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.position_L2_L);
+        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(AutomaticCommands.position_L2_R);
+        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(AutomaticCommands.position_L3_L);
+        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(AutomaticCommands.position_L3_R);
+        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.position_L4_L);
+        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.position_L4_R);
 
         OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(m_elevatorSubsystem.m_manualUpCommand);
         OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(m_elevatorSubsystem.m_manualDownCommand);
 
         OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.m_manualLeftCommand);
         OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.m_manualRightCommand);
-
-        // m_swerveSubsystem.registerTelemetry(logger::telemeterize);
     }
 
     public Command getAutonomousCommand() {
@@ -231,7 +199,7 @@ public class RobotContainer {
     }
 
     public void teleopInit() {
-        RobotState.setTargetScorePosition(RELATIVE_SCORE_POSITION.NONE);
+        RobotState.setTargetScorePosition(RelativeScorePosition.NONE);
 
         m_elevatorSubsystem.resetManualPosition();
     }
