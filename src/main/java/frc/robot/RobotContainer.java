@@ -31,6 +31,9 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
+import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -48,9 +51,9 @@ public class RobotContainer {
     private final CommandSwerveDrivetrain m_driveSubsystem;
     private final CameraSubsystem m_cameraSubsystem;
 
-    private final ElevatorSubsystem m_elevatorSubsystem;
-    private final GantrySubsystem m_gantrySubsystem;
-    private final IntakeOuttakeSubsystem m_intakeOuttakeSubsystem;
+    private final ElevatorSubsystemInterface m_elevatorSubsystem;
+    private final GantrySubsystemInterface m_gantrySubsystem;
+    private final IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
 
     private final Rotation2d m_initialSwerveRotation;
 
@@ -165,15 +168,15 @@ public class RobotContainer {
             return m_cameraSubsystem.getPathCommandFromReefTag(m_targetReefLocation);
         }));
 
-        DRIVER_CONTROLS.TEMPORARY_resetGantryPosition.onTrue(new InstantCommand(() -> {
+        DRIVER_CONTROLS.TEMPORARY_resetGantryPosition.onTrue(m_gantrySubsystem.addToCommandRequirements(new InstantCommand(() -> {
             m_gantrySubsystem.resetMotorPosition();
             m_gantrySubsystem.resetManualPosition();
-        }, m_gantrySubsystem));
+        })));
 
         // OPERATOR CONTROLS
 
-        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.m_outCommand);
-        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.m_inCommand);
+        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.getOutCommand());
+        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.getInCommand());
 
         OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.positionCoralStation);
 
@@ -185,11 +188,11 @@ public class RobotContainer {
         OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.position_L4_L);
         OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.position_L4_R);
 
-        OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(m_elevatorSubsystem.m_manualUpCommand);
-        OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(m_elevatorSubsystem.m_manualDownCommand);
+        OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(m_elevatorSubsystem.getManualUpCommand());
+        OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(m_elevatorSubsystem.getManualDownCommand());
 
-        OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.m_manualLeftCommand);
-        OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.m_manualRightCommand);
+        OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.getManualLeftCommand());
+        OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.getManualRightCommand());
     }
 
     public Command getAutonomousCommand() {

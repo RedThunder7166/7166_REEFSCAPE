@@ -11,13 +11,15 @@ import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
 import frc.robot.RobotState.RelativeScorePosition;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
-import frc.robot.subsystems.ElevatorSubsystem.ElevatorState;
-import frc.robot.subsystems.GantrySubsystem.GantryState;
+import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.ElevatorState;
+import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryState;
 
 public class AutomaticCommands {
     private static class AutomaticGoToPositionCommand extends Command {
-        private final ElevatorSubsystem m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
-        private final GantrySubsystem m_gantrySubsystem = GantrySubsystem.getSingleton();
+        private final ElevatorSubsystemInterface m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
+        private final GantrySubsystemInterface m_gantrySubsystem = GantrySubsystem.getSingleton();
 
         private final RelativeScorePosition m_position;
         private final ElevatorState m_elevatorState;
@@ -28,7 +30,8 @@ public class AutomaticCommands {
             m_elevatorState = elevatorState;
             m_gantryState = gantryState;
 
-            addRequirements(m_elevatorSubsystem, m_gantrySubsystem);
+            m_elevatorSubsystem.addToCommandRequirements(this);
+            m_gantrySubsystem.addToCommandRequirements(this);
         }
 
         @Override

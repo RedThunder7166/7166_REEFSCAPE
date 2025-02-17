@@ -18,6 +18,7 @@ public class Constants {
     }
 
     public static final class ElevatorConstants {
+        public static final boolean REAL = true;
         public static final int LEADER_MOTOR_ID = 31; // left
         public static final int FOLLOWER_MOTOR_ID = 32; // right
 
@@ -39,7 +40,9 @@ public class Constants {
         public static final double POSITION_ERROR_THRESHOLD = 0.00006;
     }
     public static final class GantryConstants {
-        public static final int MOTOR_ID = 51;
+        public static final boolean REAL = false;
+        public static final int GANTRY_MOTOR_ID = 51;
+        public static final int SCORE_MOTOR_ID = 53;
 
         public static final double MIN_POSITION_ROTATIONS = -7.4;
         public static final double MAX_POSITION_ROTATIONS = 8.8;
@@ -52,7 +55,7 @@ public class Constants {
         public static final double POSITION_ERROR_THRESHOLD = 0.02;
     }
     public static final class IntakeOuttakeConstants {
-        public static final int SCORE_MOTOR_ID = 53;
+        public static final boolean REAL = true;
         public static final int INTAKE_MOTOR_ID = 52;
 
         // TODO: use MotionMagicVoltage with velocity

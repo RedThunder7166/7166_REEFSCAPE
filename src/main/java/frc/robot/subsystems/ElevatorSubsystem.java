@@ -22,36 +22,94 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
 import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
+import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 
-public class ElevatorSubsystem extends SubsystemBase {
-    private static ElevatorSubsystem singleton = null;
+public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsystemInterface {
+    private static final class FakeElevatorSubsystem implements ElevatorSubsystemInterface {
+        @Override
+        public Command addToCommandRequirements(Command command) {
+            return command;
+        }
 
-    public static ElevatorSubsystem getSingleton() {
+        @Override
+        public void setAutomaticState(ElevatorState desiredState) { }
+
+        @Override
+        public void setIdle() { }
+
+        @Override
+        public void setManualDirection(ElevatorManualDirection desiredManualDirection) { }
+
+        @Override
+        public void incrementManualPosition(double value) { }
+
+        @Override
+        public void resetManualPosition() { }
+
+        @Override
+        public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) { }
+
+        @Override
+        public boolean getIsAtTargetPosition() {
+            return true;
+        }
+
+        @Override
+        public Command getManualUpCommand() {
+            return Commands.none();
+        }
+        @Override
+        public Command getManualDownCommand() {
+            return Commands.none();
+        }
+
+        @Override
+        public Command getTempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition) {
+            return Commands.none();
+        }
+
+        @Override
+        public Command getTempHoldPositionCommand() {
+            return Commands.none();
+        }
+
+        @Override
+        public Command getTimeTravelCommand(double targetPosition) {
+            return Commands.none();
+        }
+    }
+
+    @Override
+    public Command addToCommandRequirements(Command command) {
+        command.addRequirements(this);
+        return command;
+    }
+
+    private static ElevatorSubsystemInterface singleton = null;
+
+    public static ElevatorSubsystemInterface getSingleton() {
         if (singleton == null)
-            singleton = new ElevatorSubsystem();
+            singleton = ElevatorConstants.REAL ? new ElevatorSubsystem() : new FakeElevatorSubsystem();
         return singleton;
     }
 
-    public static enum ElevatorState {
-        HOME,
-        IDLE,
-        SCORE,
-        CORAL_STATION
-    }
     private ElevatorState m_state = ElevatorState.HOME;
     private ElevatorState m_desiredState = m_state;
+    @Override
     public void setAutomaticState(ElevatorState desiredState) {
         m_desiredState = desiredState;
     }
     private final StringPublisher m_statePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorState").publish();
     private final StringPublisher m_desiredStatePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorDesiredState").publish();
 
+    @Override
     public void setIdle() {
         setAutomaticState(ElevatorState.IDLE);
         m_state = ElevatorState.IDLE;
@@ -82,12 +140,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final StringPublisher m_positionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorPosition").publish();
     private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorAutomaticPositionRotations").publish();
 
-    public static enum ElevatorManualDirection {
-        NONE,
-        UP,
-        DOWN
-    }
     private ElevatorManualDirection m_manualDirection = ElevatorManualDirection.NONE;
+    @Override
     public void setManualDirection(ElevatorManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
@@ -105,15 +159,18 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         m_manualPosition = newValue;
     }
+    @Override
     public void incrementManualPosition(double value) {
         setManualPosition(m_manualPosition + value);
     }
+    @Override
     public void resetManualPosition() {
         setManualPosition(0);
     }
     private final DoublePublisher m_manualPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorManualTargetPosition").publish();
 
     private DESIRED_CONTROL_TYPE m_desiredControlType = DESIRED_CONTROL_TYPE.AUTOMATIC;
+    @Override
     public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) {
         m_desiredControlType = desiredControlType;
     }
@@ -223,6 +280,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_followerMotor.setPosition(0);
     }
 
+    @Override
     public boolean getIsAtTargetPosition() {
         // return true if we're not actively targeting a position
         if (m_desiredControlType == DESIRED_CONTROL_TYPE.AUTOMATIC && m_position == ElevatorPosition.IDLE)
@@ -249,8 +307,17 @@ public class ElevatorSubsystem extends SubsystemBase {
             setManualDirection(ElevatorManualDirection.NONE);
         });
     }
-    public final Command m_manualUpCommand = makeManualCommand(ElevatorManualDirection.UP);
-    public final Command m_manualDownCommand = makeManualCommand(ElevatorManualDirection.DOWN);
+    private final Command m_manualUpCommand = makeManualCommand(ElevatorManualDirection.UP);
+    private final Command m_manualDownCommand = makeManualCommand(ElevatorManualDirection.DOWN);
+
+    @Override
+    public Command getManualUpCommand() {
+        return m_manualUpCommand;
+    }
+    @Override
+    public Command getManualDownCommand() {
+        return m_manualDownCommand;
+    }
 
     @Override
     public void periodic() {
@@ -424,62 +491,81 @@ public class ElevatorSubsystem extends SubsystemBase {
         // m_leaderMotor.setControl(m_brake);
     }
 
-    public Command getTempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition) {
-        return new Command() {
-            private double m_initialPosition;
-            @Override
-            public void initialize() {
-                m_initialPosition = m_leaderMotorPosition.refresh().getValueAsDouble();
-            }
+    public class TempGoUntilTargetIncreaseCommand extends Command {
+        private double m_targetIncreaseInPosition;
+        private double m_initialPosition;
 
-            @Override
-            public void execute() {
-                m_leaderMotor.setControl(new DutyCycleOut(0.04));
-            }
+        TempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition) {
+            m_targetIncreaseInPosition = targetIncreaseInPosition;
+        }
 
-            @Override
-            public boolean isFinished() {
-                var position = m_leaderMotorPosition.refresh().getValueAsDouble();
-                return position >= (m_initialPosition + targetIncreaseInPosition);
-            }
+        @Override
+        public void initialize() {
+            m_initialPosition = m_leaderMotorPosition.refresh().getValueAsDouble();
+        }
 
-            @Override
-            public void end(boolean isInterrupted) {
-                m_leaderMotor.setControl(m_brake);
-            }
-        };
+        @Override
+        public void execute() {
+            m_leaderMotor.setControl(new DutyCycleOut(0.04));
+        }
+
+        @Override
+        public boolean isFinished() {
+            var position = m_leaderMotorPosition.refresh().getValueAsDouble();
+            return position >= (m_initialPosition + m_targetIncreaseInPosition);
+        }
+
+        @Override
+        public void end(boolean isInterrupted) {
+            m_leaderMotor.setControl(m_brake);
+        }
     }
+    @Override
+    public Command getTempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition) {
+        return new TempGoUntilTargetIncreaseCommand(targetIncreaseInPosition);
+    }
+
+    @Override
     public Command getTempHoldPositionCommand() {
         return run(() -> {
-            m_leaderMotor.setControl(new DutyCycleOut(0.025)); // about kG / 12
+            m_leaderMotor.setControl(new DutyCycleOut(m_kg / 12));
         });
     }
 
+    public class TimeTravelCommand extends Command {
+        private final double m_targetPosition;
+        private Timer m_timer = new Timer();
+
+        public TimeTravelCommand(double targetPosition) {
+            m_targetPosition = targetPosition;
+        }
+
+        @Override
+        public void initialize() {
+            m_timer.start();
+        }
+
+        @Override
+        public void execute() {
+            m_leaderMotor.setControl(m_positionControl.withPosition(m_targetPosition));
+        }
+
+        @Override
+        public boolean isFinished() {
+            // FIXME: try this with getIsAtTarget
+            var position = m_leaderMotorPosition.refresh().getValueAsDouble();
+            return position >= m_targetPosition;
+        }
+
+        @Override
+        public void end(boolean isInterrupted) {
+            m_timer.stop();
+            m_leaderMotor.setControl(m_brake);
+            SmartDashboard.putNumber("ELEVATOR_TIME_TAKEN", m_timer.get());
+        }
+    }
+    @Override
     public Command getTimeTravelCommand(double targetPosition) {
-        return new Command() {
-            private Timer m_timer = new Timer();
-            @Override
-            public void initialize() {
-                m_timer.start();
-            }
-
-            @Override
-            public void execute() {
-                m_leaderMotor.setControl(m_positionControl.withPosition(targetPosition));
-            }
-
-            @Override
-            public boolean isFinished() {
-                var position = m_leaderMotorPosition.refresh().getValueAsDouble();
-                return position >= targetPosition;
-            }
-
-            @Override
-            public void end(boolean isInterrupted) {
-                m_timer.stop();
-                m_leaderMotor.setControl(m_brake);
-                SmartDashboard.putNumber("ELEVATOR_TIME_TAKEN", m_timer.get());
-            }
-        };
+        return new TimeTravelCommand(targetPosition);
     }
 }
