@@ -31,7 +31,6 @@ public class IntakeOuttakeSubsystem extends SubsystemBase {
 
     private final TalonFX m_scoreMotor = new TalonFX(IntakeOuttakeConstants.SCORE_MOTOR_ID);
     private final TalonFX m_intakeMotor = new TalonFX(IntakeOuttakeConstants.INTAKE_MOTOR_ID);
-    // private final VelocityVoltage m_velocityVoltage = new VelocityVoltage(0).withSlot(0);
     private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
     private final NeutralOut m_brake = new NeutralOut();
 
