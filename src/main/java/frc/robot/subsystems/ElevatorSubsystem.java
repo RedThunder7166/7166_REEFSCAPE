@@ -15,6 +15,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
@@ -27,8 +28,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants;
 import frc.robot.OurUtils;
+import frc.robot.Robot;
 import frc.robot.RobotState;
 import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
+import frc.robot.subsystems.Mechanisms.ElevatorMechanisms;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 
 public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsystemInterface {
@@ -272,6 +275,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         m_leaderMotor.setPosition(0);
         m_followerMotor.setPosition(0);
+
+        SmartDashboard.putData("ElevatorMech2d", ElevatorMechanisms.mechanism2d);
     }
 
     // TODO: this should be called on sensor trip
@@ -402,10 +407,12 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         m_PIDPositionReference.refresh();
 
+        final double leaderMotorPosition = m_leaderMotorPosition.getValueAsDouble();
         m_followerMotorPositionPublisher.set(m_followerMotorPosition.getValueAsDouble());
-        m_leaderMotorPositionPublisher.set(m_leaderMotorPosition.getValueAsDouble());
+        m_leaderMotorPositionPublisher.set(leaderMotorPosition);
 
-        m_PIDPositionReferencePublisher.set(m_PIDPositionReference.getValueAsDouble());
+        final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
+        m_PIDPositionReferencePublisher.set(PIDPositionReference);
 
         m_statePublisher.set(m_state.toString());
         m_desiredStatePublisher.set(m_state.toString());
@@ -413,6 +420,11 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         m_manualDirectionPublisher.set(m_manualDirection.toString());
 
         m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
+
+        final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : leaderMotorPosition;
+        ElevatorMechanisms.ligament.setLength(ElevatorMechanisms.baseHeightMeters + Units.inchesToMeters(
+            ElevatorMechanisms.maxHeightInches * (mechPositionToUse / ElevatorConstants.MAX_POSITION_ROTATIONS)
+        ));
     }
 
     private void handleAutomatic() {

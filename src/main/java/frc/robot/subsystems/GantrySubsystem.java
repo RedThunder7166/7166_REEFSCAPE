@@ -12,6 +12,7 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
@@ -23,8 +24,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
 import frc.robot.Constants.IntakeOuttakeConstants;
 import frc.robot.OurUtils;
+import frc.robot.Robot;
 import frc.robot.RobotState;
 import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
+import frc.robot.subsystems.Mechanisms.GantryMechanisms;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
 
 public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInterface {
@@ -246,16 +249,26 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_desiredControlTypePublisher.set(m_desiredControlType.toString());
 
         m_gantryMotorPosition.refresh();
+
         m_PIDPositionReference.refresh();
 
-        m_gantryMotorPositionPublisher.set(m_gantryMotorPosition.getValueAsDouble());
-        m_PIDPositionReferencePublisher.set(m_PIDPositionReference.getValueAsDouble());
+        final double gantryMotorPosition = m_gantryMotorPosition.getValueAsDouble();
+        m_gantryMotorPositionPublisher.set(gantryMotorPosition);
+
+        final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
+        m_PIDPositionReferencePublisher.set(PIDPositionReference);
 
         m_statePublisher.set(m_state.toString());
         m_positionPublisher.set(m_position.toString());
         m_manualDirectionPublisher.set(m_manualDirection.toString());
 
         m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
+
+        final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : gantryMotorPosition;
+        final boolean mechPositionIsPositive = mechPositionToUse > 0;
+        final double mechPositionSign = mechPositionIsPositive ? 1 : -1;
+        final double length = GantryMechanisms.widthInches * (mechPositionIsPositive ? (mechPositionToUse / GantryConstants.MAX_POSITION_ROTATIONS) : (mechPositionToUse / GantryConstants.MIN_POSITION_ROTATIONS));
+        GantryMechanisms.ligament.setLength(Units.inchesToMeters(length * mechPositionSign));
     }
 
     private void handleAutomatic() {
@@ -315,10 +328,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             case NONE:
                 break;
             case LEFT:
-                incrementManualPosition(increment);
+                incrementManualPosition(-increment);
                 break;
             case RIGHT:
-                incrementManualPosition(-increment);
+                incrementManualPosition(increment);
                 break;
         }
 

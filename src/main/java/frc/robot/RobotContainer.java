@@ -55,6 +55,8 @@ public class RobotContainer {
     private final GantrySubsystemInterface m_gantrySubsystem;
     private final IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
 
+    private final Command localizeToReefCommand;
+
     private final Rotation2d m_initialSwerveRotation;
 
     private final SendableChooser<Command> m_autoChooser;
@@ -81,6 +83,11 @@ public class RobotContainer {
 
         m_driveSubsystem.resetCustomEstimatedRotation(m_initialSwerveRotation);
 
+        localizeToReefCommand = new CameraSubsystem.DynamicCommand(() -> {
+            System.out.println("HELLO?");
+            return m_cameraSubsystem.getPathCommandFromReefTag(m_targetReefLocation);
+        });
+
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
         NamedCommands.registerCommand("PositionCoralStation", AutomaticCommands.positionCoralStation);
 
@@ -92,7 +99,19 @@ public class RobotContainer {
         NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.position_L4_L);
         NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.position_L4_R);
 
+        NamedCommands.registerCommand("LocalizeToReefIJ",
+            new InstantCommand(
+                () -> {setTargetReefLocation(RelativeReefLocation.IJ);},
+                m_cameraSubsystem
+            ).andThen(localizeToReefCommand)
+        );
+
         configureBindings();
+    }
+
+    private void setTargetReefLocation(RelativeReefLocation targetReefLocation) {
+        m_targetReefLocation = targetReefLocation;
+        SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
     }
 
     private boolean m_robotCentricForward = false;
@@ -154,19 +173,15 @@ public class RobotContainer {
             m_robotCentricLeft = false;
         }));
 
-        SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+        setTargetReefLocation(m_targetReefLocation);
         DRIVER_CONTROLS.incrementTargetReefLocation.onTrue(new InstantCommand(() -> {
-            m_targetReefLocation = m_targetReefLocation.getNext();
-            SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+            setTargetReefLocation(m_targetReefLocation.getNext());
         }));
         DRIVER_CONTROLS.decrementTargetReefLocation.onTrue(new InstantCommand(() -> {
-            m_targetReefLocation = m_targetReefLocation.getPrevious();
-            SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+            setTargetReefLocation(m_targetReefLocation.getPrevious());
         }));
 
-        DRIVER_CONTROLS.localizeToReef.whileTrue(new CameraSubsystem.DynamicCommand(() -> {
-            return m_cameraSubsystem.getPathCommandFromReefTag(m_targetReefLocation);
-        }));
+        DRIVER_CONTROLS.localizeToReef.whileTrue(localizeToReefCommand);
 
         DRIVER_CONTROLS.TEMPORARY_resetGantryPosition.onTrue(m_gantrySubsystem.addToCommandRequirements(new InstantCommand(() -> {
             m_gantrySubsystem.resetMotorPosition();

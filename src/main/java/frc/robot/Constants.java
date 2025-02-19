@@ -40,7 +40,7 @@ public class Constants {
         public static final double POSITION_ERROR_THRESHOLD = 0.00006;
     }
     public static final class GantryConstants {
-        public static final boolean REAL = false;
+        public static final boolean REAL = true;
         public static final int GANTRY_MOTOR_ID = 51;
         public static final int SCORE_MOTOR_ID = 53;
 
