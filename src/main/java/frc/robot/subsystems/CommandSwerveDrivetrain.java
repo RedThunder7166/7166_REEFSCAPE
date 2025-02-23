@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
+import frc.robot.RobotState;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 /**
@@ -213,7 +214,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         registerTelemetry((SwerveDriveState state) -> {
             m_poseEstimator.update(pigeon.getRotation2d(), state.ModulePositions);
         });
-
+    }
+    public void configureAutoBuilder() {
         try {
             var config = RobotConfig.fromGUISettings();
             AutoBuilder.configure(
@@ -236,7 +238,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 ),
                 config,
                 // Assume the path needs to be flipped for Red vs Blue, this is normally the case // TODO: fact check this
-                () -> Constants.ALLIANCE == Alliance.Red,
+                () -> RobotState.ALLIANCE == Alliance.Red,
                 this
             );
         } catch (Exception ex) {

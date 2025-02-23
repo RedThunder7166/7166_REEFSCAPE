@@ -4,16 +4,21 @@
 
 package frc.robot.commands;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.RobotState;
 import frc.robot.Constants;
-import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
-import frc.robot.RobotState.RelativeScorePosition;
+import frc.robot.RobotState.DesiredControlType;
+import frc.robot.RobotState.TargetScorePosition;
+import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
+import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.ElevatorState;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryState;
 
 public class AutomaticCommands {
@@ -21,11 +26,11 @@ public class AutomaticCommands {
         private final ElevatorSubsystemInterface m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
         private final GantrySubsystemInterface m_gantrySubsystem = GantrySubsystem.getSingleton();
 
-        private final RelativeScorePosition m_position;
+        private final TargetScorePosition m_position;
         private final ElevatorState m_elevatorState;
         private final GantryState m_gantryState;
 
-        public AutomaticGoToPositionCommand(RelativeScorePosition position, ElevatorState elevatorState, GantryState gantryState) {
+        public AutomaticGoToPositionCommand(TargetScorePosition position, ElevatorState elevatorState, GantryState gantryState) {
             m_position = position;
             m_elevatorState = elevatorState;
             m_gantryState = gantryState;
@@ -38,8 +43,8 @@ public class AutomaticCommands {
         public void initialize() {
             RobotState.setTargetScorePosition(m_position);
 
-            m_elevatorSubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC);
-            m_gantrySubsystem.setDesiredControlType(DESIRED_CONTROL_TYPE.AUTOMATIC);
+            m_elevatorSubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
+            m_gantrySubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
 
             m_elevatorSubsystem.setAutomaticState(m_elevatorState);
             m_gantrySubsystem.setAutomaticState(m_gantryState);
@@ -57,31 +62,62 @@ public class AutomaticCommands {
         public void end(boolean isInterrupted) { }
     }
 
-    private static Command createAutomaticGoToPositionCommand(RelativeScorePosition position, ElevatorState elevatorState, GantryState gantryState) {
+    private static Command createAutomaticGoToPositionCommand(TargetScorePosition position, ElevatorState elevatorState, GantryState gantryState) {
         return new AutomaticGoToPositionCommand(position, elevatorState, gantryState)
             .withTimeout(Constants.AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS);
     }
 
     public static final Command positionNONE = createAutomaticGoToPositionCommand(
-        RelativeScorePosition.NONE,
+        TargetScorePosition.NONE,
         ElevatorState.IDLE,
         GantryState.IDLE
     );
     public static final Command positionCoralStation = createAutomaticGoToPositionCommand(
-        RelativeScorePosition.NONE,
-        ElevatorState.CORAL_STATION,
-        GantryState.CORAL_STATION
+        TargetScorePosition.CORAL_STATION,
+        ElevatorState.TARGET,
+        GantryState.TARGET
     );
 
-    private static Command createScoreCommand(RelativeScorePosition position) {
-        return createAutomaticGoToPositionCommand(position, ElevatorState.SCORE, GantryState.SCORE);
+    public static Command createScoreCommand(TargetScorePosition position) {
+        return createAutomaticGoToPositionCommand(
+            position,
+            ElevatorState.TARGET,
+            GantryState.TARGET
+        );
     }
 
-    public static final Command position_L1 = createScoreCommand(RelativeScorePosition.L1);
-    public static final Command position_L2_L = createScoreCommand(RelativeScorePosition.L2_L);
-    public static final Command position_L2_R = createScoreCommand(RelativeScorePosition.L2_R);
-    public static final Command position_L3_L = createScoreCommand(RelativeScorePosition.L3_L);
-    public static final Command position_L3_R = createScoreCommand(RelativeScorePosition.L3_R);
-    public static final Command position_L4_L = createScoreCommand(RelativeScorePosition.L4_L);
-    public static final Command position_L4_R = createScoreCommand(RelativeScorePosition.L4_R);
+    public static Command createLocalizeToReefCommand(RelativeReefLocation targetLocation) {
+        return new CameraSubsystem.DynamicCommand(() -> {
+            return CameraSubsystem.getSingleton().getPathCommandFromReefTag(targetLocation);
+        });
+    }
+
+    public static class IntakeCommand extends Command {
+        IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
+        public IntakeCommand(IntakeOuttakeSubsystemInterface intakeOuttakeSubsystem) {
+            m_intakeOuttakeSubsystem = intakeOuttakeSubsystem;
+
+            m_intakeOuttakeSubsystem.addToCommandRequirements(this);
+        }
+
+        @Override
+        public void initialize() {
+
+        }
+
+        @Override
+        public void execute() {
+            
+        }
+
+        @Override
+        public boolean isFinished() {
+            return false;
+        }
+
+        @Override
+        public void end(boolean isInterrupted) {
+            
+        }
+    }
 }

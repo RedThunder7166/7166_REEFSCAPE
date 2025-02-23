@@ -1,9 +1,10 @@
 {
-  "robotWidth": 0.9,
-  "robotLength": 0.9,
+  "robotWidth": 0.864,
+  "robotLength": 0.864,
   "holonomicMode": true,
   "pathFolders": [
-    "BargeZoneEscape"
+    "BargeZoneEscape",
+    "testing"
   ],
   "autoFolders": [],
   "defaultMaxVel": 3.0,

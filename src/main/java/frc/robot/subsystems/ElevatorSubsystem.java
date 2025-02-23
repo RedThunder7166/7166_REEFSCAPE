@@ -20,6 +20,7 @@ import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,7 +31,7 @@ import frc.robot.Constants;
 import frc.robot.OurUtils;
 import frc.robot.Robot;
 import frc.robot.RobotState;
-import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
+import frc.robot.RobotState.DesiredControlType;
 import frc.robot.subsystems.Mechanisms.ElevatorMechanisms;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 
@@ -57,7 +58,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         public void resetManualPosition() { }
 
         @Override
-        public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) { }
+        public void setDesiredControlType(DesiredControlType desiredControlType) { }
 
         @Override
         public boolean getIsAtTargetPosition() {
@@ -109,8 +110,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     public void setAutomaticState(ElevatorState desiredState) {
         m_desiredState = desiredState;
     }
-    private final StringPublisher m_statePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorState").publish();
-    private final StringPublisher m_desiredStatePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorDesiredState").publish();
+    private final StringPublisher m_statePublisher = RobotState.robotStateTable.getStringTopic("ElevatorState").publish();
+    private final StringPublisher m_desiredStatePublisher = RobotState.robotStateTable.getStringTopic("ElevatorDesiredState").publish();
 
     @Override
     public void setIdle() {
@@ -125,30 +126,39 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         CORAL_STATION(ElevatorConstants.CORAL_STATION_POSITION),
 
         L1(ElevatorConstants.L1_POSITION),
-        L2(ElevatorConstants.L2_POSITION),
-        L3(ElevatorConstants.L3_POSITION),
-        L4(ElevatorConstants.L4_POSITION)
+        L2(ElevatorConstants.L2_POSITION, true),
+        L3(ElevatorConstants.L3_POSITION, true),
+        L4(ElevatorConstants.L4_POSITION, true)
 
         ;
         private final double m_position;
+        private final boolean m_needsElevatorClearance;
 
         ElevatorPosition(double position) {
             m_position = position;
+            m_needsElevatorClearance = false;
+        }
+        ElevatorPosition(double position, boolean needsElevatorClearance) {
+            m_position = position;
+            m_needsElevatorClearance = needsElevatorClearance;
         }
     }
     private ElevatorPosition m_position = ElevatorPosition.IDLE;
     private void setAutomaticPosition(ElevatorPosition desiredPosition) {
+        if (desiredPosition.m_needsElevatorClearance && !RobotState.getElevatorHasClearance())
+            return;
+
         m_position = desiredPosition;
     }
-    private final StringPublisher m_positionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorPosition").publish();
-    private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorAutomaticPositionRotations").publish();
+    private final StringPublisher m_positionPublisher = RobotState.robotStateTable.getStringTopic("ElevatorPosition").publish();
+    private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorAutomaticPositionRotations").publish();
 
     private ElevatorManualDirection m_manualDirection = ElevatorManualDirection.NONE;
     @Override
     public void setManualDirection(ElevatorManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
-    private final StringPublisher m_manualDirectionPublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorManualDirection").publish();
+    private final StringPublisher m_manualDirectionPublisher = RobotState.robotStateTable.getStringTopic("ElevatorManualDirection").publish();
 
     private double m_manualPosition = 0;
     private void setManualPosition(double newValue) {
@@ -170,14 +180,14 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     public void resetManualPosition() {
         setManualPosition(0);
     }
-    private final DoublePublisher m_manualPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorManualTargetPosition").publish();
+    private final DoublePublisher m_manualPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorManualTargetPosition").publish();
 
-    private DESIRED_CONTROL_TYPE m_desiredControlType = DESIRED_CONTROL_TYPE.AUTOMATIC;
+    private DesiredControlType m_desiredControlType = DesiredControlType.AUTOMATIC;
     @Override
-    public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType) {
+    public void setDesiredControlType(DesiredControlType desiredControlType) {
         m_desiredControlType = desiredControlType;
     }
-    private final StringPublisher m_desiredControlTypePublisher = RobotState.m_robotStateTable.getStringTopic("ElevatorDesiredControlType").publish();
+    private final StringPublisher m_desiredControlTypePublisher = RobotState.robotStateTable.getStringTopic("ElevatorDesiredControlType").publish();
 
     private final TalonFX m_leaderMotor = new TalonFX(ElevatorConstants.LEADER_MOTOR_ID, Constants.CANIVORE_NAME);
     private final TalonFX m_followerMotor = new TalonFX(ElevatorConstants.FOLLOWER_MOTOR_ID, Constants.CANIVORE_NAME);
@@ -187,35 +197,46 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
     private final StatusSignal<Angle> m_leaderMotorPosition = m_leaderMotor.getPosition();
     private final StatusSignal<Angle> m_followerMotorPosition = m_followerMotor.getPosition();
+    private final StatusSignal<AngularVelocity> m_leaderMotorVelocity = m_leaderMotor.getVelocity();
 
     private final StatusSignal<Double> m_PIDPositionReference = m_leaderMotor.getClosedLoopReference();
+    private final StatusSignal<Double> m_PIDPositionSlope = m_leaderMotor.getClosedLoopReferenceSlope();
     private final StatusSignal<Double> m_PIDPositionError = m_leaderMotor.getClosedLoopError();
 
-    private final DoublePublisher m_leaderMotorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorLeaderMotorPosition").publish();
-    private final DoublePublisher m_followerMotorPositionPublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorFollowerMotorPosition").publish();
+    private final DoublePublisher m_leaderMotorPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorLeaderMotorPosition").publish();
+    private final DoublePublisher m_followerMotorPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorFollowerMotorPosition").publish();
+    private final DoublePublisher m_leaderMotorVelocityPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorLeaderMotorVelocity").publish();
 
-    private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.m_robotStateTable.getDoubleTopic("ElevatorPIDPositionReferencePosition").publish();
+    private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorPIDPositionReference").publish();
+    private final DoublePublisher m_PIDPositionSlopePublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorPIDPositionSlope").publish();
 
-    private static final boolean tuneWithNetworkTables = false;
+    private static final boolean tuneWithNetworkTables = true;
 
     /* SOME NOTES
         2.4 inches per rotation of the motor
         11.81 inches per rotation of the gearbox (post gearbox)
 
-        with weights no gantry:
+        first iter: weights no gantry:
         kG = 0.32
         kV = 0.6
         kA = 0.03
 
-        kP = 100
+        second iter:
+        kG = 0.3
+        kV = 0.82
+        kA = 0.03
+        kP = 3
+
+        third iter:
+        kG = 0.223
      */
-    private double m_kg = 0.3;
-    private double m_kv = 0.82;
+    private double m_kg = 0.223;
+    private double m_kv = 0.67;
     private double m_ka = 0.03;
 
     private double m_ks = 0;
 
-    private double m_kp = 3; // 25
+    private double m_kp = 10;
     private double m_ki = 0;
     private double m_kd = 0;
 
@@ -264,7 +285,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         // FIXME: tune elevator Motion Magic; may be different per motor?
         var motionMagicConfigs = motorConfig.MotionMagic;
 
-        var value = 8;
+        var value = 15;
         motionMagicConfigs.MotionMagicCruiseVelocity = value;
         motionMagicConfigs.MotionMagicAcceleration = value;
 
@@ -288,14 +309,15 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     @Override
     public boolean getIsAtTargetPosition() {
         // return true if we're not actively targeting a position
-        if (m_desiredControlType == DESIRED_CONTROL_TYPE.AUTOMATIC && m_position == ElevatorPosition.IDLE)
+        if (m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE)
             return true;
 
-        double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
+        // double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
+        final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
         SmartDashboard.putNumber("ElevatorPIDError", err);
-        return Math.abs(m_PIDPositionError.refresh().getValueAsDouble()) <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
+        return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
     }
-    private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.m_robotStateTable.getBooleanTopic("ElevatorIsAtTargetPosition").publish();
+    private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("ElevatorIsAtTargetPosition").publish();
 
     private Command makeManualCommand(ElevatorManualDirection desiredDirection) {
         return startEnd(() -> {
@@ -305,7 +327,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 default:
                     setManualPosition(m_position.m_position);
             }
-            setDesiredControlType(DESIRED_CONTROL_TYPE.MANUAL);
+            setDesiredControlType(DesiredControlType.MANUAL);
             setIdle();
             setManualDirection(desiredDirection);
         }, () -> {
@@ -392,7 +414,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         // looks ugly, but compiler optimizes nicely
         if (RobotState.ENABLE_AUTOMATIC_ELEVATOR_CONTROL) {
-            if (m_desiredControlType == DESIRED_CONTROL_TYPE.AUTOMATIC)
+            if (m_desiredControlType == DesiredControlType.AUTOMATIC)
                 handleAutomatic();
             else
                 handleManual();
@@ -404,15 +426,19 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         m_leaderMotorPosition.refresh();
         m_followerMotorPosition.refresh();
+        m_leaderMotorVelocity.refresh();
 
         m_PIDPositionReference.refresh();
+        m_PIDPositionSlope.refresh();
 
         final double leaderMotorPosition = m_leaderMotorPosition.getValueAsDouble();
         m_followerMotorPositionPublisher.set(m_followerMotorPosition.getValueAsDouble());
         m_leaderMotorPositionPublisher.set(leaderMotorPosition);
+        m_leaderMotorVelocityPublisher.set(m_leaderMotorVelocity.getValueAsDouble());
 
         final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
         m_PIDPositionReferencePublisher.set(PIDPositionReference);
+        m_PIDPositionSlopePublisher.set(m_PIDPositionSlope.getValueAsDouble());
 
         m_statePublisher.set(m_state.toString());
         m_desiredStatePublisher.set(m_state.toString());
@@ -429,7 +455,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
     private void handleAutomatic() {
         // TODO: verify this should be IDLE
-        m_state = RobotState.getCanMoveScoringMechanisms() ? m_desiredState : ElevatorState.IDLE;
+        // m_state = RobotState.getElevatorHasClearance() ? m_desiredState : ElevatorState.IDLE;
+        m_state = m_desiredState;
 
         switch (m_state) {
             case HOME:
@@ -438,10 +465,14 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
             case IDLE:
                 setAutomaticPosition(ElevatorPosition.IDLE);
                 break;
-            case SCORE:
+            case TARGET:
                 switch (RobotState.getTargetScorePosition()) {
                     case NONE:
                         setAutomaticPosition(ElevatorPosition.IDLE);
+                        break;
+
+                    case CORAL_STATION:
+                        setAutomaticPosition(ElevatorPosition.CORAL_STATION);
                         break;
 
                     case L1:
@@ -463,9 +494,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                         setAutomaticPosition(ElevatorPosition.L4);
                         break;
                 }
-                break;
-            case CORAL_STATION:
-                setAutomaticPosition(ElevatorPosition.CORAL_STATION);
                 break;
         }
 
@@ -492,7 +520,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
             case NONE:
                 break;
             case UP:
-                incrementManualPosition(increment);
+                if (RobotState.getElevatorHasClearance())
+                    incrementManualPosition(increment);
                 break;
             case DOWN:
                 incrementManualPosition(-increment);

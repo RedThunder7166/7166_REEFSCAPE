@@ -11,7 +11,6 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IntakeOuttakeConstants;
 import frc.robot.OurUtils;
@@ -23,15 +22,6 @@ public class IntakeOuttakeSubsystem extends SubsystemBase implements IntakeOutta
         @Override
         public Command addToCommandRequirements(Command command) {
             return command;
-        }
-
-        @Override
-        public Command getOutCommand() {
-            return Commands.none();
-        }
-        @Override
-        public Command getInCommand() {
-            return Commands.none();
         }
     }
 
@@ -76,24 +66,5 @@ public class IntakeOuttakeSubsystem extends SubsystemBase implements IntakeOutta
         }
 
         m_motor.setControl(targetRequest);
-    }
-
-    private Command makeCommand(boolean isForward) {
-        return this.startEnd(() -> {
-            RobotState.startIntake(isForward);
-        }, () -> {
-            RobotState.stopIntake();
-        });
-    }
-    public final Command m_outCommand = makeCommand(true);
-    public final Command m_inCommand = makeCommand(false);
-
-    @Override
-    public Command getOutCommand() {
-        return m_outCommand;
-    }
-    @Override
-    public Command getInCommand() {
-        return m_inCommand;
     }
 }

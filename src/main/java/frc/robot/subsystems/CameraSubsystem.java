@@ -28,11 +28,15 @@ import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AprilTagConstants;
+import frc.robot.Constants;
 import frc.robot.LimelightHelpers;
+import frc.robot.RobotState;
 
 public class CameraSubsystem extends SubsystemBase {
     private static CameraSubsystem singleton = null;
@@ -50,8 +54,9 @@ public class CameraSubsystem extends SubsystemBase {
     private static final HashMap<Integer, AprilTag> aprilTagMap = new HashMap<>();
     private static final HashMap<Integer, PathPlannerPath> aprilTagLineUpMap = new HashMap<>();
     private static Translation2d reefCenterTranslation = new Translation2d();
+    private static boolean aprilTagFieldLayoutSuccess = false;
 
-    static boolean tryToMapAprilTagAndLineUp(int aprilTagID, String file_path) {
+    private static boolean tryToMapAprilTagAndLineUp(int aprilTagID, String file_path) {
         try {
             aprilTagLineUpMap.put(aprilTagID, PathPlannerPath.fromPathFile(file_path));
             return true;
@@ -60,6 +65,7 @@ public class CameraSubsystem extends SubsystemBase {
         }
         return false;
     }
+
     static {
         for (int port = 5800; port <= 5809; port++)
             PortForwarder.add(port, limelightOneName + ".local", port);
@@ -68,36 +74,37 @@ public class CameraSubsystem extends SubsystemBase {
             for (int port = 5800; port <= 5809; port++)
                 PortForwarder.add(port + 10, limelightTwoName + ".local", port);
 
-        boolean success = false;
         try {
             AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
             for (var tag : fieldLayout.getTags()) {
                 aprilTagMap.put(tag.ID, tag);
             }
-            success = true;
+            aprilTagFieldLayoutSuccess = true;
         } catch (Exception e) {
             DriverStation.reportError("Failed to load AprilTagFieldLayout: " + e.getMessage(), false);
         }
+    }
+    public static void update() {
+        if (!aprilTagFieldLayoutSuccess)
+            return;
 
-        if (success) {
-            var translationAB = aprilTagMap.get(AprilTagConstants.REEF_AB_TAGID).pose.getTranslation();
-            var translationCD = aprilTagMap.get(AprilTagConstants.REEF_CD_TAGID).pose.getTranslation();
-            var translationEF = aprilTagMap.get(AprilTagConstants.REEF_EF_TAGID).pose.getTranslation();
-            var translationGH = aprilTagMap.get(AprilTagConstants.REEF_GH_TAGID).pose.getTranslation();
-            var translationIJ = aprilTagMap.get(AprilTagConstants.REEF_IJ_TAGID).pose.getTranslation();
-            var translationKL = aprilTagMap.get(AprilTagConstants.REEF_KL_TAGID).pose.getTranslation();
-            reefCenterTranslation = new Translation2d(
-                (translationAB.getX() + translationCD.getX() + translationEF.getX() + translationGH.getX() + translationIJ.getX() + translationKL.getX()) / 6,
-                (translationAB.getY() + translationCD.getY() + translationEF.getY() + translationGH.getY() + translationIJ.getY() + translationKL.getY()) / 6
-            );
+        var translationAB = aprilTagMap.get(AprilTagConstants.REEF_AB_TAGID).pose.getTranslation();
+        var translationCD = aprilTagMap.get(AprilTagConstants.REEF_CD_TAGID).pose.getTranslation();
+        var translationEF = aprilTagMap.get(AprilTagConstants.REEF_EF_TAGID).pose.getTranslation();
+        var translationGH = aprilTagMap.get(AprilTagConstants.REEF_GH_TAGID).pose.getTranslation();
+        var translationIJ = aprilTagMap.get(AprilTagConstants.REEF_IJ_TAGID).pose.getTranslation();
+        var translationKL = aprilTagMap.get(AprilTagConstants.REEF_KL_TAGID).pose.getTranslation();
+        reefCenterTranslation = new Translation2d(
+            (translationAB.getX() + translationCD.getX() + translationEF.getX() + translationGH.getX() + translationIJ.getX() + translationKL.getX()) / 6,
+            (translationAB.getY() + translationCD.getY() + translationEF.getY() + translationGH.getY() + translationIJ.getY() + translationKL.getY()) / 6
+        );
 
-            success = success && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_AB_TAGID, "REEF_AB_LINEUP")
-                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_CD_TAGID, "REEF_CD_LINEUP")
-                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_EF_TAGID, "REEF_EF_LINEUP")
-                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_GH_TAGID, "REEF_GH_LINEUP")
-                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_IJ_TAGID, "REEF_IJ_LINEUP")
-                && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_KL_TAGID, "REEF_KL_LINEUP");
-        }
+        aprilTagFieldLayoutSuccess = aprilTagFieldLayoutSuccess && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_AB_TAGID, "REEF_AB_LINEUP")
+            && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_CD_TAGID, "REEF_CD_LINEUP")
+            && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_EF_TAGID, "REEF_EF_LINEUP")
+            && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_GH_TAGID, "REEF_GH_LINEUP")
+            && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_IJ_TAGID, "REEF_IJ_LINEUP")
+            && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_KL_TAGID, "REEF_KL_LINEUP");
     }
 
     public static final class DynamicCommand extends Command {
@@ -142,18 +149,19 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     public static enum RelativeReefLocation {
-        AB(AprilTagConstants.REEF_AB_TAGID),
-        CD(AprilTagConstants.REEF_CD_TAGID),
-        EF(AprilTagConstants.REEF_EF_TAGID),
-        GH(AprilTagConstants.REEF_GH_TAGID),
-        IJ(AprilTagConstants.REEF_IJ_TAGID),
-        KL(AprilTagConstants.REEF_KL_TAGID);
+        AB,
+        CD,
+        EF,
+        GH,
+        IJ,
+        KL;
 
         private int m_tagID;
-        private Translation2d m_translation;
+        private Translation2d m_translation = null;
         private Rotation2d m_rotation;
         private RelativeReefLocation m_next;
         private RelativeReefLocation m_previous;
+        private Pose2d m_pose;
 
         static {
             RelativeReefLocation first = AB;
@@ -168,11 +176,33 @@ public class CameraSubsystem extends SubsystemBase {
             }
         }
 
-        RelativeReefLocation(int tagID) {
-            m_tagID = tagID;
-            final Pose2d pose = aprilTagMap.get(tagID).pose.toPose2d();
-            m_translation = pose.getTranslation();
-            m_rotation = pose.getRotation();
+        public void update() {
+            switch (this) {
+                case AB:
+                    m_tagID = Constants.AprilTagConstants.REEF_AB_TAGID;
+                    break;
+                case CD:
+                    m_tagID = Constants.AprilTagConstants.REEF_CD_TAGID;
+                    break;
+                case EF:
+                    m_tagID = Constants.AprilTagConstants.REEF_EF_TAGID;
+                    break;
+                case GH:
+                    m_tagID = Constants.AprilTagConstants.REEF_GH_TAGID;
+                    break;
+                case IJ:
+                    m_tagID = Constants.AprilTagConstants.REEF_IJ_TAGID;
+                    break;
+                case KL:
+                    m_tagID = Constants.AprilTagConstants.REEF_KL_TAGID;
+                    break;
+
+                default:
+                    break;
+            }
+            m_pose = aprilTagMap.get(m_tagID).pose.toPose2d();
+            m_translation = m_pose.getTranslation();
+            m_rotation = m_pose.getRotation();
         }
 
         public int getTagID() {
@@ -184,6 +214,10 @@ public class CameraSubsystem extends SubsystemBase {
         }
         public RelativeReefLocation getPrevious() {
             return m_previous;
+        }
+
+        public Pose2d getPose() {
+            return m_pose;
         }
     }
 
@@ -198,6 +232,7 @@ public class CameraSubsystem extends SubsystemBase {
     private Pose2d m_cachedPoseEstimate;
 
     private boolean m_insideReefZone = false;
+    private boolean m_canAutoAdjust = false;
 
     private final StructPublisher<Pose2d> swervePosePublisher = NetworkTableInstance.getDefault()
         .getStructTopic("MyPose", Pose2d.struct).publish();
@@ -303,17 +338,28 @@ public class CameraSubsystem extends SubsystemBase {
         return true;
     }
 
-    public void updateInsideReefZone(Translation2d robotTranslation) {
-        // final RobotContainer robotContainer = RobotContainer.getSingleton();
+    private void updateDistanceBooleans(Translation2d robotTranslation) {
+        if (!aprilTagFieldLayoutSuccess)
+            return;
+
         final double distance = robotTranslation.getDistance(reefCenterTranslation);
         SmartDashboard.putNumber("ReefZoneDistance", distance);
         final boolean insideReefZone = distance <= AprilTagConstants.INSIDE_REEF_ZONE_THRESHOLD;
+        final boolean canAutoAdjust = distance <= AprilTagConstants.AUTO_ADJUST_THRESHOLD;
         if (insideReefZone != m_insideReefZone) {
             SmartDashboard.putBoolean("InsideReefZone", insideReefZone);
-            // set field centric to be the opposite of if we're in the reef zone
-            // robotContainer.setFieldCentric(m_insideReefZone); // optimization: m_insideReefZone should be the opposite
             m_insideReefZone = insideReefZone;
         }
+        if (canAutoAdjust != m_canAutoAdjust) {
+            SmartDashboard.putBoolean("CanAutoAdjust", canAutoAdjust);
+            m_canAutoAdjust = canAutoAdjust;
+        }
+    }
+    public boolean getInsideReefZone() {
+        return m_insideReefZone;
+    }
+    public boolean getCanAutoAdjust() {
+        return m_canAutoAdjust;
     }
 
     @Override
@@ -328,7 +374,7 @@ public class CameraSubsystem extends SubsystemBase {
         }
 
         final Translation2d robotTranslation = m_cachedPoseEstimate.getTranslation();
-        updateInsideReefZone(robotTranslation);
+        updateDistanceBooleans(robotTranslation);
 
         swervePosePublisher.set(m_cachedPoseEstimate);
     }
@@ -351,14 +397,21 @@ public class CameraSubsystem extends SubsystemBase {
         return result;
     }
 
+    public Translation2d getReefTagDirectionVector(Translation2d targetTagTranslation) {
+        Translation2d directionVector = targetTagTranslation.minus(reefCenterTranslation); // get vector from center of reef to tag
+        final double directionVectorMagnitude = Math.sqrt(Math.pow(directionVector.getX(), 2) + Math.pow(directionVector.getY(), 2)); // get magnitude
+        directionVector = new Translation2d(directionVector.getX() / directionVectorMagnitude, directionVector.getY() / directionVectorMagnitude); // normalize
+        return directionVector;
+    }
     public Command getPathCommandFromReefTag(RelativeReefLocation reefLocation) {
+        if (!aprilTagFieldLayoutSuccess || reefLocation.m_translation == null)
+            return Commands.none();
+
         final double offset = Units.inchesToMeters(25);
 
         // this code gets the target april tag position and applies a certain offset away from the reef
         final Translation2d targetTagTranslation = reefLocation.m_translation;
-        Translation2d directionVector = targetTagTranslation.minus(reefCenterTranslation); // get vector from center of reef to tag
-        final double directionVectorMagnitude = Math.sqrt(Math.pow(directionVector.getX(), 2) + Math.pow(directionVector.getY(), 2)); // get magnitude
-        directionVector = new Translation2d(directionVector.getX() / directionVectorMagnitude, directionVector.getY() / directionVectorMagnitude); // normalize
+        final Translation2d directionVector = getReefTagDirectionVector(targetTagTranslation);
 
         Pose2d targetPose = new Pose2d(
             new Translation2d(targetTagTranslation.getX() + directionVector.getX() * offset, targetTagTranslation.getY() + directionVector.getY() * offset),

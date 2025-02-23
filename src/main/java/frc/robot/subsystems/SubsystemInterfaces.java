@@ -5,8 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.RobotState.DESIRED_CONTROL_TYPE;
+import frc.robot.RobotState.DesiredControlType;
 
 public class SubsystemInterfaces {
     private static interface GenericInterface {
@@ -17,8 +16,7 @@ public class SubsystemInterfaces {
         public static enum ElevatorState {
             HOME,
             IDLE,
-            SCORE,
-            CORAL_STATION
+            TARGET,
         }
 
         public void setAutomaticState(ElevatorState desiredState);
@@ -36,7 +34,7 @@ public class SubsystemInterfaces {
         public void incrementManualPosition(double value);
         public void resetManualPosition();
 
-        public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType);
+        public void setDesiredControlType(DesiredControlType desiredControlType);
 
         public boolean getIsAtTargetPosition();
 
@@ -51,8 +49,7 @@ public class SubsystemInterfaces {
     public static interface GantrySubsystemInterface extends GenericInterface {
         public static enum GantryState {
             IDLE,
-            SCORE,
-            CORAL_STATION
+            TARGET,
         }
         public void setAutomaticState(GantryState desiredState);
 
@@ -68,18 +65,17 @@ public class SubsystemInterfaces {
         public void incrementManualPosition(double value);
         public void resetManualPosition();
 
-        public void setDesiredControlType(DESIRED_CONTROL_TYPE desiredControlType);
+        public void setDesiredControlType(DesiredControlType desiredControlType);
 
         public void resetMotorPosition();
 
         public boolean getIsAtTargetPosition();
+        public boolean getScoreExitSensorTripped();
 
         public Command getManualLeftCommand();
         public Command getManualRightCommand();
     }
 
     public static interface IntakeOuttakeSubsystemInterface extends GenericInterface {
-        public Command getOutCommand();
-        public Command getInCommand();
     }
 }

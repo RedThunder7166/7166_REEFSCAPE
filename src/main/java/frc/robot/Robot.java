@@ -14,13 +14,15 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   public Robot() {
+    RobotState.updateState(null);
     m_robotContainer = new RobotContainer();
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
-    RobotState.updateNetworkTables();
+    RobotState.updateState(m_robotContainer);
+    m_robotContainer.robotPeriodic();
   }
 
   @Override
