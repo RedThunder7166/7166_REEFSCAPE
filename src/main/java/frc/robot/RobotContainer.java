@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import frc.robot.Constants.GantryConstants;
 import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.commands.AutomaticCommands;
 import frc.robot.controls.DRIVER_CONTROLS;
@@ -32,9 +31,11 @@ import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
+import frc.robot.subsystems.IntakeActuatorSubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.IntakeActuatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
 
 public class RobotContainer {
@@ -56,24 +57,12 @@ public class RobotContainer {
     private final ElevatorSubsystemInterface m_elevatorSubsystem;
     private final GantrySubsystemInterface m_gantrySubsystem;
     private final IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
+    private final IntakeActuatorSubsystemInterface m_intakeActuatorSubsystem;
 
     private Command createLocalizeToReefCommand() {
         return new CameraSubsystem.DynamicCommand(() -> {
             return m_cameraSubsystem.getPathCommandFromReefTag(m_targetReefLocation);
-        })
-        /*.andThen(Commands.run(() -> {
-            // FIXME: TEST THIS PLEASE; NOTE THAT .andThen BREAKS THINGS (wont stop after letting go of button)
-            // m_robotCentricRight = false;
-            // m_robotCentricLeft = false;
-            // var reefTargetHorizontalDistance = RobotState.getReefTargetHorizontalDistance();
-            // if (reefTargetHorizontalDistance.isPresent()) {
-            //     double distance = reefTargetHorizontalDistance.get();
-            //     if (Math.abs(distance) < 0.05) ;
-            //     else if (distance < 0) m_robotCentricRight = true;
-            //     else m_robotCentricLeft = true;
-            // }
-            
-        }, m_driveSubsystem))*/;
+        });
     }
     private Command createScoreCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
@@ -91,7 +80,7 @@ public class RobotContainer {
             public void end(boolean isInterrupted) {
                 RobotState.setWantsToScore(false);
             }
-        });
+        }).andThen(Commands.waitSeconds(Constants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
     private Command createPickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
@@ -122,19 +111,22 @@ public class RobotContainer {
         m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
         m_gantrySubsystem = GantrySubsystem.getSingleton();
         m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
+        m_intakeActuatorSubsystem = IntakeActuatorSubsystem.getSingleton();
 
         m_driveSubsystem.ensureThisFileHasBeenModified();
 
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
-        NamedCommands.registerCommand("PositionCoralStation", AutomaticCommands.positionCoralStation);
+        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createScoreCommand(TargetScorePosition.CORAL_STATION));
 
-        NamedCommands.registerCommand("PositionL1", AutomaticCommands.createScoreCommand(TargetScorePosition.L1));
-        NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createScoreCommand(TargetScorePosition.L2_L));
-        NamedCommands.registerCommand("PositionL2_R", AutomaticCommands.createScoreCommand(TargetScorePosition.L2_R));
-        NamedCommands.registerCommand("PositionL3_L", AutomaticCommands.createScoreCommand(TargetScorePosition.L3_L));
-        NamedCommands.registerCommand("PositionL3_R", AutomaticCommands.createScoreCommand(TargetScorePosition.L3_R));
-        NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.createScoreCommand(TargetScorePosition.L4_L));
-        NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createScoreCommand(TargetScorePosition.L4_R));
+        NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
+        NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
+        NamedCommands.registerCommand("PositionL2_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_R));
+        NamedCommands.registerCommand("PositionL3_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_L));
+        NamedCommands.registerCommand("PositionL3_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_R));
+        NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_L));
+        NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_R));
+
+        NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
 
         NamedCommands.registerCommand("Score", createScoreCommand());
         NamedCommands.registerCommand("Pickup", createPickupCommand());
@@ -230,21 +222,16 @@ public class RobotContainer {
 
         DRIVER_CONTROLS.localizeToReef.whileTrue(createLocalizeToReefCommand());
 
-        DRIVER_CONTROLS.TEMPORARY_resetGantryPosition.onTrue(m_gantrySubsystem.addToCommandRequirements(new InstantCommand(() -> {
-            m_gantrySubsystem.resetMotorPosition();
-            m_gantrySubsystem.resetManualPosition();
-        })));
-
         // OPERATOR CONTROLS
 
-        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(createPickupCommand());
-        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runEnd(() -> {
+        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runEnd(() -> {
             RobotState.startIntake(true);
         }, () -> {
             RobotState.stopIntake();
         })));
+        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCommand());
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.positionCoralStation);
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.CORAL_STATION));
 
         OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L1));
         OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L2_L));
@@ -282,8 +269,20 @@ public class RobotContainer {
 
     public void robotPeriodic() {
         final Pose2d robotPose = m_driveSubsystem.getCustomEstimatedPose();
-        final Pose2d targetPose = m_targetReefLocation.getPose(); // FIXME: this should be closest tag, not target tag
+        Pose2d targetPose = m_targetReefLocation.getPose();
         if (targetPose != null) {
+            double closest_distance = 1000;
+            for (var location : RelativeReefLocation.values()) {
+                var pose = location.getPose();
+                if (pose == null)
+                    continue;
+                final double distance = pose.getTranslation().getDistance(robotPose.getTranslation());
+                if (distance < closest_distance) {
+                    closest_distance = distance;
+                    targetPose = pose;
+                }
+            }
+
             final Translation2d targetCentricTranslation = robotPose.getTranslation().minus(targetPose.getTranslation())
                 .rotateBy(targetPose.getRotation().unaryMinus());
             final double horizontalDifference = targetCentricTranslation.getY();

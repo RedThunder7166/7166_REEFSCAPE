@@ -95,8 +95,8 @@ public class CameraSubsystem extends SubsystemBase {
         var translationIJ = aprilTagMap.get(AprilTagConstants.REEF_IJ_TAGID).pose.getTranslation();
         var translationKL = aprilTagMap.get(AprilTagConstants.REEF_KL_TAGID).pose.getTranslation();
         reefCenterTranslation = new Translation2d(
-            (translationAB.getX() + translationCD.getX() + translationEF.getX() + translationGH.getX() + translationIJ.getX() + translationKL.getX()) / 6,
-            (translationAB.getY() + translationCD.getY() + translationEF.getY() + translationGH.getY() + translationIJ.getY() + translationKL.getY()) / 6
+            (translationAB.getX() + translationCD.getX() + translationEF.getX() + translationGH.getX() + translationIJ.getX() + translationKL.getX()) / 6d,
+            (translationAB.getY() + translationCD.getY() + translationEF.getY() + translationGH.getY() + translationIJ.getY() + translationKL.getY()) / 6d
         );
 
         aprilTagFieldLayoutSuccess = aprilTagFieldLayoutSuccess && tryToMapAprilTagAndLineUp(AprilTagConstants.REEF_AB_TAGID, "REEF_AB_LINEUP")
@@ -422,7 +422,7 @@ public class CameraSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("PATHFINDING_POSEY", targetPose.getY());
 
         PathConstraints constraints = new PathConstraints(
-                3.0, 4.0,
+                3.0, 2,
                 Units.degreesToRadians(540), Units.degreesToRadians(720));
 
         Command result = AutoBuilder.pathfindToPose(targetPose,

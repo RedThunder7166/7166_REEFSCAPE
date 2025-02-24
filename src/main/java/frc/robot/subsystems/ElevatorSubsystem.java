@@ -569,7 +569,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     @Override
     public Command getTempHoldPositionCommand() {
         return run(() -> {
-            m_leaderMotor.setControl(new DutyCycleOut(m_kg / 12));
+            m_leaderMotor.setControl(new DutyCycleOut(m_kg / 12d));
         });
     }
 

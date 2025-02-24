@@ -201,7 +201,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         motionMagicConfigs.MotionMagicCruiseVelocity = 40;
         motionMagicConfigs.MotionMagicAcceleration = 120;
 
-        // 54 / 12
+        motorConfig.Feedback.SensorToMechanismRatio = 54d / 12d;
 
         OurUtils.tryApplyConfig(m_gantryMotor, motorConfig);
 
@@ -210,7 +210,8 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         OurUtils.tryApplyConfig(m_scoreMotor, scoreMotorConfig);
 
-        // m_motor.setPosition(0);
+        resetManualPosition();
+        resetMotorPosition();
     }
 
     @Override
@@ -361,14 +362,13 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 break;
             default:
                 double position = m_position.m_position;
-                var reefTargetHorizontalDistance = RobotState.getReefTargetHorizontalDistance();
-                if (reefTargetHorizontalDistance.isPresent()) {
-                    double distance = reefTargetHorizontalDistance.get() + RobotState.reefTargetHorizontalDistanceOffset;
-                    distance += GantryConstants.LEFT_RIGHT_OFFSET;
-                    double desiredPosition = position - (distance * GantryConstants.METERS_TO_UNIT) + GantryConstants.LEFT_RIGHT_OFFSET;
-                    if (desiredPosition >= GantryConstants.MIN_POSITION_ROTATIONS && desiredPosition <= GantryConstants.MAX_POSITION_ROTATIONS)
-                        position = desiredPosition;
-                }
+                // var reefTargetHorizontalDistance = RobotState.getReefTargetHorizontalDistance();
+                // if (reefTargetHorizontalDistance.isPresent()) {
+                //     double distance = reefTargetHorizontalDistance.get() + RobotState.reefTargetHorizontalDistanceOffset;
+                //     double desiredPosition = position - (distance * GantryConstants.METERS_TO_UNIT);
+                //     if (desiredPosition >= GantryConstants.MIN_POSITION_ROTATIONS && desiredPosition <= GantryConstants.MAX_POSITION_ROTATIONS)
+                //         position = desiredPosition;
+                // }
                 desiredControl = m_positionControl.withPosition(position);
             break;
         }
@@ -379,7 +379,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_gantryMotor.setControl(desiredControl);
     }
     private void handleManual() {
-        final double increment = 0.5;
+        final double increment = 0.1;
 
         switch (m_manualDirection) {
             case NONE:
@@ -393,7 +393,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         }
 
         m_gantryMotor.setControl(m_positionControl.withPosition(m_manualPosition));
-        // m_motor.setControl(m_brake);
     }
 
     private void handleScoreMotor() {
@@ -418,14 +417,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         if (intakeState == IntakeState.OUT) {
             targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
         } else {
-            // boolean active = intakeState != IntakeState.IDLE || RobotState.getTargetScorePosition() != TargetScorePosition.NONE;
-            // if (active && !m_scoreEnterSensorTripped)
-            //     targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_BACKWARD_OUTPUT);
-            // else if (m_elevatorClearanceSensorTripped)
-            //     targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
-            // else
-            //     targetRequest = m_brake;
-
             TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
 
             if (m_elevatorClearanceSensorTripped)

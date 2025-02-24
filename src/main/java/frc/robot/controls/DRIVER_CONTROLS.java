@@ -33,6 +33,4 @@ public final class DRIVER_CONTROLS {
     public static final Trigger localizeToReef = driverController.b();
     public static final Trigger decrementTargetReefLocation = driverController.leftBumper();
     public static final Trigger incrementTargetReefLocation = driverController.rightBumper();
-
-    public static final Trigger TEMPORARY_resetGantryPosition = driverController.x();
 }

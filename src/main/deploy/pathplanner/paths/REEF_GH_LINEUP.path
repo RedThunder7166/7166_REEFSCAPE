@@ -45,7 +45,7 @@
     "rotation": -179.2388918132391
   },
   "reversed": false,
-  "folder": null,
+  "folder": "LINEUP",
   "idealStartingState": {
     "velocity": 0,
     "rotation": -179.42706130231645

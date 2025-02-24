@@ -51,7 +51,6 @@ public class IntakeOuttakeSubsystem extends SubsystemBase implements IntakeOutta
     
     @Override
     public void periodic() {
-        // TODO: motor should be controlled entirely through sensors, not pure intake state
         ControlRequest targetRequest = m_brake;
         switch (RobotState.getIntakeState()) {
             case IDLE:

@@ -4,6 +4,7 @@
   "holonomicMode": true,
   "pathFolders": [
     "BargeZoneEscape",
+    "LINEUP",
     "testing"
   ],
   "autoFolders": [],
@@ -12,7 +13,7 @@
   "defaultMaxAngVel": 540.0,
   "defaultMaxAngAccel": 720.0,
   "defaultNominalVoltage": 12.0,
-  "robotMass": 45.948907,
+  "robotMass": 58.6,
   "robotMOI": 6.883,
   "robotTrackwidth": 0.546,
   "driveWheelRadius": 0.048,

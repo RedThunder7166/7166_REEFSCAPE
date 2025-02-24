@@ -18,20 +18,19 @@ import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.ElevatorState;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
-import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryState;
 
 public class AutomaticCommands {
+    private static TargetScorePosition m_targetScorePosition = RobotState.getTargetScorePosition();
+
     private static class AutomaticGoToPositionCommand extends Command {
         private final ElevatorSubsystemInterface m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
         private final GantrySubsystemInterface m_gantrySubsystem = GantrySubsystem.getSingleton();
 
-        private final TargetScorePosition m_position;
         private final ElevatorState m_elevatorState;
         private final GantryState m_gantryState;
 
-        public AutomaticGoToPositionCommand(TargetScorePosition position, ElevatorState elevatorState, GantryState gantryState) {
-            m_position = position;
+        public AutomaticGoToPositionCommand(ElevatorState elevatorState, GantryState gantryState) {
             m_elevatorState = elevatorState;
             m_gantryState = gantryState;
 
@@ -41,7 +40,7 @@ public class AutomaticCommands {
 
         @Override
         public void initialize() {
-            RobotState.setTargetScorePosition(m_position);
+            RobotState.setTargetScorePosition(m_targetScorePosition);
 
             m_elevatorSubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
             m_gantrySubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
@@ -62,62 +61,33 @@ public class AutomaticCommands {
         public void end(boolean isInterrupted) { }
     }
 
-    private static Command createAutomaticGoToPositionCommand(TargetScorePosition position, ElevatorState elevatorState, GantryState gantryState) {
-        return new AutomaticGoToPositionCommand(position, elevatorState, gantryState)
+
+    private static Command createAutomaticGoToPositionCommand(ElevatorState elevatorState, GantryState gantryState) {
+        return new AutomaticGoToPositionCommand(elevatorState, gantryState)
             .withTimeout(Constants.AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS);
     }
 
+    public static Command createSetTargetScorePositionCommand(TargetScorePosition targetScorePosition) {
+        return new InstantCommand(() -> {
+            m_targetScorePosition = targetScorePosition;
+        });
+    }
+    public static Command createGoToPositionCommand() {
+        return createAutomaticGoToPositionCommand(ElevatorState.TARGET, GantryState.TARGET);
+    }
+
+    public static Command createScoreCommand(TargetScorePosition position) {
+        return createSetTargetScorePositionCommand(position).andThen(createGoToPositionCommand());
+    }
+
     public static final Command positionNONE = createAutomaticGoToPositionCommand(
-        TargetScorePosition.NONE,
         ElevatorState.IDLE,
         GantryState.IDLE
     );
-    public static final Command positionCoralStation = createAutomaticGoToPositionCommand(
-        TargetScorePosition.CORAL_STATION,
-        ElevatorState.TARGET,
-        GantryState.TARGET
-    );
-
-    public static Command createScoreCommand(TargetScorePosition position) {
-        return createAutomaticGoToPositionCommand(
-            position,
-            ElevatorState.TARGET,
-            GantryState.TARGET
-        );
-    }
 
     public static Command createLocalizeToReefCommand(RelativeReefLocation targetLocation) {
         return new CameraSubsystem.DynamicCommand(() -> {
             return CameraSubsystem.getSingleton().getPathCommandFromReefTag(targetLocation);
         });
-    }
-
-    public static class IntakeCommand extends Command {
-        IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
-        public IntakeCommand(IntakeOuttakeSubsystemInterface intakeOuttakeSubsystem) {
-            m_intakeOuttakeSubsystem = intakeOuttakeSubsystem;
-
-            m_intakeOuttakeSubsystem.addToCommandRequirements(this);
-        }
-
-        @Override
-        public void initialize() {
-
-        }
-
-        @Override
-        public void execute() {
-            
-        }
-
-        @Override
-        public boolean isFinished() {
-            return false;
-        }
-
-        @Override
-        public void end(boolean isInterrupted) {
-            
-        }
     }
 }

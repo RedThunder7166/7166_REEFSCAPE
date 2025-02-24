@@ -121,9 +121,9 @@ public final class RobotState {
         wantsToScore = wantsToScoreIn;
     }
 
-    public static final double reefTargetHorizontalDistanceOffset = 0.056;
+    public static final double reefTargetHorizontalDistanceOffset = 0; // 0.056
 
-    private static Optional<Double> reefTargetHorizontalDistance;
+    private static Optional<Double> reefTargetHorizontalDistance = Optional.empty();
     public static Optional<Double> getReefTargetHorizontalDistance() {
         return reefTargetHorizontalDistance;
     }

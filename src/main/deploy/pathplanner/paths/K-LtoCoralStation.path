@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.581033457913564,
-        "y": 2.374812740299967
+        "x": 3.855,
+        "y": 5.149
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.6982124096384013,
-        "y": 2.5956499954737
+        "x": 4.379636851081594,
+        "y": 4.616072803877413
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.700872370337273,
-        "y": 2.60391654346294
+        "x": 1.672,
+        "y": 7.402
       },
       "prevControl": {
-        "x": 3.577570259422419,
-        "y": 2.3864387527717037
+        "x": 1.4888405154474942,
+        "y": 7.572154645009945
       },
       "nextControl": null,
       "isLocked": false,
@@ -31,7 +31,19 @@
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "GoToCoralStation",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "GoToCoralStation"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -42,13 +54,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 59.99999999999999
+    "rotation": -55.05819772177998
   },
   "reversed": false,
-  "folder": "LINEUP",
+  "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 61.38954033403479
+    "rotation": -61.127695120670126
   },
   "useDefaultConstraints": true
 }

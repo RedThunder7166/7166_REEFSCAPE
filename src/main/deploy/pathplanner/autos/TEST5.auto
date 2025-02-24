@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "startRightI-J"
+            "pathName": "StartE-F"
           }
         },
         {
@@ -38,7 +38,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "I-JtoCoralStation"
+            "pathName": "E-FtoCoralStation"
           }
         },
         {
@@ -63,7 +63,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "stationToK-L"
+            "pathName": "CoralStationtoC-D"
           }
         },
         {

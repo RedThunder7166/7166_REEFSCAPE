@@ -47,18 +47,18 @@ public class Constants {
         public static final int SCORE_ENTER_SENSOR_ID = 0;
         public static final int SCORE_EXIT_SENSOR_ID = 1;
 
-        public static final double UNIT_TO_METERS = (0.403225 / 20.247);
-        public static final double METERS_TO_UNIT = 1 / UNIT_TO_METERS;
+        public static final double MIN_POSITION_ROTATIONS = 0;
+        public static final double MAX_POSITION_ROTATIONS = 4.500732421875d;
 
-        public static final double MIN_POSITION_ROTATIONS = -9.595;
-        public static final double MAX_POSITION_ROTATIONS = 8.797;
-        // public static final double LEFT_RIGHT_OFFSET = MAX_POSITION_ROTATIONS + MIN_POSITION_ROTATIONS; // only works when max is + and min is -
+        public static final double UNIT_TO_METERS = (0.4064d / MAX_POSITION_ROTATIONS);
+        public static final double METERS_TO_UNIT = 1d / UNIT_TO_METERS;
+
         // public static final double LEFT_RIGHT_OFFSET = Units.inchesToMeters(2);
         public static final double LEFT_RIGHT_OFFSET = 0;
 
-        public static final double CORAL_STATION_POSITION = 0;
-        public static final double REEF_LEFT_POSITION = -8.220703125;
-        public static final double REEF_RIGHT_POSITION = 8.279296875;
+        public static final double CORAL_STATION_POSITION = Units.inchesToMeters(8) * METERS_TO_UNIT;
+        public static final double REEF_LEFT_POSITION = Units.inchesToMeters(2) * METERS_TO_UNIT;
+        public static final double REEF_RIGHT_POSITION = Units.inchesToMeters(14) * METERS_TO_UNIT;
 
         // FIXME: GANTRY POSITION ERROR THRESHOLD
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
@@ -75,6 +75,15 @@ public class Constants {
 
         public static final double CRAWL_FORWARD_OUTPUT = 0.11;
         public static final double CRAWL_BACKWARD_OUTPUT = -CRAWL_FORWARD_OUTPUT;
+    }
+
+    public static final class IntakeActuatorConstants {
+        public static final boolean REAL = true;
+
+        public static final int MOTOR_ID = 54;
+
+        public static final double MIN_POSITION_ROTATIONS = 0;
+        public static final double MAX_POSITION_ROTATIONS = 0.119;
     }
 
     public static final class AprilTagConstants {
@@ -118,5 +127,6 @@ public class Constants {
     }
 
     // FIXME: AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS; should be slightly above actual time needed
-    public static final double AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS = 3;
+    public static final double AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS = 2;
+    public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.25;
 }

@@ -78,4 +78,6 @@ public class SubsystemInterfaces {
 
     public static interface IntakeOuttakeSubsystemInterface extends GenericInterface {
     }
+    public static interface IntakeActuatorSubsystemInterface extends GenericInterface {
+    }
 }
