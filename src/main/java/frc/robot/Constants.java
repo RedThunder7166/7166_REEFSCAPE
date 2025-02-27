@@ -21,18 +21,16 @@ public class Constants {
         public static final int LEADER_MOTOR_ID = 31; // left
         public static final int FOLLOWER_MOTOR_ID = 32; // right
 
-        public static final double MIN_POSITION_ROTATIONS = 0.01;
+        public static final double MIN_POSITION_ROTATIONS = 0;
         public static final double MAX_POSITION_ROTATIONS = 4.50;
 
-        // TODO: ideally, home and coral station are the same
-        // FIXME: ELEVATOR HOME POSITION
         public static final double HOME_POSITION = MIN_POSITION_ROTATIONS;
-        // FIXME: ELEVATOR CORAL STATION POSITION
         public static final double CORAL_STATION_POSITION = HOME_POSITION;
 
+        // TODO: ensure within max and min
         public static final double L1_POSITION = HOME_POSITION;
-        public static final double L2_POSITION = 0.8;
-        public static final double L3_POSITION = 2.10;
+        public static final double L2_POSITION = 0.9;
+        public static final double L3_POSITION = 2.21;
         public static final double L4_POSITION = 4.35;
 
         // FIXME: ELEVATOR POSITION ERROR THRESHOLD
@@ -56,7 +54,8 @@ public class Constants {
         // public static final double LEFT_RIGHT_OFFSET = Units.inchesToMeters(2);
         public static final double LEFT_RIGHT_OFFSET = 0;
 
-        public static final double CORAL_STATION_POSITION = Units.inchesToMeters(8) * METERS_TO_UNIT;
+        // TODO: ensure within max and min
+        public static final double CORAL_STATION_POSITION = Units.inchesToMeters(7.92) * METERS_TO_UNIT;
         public static final double REEF_LEFT_POSITION = Units.inchesToMeters(2) * METERS_TO_UNIT;
         public static final double REEF_RIGHT_POSITION = Units.inchesToMeters(14) * METERS_TO_UNIT;
 
@@ -75,15 +74,45 @@ public class Constants {
 
         public static final double CRAWL_FORWARD_OUTPUT = 0.11;
         public static final double CRAWL_BACKWARD_OUTPUT = -CRAWL_FORWARD_OUTPUT;
+
+        public static final double CRAWL_FORWARD_VOLTAGE = 1.5;
+        public static final double CRAWL_BACKWARD_VOLTAGE = -CRAWL_FORWARD_VOLTAGE;
     }
 
-    public static final class IntakeActuatorConstants {
+    public static final class ClimbConstants {
         public static final boolean REAL = true;
 
-        public static final int MOTOR_ID = 54;
+        public static final int ACTUATOR_MOTOR_ID = 54;
+        public static final int CAGE_CLIMB_MOTOR_ID = 55;
 
-        public static final double MIN_POSITION_ROTATIONS = 0;
-        public static final double MAX_POSITION_ROTATIONS = 0.119;
+        public static final double MIN_ACTUATOR_POSITION_ROTATIONS = 0;
+        public static final double MAX_ACTUATOR_POSITION_ROTATIONS = 0.110;
+        // TODO: ensure within max and min
+        public static final double CLIMB_ACTUATOR_POSITION_ROTATIONS = 0.110;
+
+        // public static final double MIN_SAFE_ACTUATOR_POSITION_ROTATIONS = 50;
+        // public static final double MAX_SAFE_ACTUATOR_POSITION_ROTATIONS = 10;
+
+        public static final double CAGE_DUTY_CYCLE_OUT = 1;
+        public static final double CAGE_DUTY_CYCLE_IN = -CAGE_DUTY_CYCLE_OUT;
+
+        public static final double MIN_CAGE_POSITION_ROTATIONS = 0;
+        public static final double MAX_CAGE_POSITION_ROTATIONS = 238.5; // 79.5
+
+        // public static final double MIN_SAFE_CAGE_POSITION_ROTATIONS = 0.09;
+        // public static final double MAX_SAFE_CAGE_POSITION_ROTATIONS = 0.05;
+    }
+
+    public static final class AlgaeHandConstants {
+        public static final boolean REAL = true;
+
+        public static final int MOTOR_ID = 56;
+
+        public static final double MIN_POSITION_ROTATIONS = 0.017;
+        public static final double MAX_POSITION_ROTATIONS = 1;
+        public static final double MIDDLE_POSITION_ROTATIONS = 0.5;
+
+        public static final double MAX_DUTY_CYCLE = 0.2;
     }
 
     public static final class AprilTagConstants {

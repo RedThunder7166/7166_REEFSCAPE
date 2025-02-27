@@ -63,7 +63,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "CoralStationtoC-D"
+            "pathName": "CoralStationToC-D"
           }
         },
         {
@@ -95,6 +95,6 @@
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "TestAutos",
   "choreoAuto": false
 }

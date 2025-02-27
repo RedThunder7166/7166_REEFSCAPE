@@ -3,16 +3,16 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.054227941176471,
-        "y": 5.21328125
+        "x": 5.129503676470588,
+        "y": 5.143382352941176
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.52158342226656,
-        "y": 5.614813241273066
+        "x": 4.596859157560677,
+        "y": 5.544914344214242
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "ReefIJ"
     },
     {
       "anchor": {
@@ -25,7 +25,7 @@
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "LeftCoralStationClose"
     }
   ],
   "rotationTargets": [],
@@ -57,10 +57,10 @@
     "rotation": -51.98105740682981
   },
   "reversed": false,
-  "folder": null,
+  "folder": "ReefToCoralStation",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -117.17864075708738
+    "rotation": -115.40771810894859
   },
   "useDefaultConstraints": true
 }

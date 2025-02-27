@@ -12,6 +12,12 @@ public class SubsystemInterfaces {
         public Command addToCommandRequirements(Command command);
     }
 
+    public static enum GenericDirection {
+        NONE,
+        OUT,
+        IN
+    }
+
     public static interface ElevatorSubsystemInterface extends GenericInterface {
         public static enum ElevatorState {
             HOME,
@@ -28,8 +34,6 @@ public class SubsystemInterfaces {
             UP,
             DOWN
         }
-        
-        public void setManualDirection(ElevatorManualDirection desiredManualDirection);
 
         public void incrementManualPosition(double value);
         public void resetManualPosition();
@@ -60,7 +64,6 @@ public class SubsystemInterfaces {
             LEFT,
             RIGHT
         }
-        public void setManualDirection(GantryManualDirection desiredManualDirection);
 
         public void incrementManualPosition(double value);
         public void resetManualPosition();
@@ -70,6 +73,7 @@ public class SubsystemInterfaces {
         public void resetMotorPosition();
 
         public boolean getIsAtTargetPosition();
+        public boolean getScoreEnterSensorTripped();
         public boolean getScoreExitSensorTripped();
 
         public Command getManualLeftCommand();
@@ -78,6 +82,21 @@ public class SubsystemInterfaces {
 
     public static interface IntakeOuttakeSubsystemInterface extends GenericInterface {
     }
-    public static interface IntakeActuatorSubsystemInterface extends GenericInterface {
+    public static interface ClimbSubsystemInterface extends GenericInterface {
+        public void incrementManualPosition(double value);
+        public void resetManualPosition();
+
+        public Command getManualActuatorOutCommand();
+        public Command getManualActuatorInCommand();
+
+        public Command getCageOutCommand();
+        public Command getCageInCommand();
+    }
+
+    public static interface AlgaeHandSubsystemInterface extends GenericInterface {
+        public Command getManualOutCommand();
+        public Command getManualInCommand();
+
+        public Command getMiddleCommand();
     }
 }

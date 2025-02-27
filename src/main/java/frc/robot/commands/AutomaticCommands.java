@@ -76,7 +76,7 @@ public class AutomaticCommands {
         return createAutomaticGoToPositionCommand(ElevatorState.TARGET, GantryState.TARGET);
     }
 
-    public static Command createScoreCommand(TargetScorePosition position) {
+    public static Command createSetAndGoToTargetScorePositionCommand(TargetScorePosition position) {
         return createSetTargetScorePositionCommand(position).andThen(createGoToPositionCommand());
     }
 
@@ -89,5 +89,60 @@ public class AutomaticCommands {
         return new CameraSubsystem.DynamicCommand(() -> {
             return CameraSubsystem.getSingleton().getPathCommandFromReefTag(targetLocation);
         });
+    }
+
+    private static class TESTAutomaticGoToPositionCommand extends Command {
+        private final ElevatorSubsystemInterface m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
+        private final GantrySubsystemInterface m_gantrySubsystem = GantrySubsystem.getSingleton();
+
+        private final ElevatorState m_elevatorState;
+        private final GantryState m_gantryState;
+
+        private boolean m_started = false;
+
+        public TESTAutomaticGoToPositionCommand(ElevatorState elevatorState, GantryState gantryState) {
+            m_elevatorState = elevatorState;
+            m_gantryState = gantryState;
+
+            m_elevatorSubsystem.addToCommandRequirements(this);
+            m_gantrySubsystem.addToCommandRequirements(this);
+        }
+
+        @Override
+        public void initialize() { }
+
+        @Override
+        public void execute() {
+            if (!m_started && RobotState.getCoralIsGood()) {
+                m_started = true;
+
+                RobotState.stopIntake();
+                RobotState.setTargetScorePosition(m_targetScorePosition);
+
+                m_elevatorSubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
+                m_gantrySubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
+
+                m_elevatorSubsystem.setAutomaticState(m_elevatorState);
+                m_gantrySubsystem.setAutomaticState(m_gantryState);
+            }
+        }
+
+        @Override
+        public boolean isFinished() {
+            return m_started && m_elevatorSubsystem.getIsAtTargetPosition() && m_gantrySubsystem.getIsAtTargetPosition();
+        }
+
+        @Override
+        public void end(boolean isInterrupted) { }
+    }
+
+
+    private static Command TESTcreateAutomaticGoToPositionCommand(ElevatorState elevatorState, GantryState gantryState) {
+        return new TESTAutomaticGoToPositionCommand(elevatorState, gantryState)
+            .withTimeout(Constants.AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS);
+    }
+
+    public static Command TESTcreateGoToPositionCommand() {
+        return TESTcreateAutomaticGoToPositionCommand(ElevatorState.TARGET, GantryState.TARGET);
     }
 }

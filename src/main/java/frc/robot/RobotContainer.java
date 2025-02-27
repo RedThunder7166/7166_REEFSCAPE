@@ -21,21 +21,25 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import frc.robot.RobotState.ClimbActuatorState;
+import frc.robot.RobotState.IntakeState;
 import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.commands.AutomaticCommands;
 import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.AlgaeHandSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
-import frc.robot.subsystems.IntakeActuatorSubsystem;
+import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
-import frc.robot.subsystems.SubsystemInterfaces.IntakeActuatorSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.AlgaeHandSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.ClimbSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
 
 public class RobotContainer {
@@ -57,7 +61,8 @@ public class RobotContainer {
     private final ElevatorSubsystemInterface m_elevatorSubsystem;
     private final GantrySubsystemInterface m_gantrySubsystem;
     private final IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
-    private final IntakeActuatorSubsystemInterface m_intakeActuatorSubsystem;
+    private final ClimbSubsystemInterface m_climbSubsystem;
+    private final AlgaeHandSubsystemInterface m_algaeHandSubsystem;
 
     private Command createLocalizeToReefCommand() {
         return new CameraSubsystem.DynamicCommand(() -> {
@@ -82,23 +87,55 @@ public class RobotContainer {
             }
         }).andThen(Commands.waitSeconds(Constants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
+    private static class PickupCommand extends Command {
+        @Override
+        public void initialize() {
+            RobotState.startIntake(IntakeState.IN);
+        }
+
+        @Override
+        public boolean isFinished() {
+            return RobotState.getCoralIsGood();
+        }
+
+        @Override
+        public void end(boolean isInterrupted) {
+            RobotState.stopIntake();
+        }
+    }
+    private static final class AutoPickupCommand extends PickupCommand {
+        private GantrySubsystemInterface m_gantrySubsystem;
+
+        public AutoPickupCommand(GantrySubsystemInterface gantrySubsystem) {
+            m_gantrySubsystem = gantrySubsystem;
+        }
+
+        @Override
+        public boolean isFinished() {
+            return m_gantrySubsystem.getScoreEnterSensorTripped();
+        }
+
+        @Override
+        public void end(boolean isInterrupted) { 
+            // do nothing: we don't want the intake to stop here; it will be stopped from auto
+        }
+    }
     private Command createPickupCommand() {
-        return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
-            @Override
-            public void initialize() {
-                RobotState.startIntake(false);
-            }
+        return m_intakeOuttakeSubsystem.addToCommandRequirements(
+            new PickupCommand()
+        );
+    }
 
-            @Override
-            public boolean isFinished() {
-                return RobotState.getCoralIsGood();
-            }
+    private Command TESTcreatePickupCommand() {
+        return m_intakeOuttakeSubsystem.addToCommandRequirements(
+            new AutoPickupCommand(m_gantrySubsystem)
+        );
+    }
 
-            @Override
-            public void end(boolean isInterrupted) {
-                RobotState.stopIntake();
-            }
-        });
+    private Command createSetClimbStateCommand(ClimbActuatorState climbState) {
+        return m_climbSubsystem.addToCommandRequirements(new InstantCommand(() -> {
+            RobotState.setClimbActuatorState(climbState);
+        }));
     }
 
     private final SendableChooser<Command> m_autoChooser;
@@ -111,12 +148,13 @@ public class RobotContainer {
         m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
         m_gantrySubsystem = GantrySubsystem.getSingleton();
         m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
-        m_intakeActuatorSubsystem = IntakeActuatorSubsystem.getSingleton();
+        m_climbSubsystem = ClimbSubsystem.getSingleton();
+        m_algaeHandSubsystem = AlgaeHandSubsystem.getSingleton();
 
         m_driveSubsystem.ensureThisFileHasBeenModified();
 
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
-        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createScoreCommand(TargetScorePosition.CORAL_STATION));
+        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.CORAL_STATION));
 
         NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
         NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
@@ -127,9 +165,11 @@ public class RobotContainer {
         NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_R));
 
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
+        // NamedCommands.registerCommand("GoToPosition", AutomaticCommands.TESTcreateGoToPositionCommand());
 
         NamedCommands.registerCommand("Score", createScoreCommand());
         NamedCommands.registerCommand("Pickup", createPickupCommand());
+        // NamedCommands.registerCommand("Pickup", TESTcreatePickupCommand());
 
         NamedCommands.registerCommand("LocalizeToReefAB", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.AB));
         NamedCommands.registerCommand("LocalizeToReefCD", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.CD));
@@ -225,21 +265,21 @@ public class RobotContainer {
         // OPERATOR CONTROLS
 
         OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runEnd(() -> {
-            RobotState.startIntake(true);
+            RobotState.startIntake(IntakeState.OUT);
         }, () -> {
             RobotState.stopIntake();
         })));
         OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCommand());
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.CORAL_STATION));
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.CORAL_STATION));
 
-        OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L1));
-        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L2_L));
-        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L2_R));
-        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L3_L));
-        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L3_R));
-        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L4_L));
-        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.createScoreCommand(TargetScorePosition.L4_R));
+        OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L1));
+        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L2_L));
+        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L2_R));
+        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L3_L));
+        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L3_R));
+        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L4_L));
+        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L4_R));
 
         OPERATOR_CONTROLS.SCORE_PIECE.whileTrue(createScoreCommand());
 
@@ -248,6 +288,24 @@ public class RobotContainer {
 
         OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.getManualLeftCommand());
         OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.getManualRightCommand());
+
+        OPERATOR_CONTROLS.GANTRY_RESET_POSITION.onTrue(new InstantCommand(() -> {
+            m_gantrySubsystem.resetManualPosition();
+            m_gantrySubsystem.resetMotorPosition();
+        }));
+
+        OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(m_climbSubsystem.getManualActuatorOutCommand());
+        OPERATOR_CONTROLS.CLIMBER_IN.whileTrue(m_climbSubsystem.getManualActuatorInCommand());
+
+        OPERATOR_CONTROLS.CLIMBER_CLIMB.whileTrue(createSetClimbStateCommand(ClimbActuatorState.CLIMB));
+        OPERATOR_CONTROLS.CLIMBER_HOME.whileTrue(createSetClimbStateCommand(ClimbActuatorState.HOME));
+
+        OPERATOR_CONTROLS.CAGE_OUT.whileTrue(m_climbSubsystem.getCageOutCommand());
+        OPERATOR_CONTROLS.CAGE_IN.whileTrue(m_climbSubsystem.getCageInCommand());
+
+        OPERATOR_CONTROLS.ALGAE_HAND_OUT.whileTrue(m_algaeHandSubsystem.getManualOutCommand());
+        // OPERATOR_CONTROLS.ALGAE_HAND_OUT.whileTrue(m_algaeHandSubsystem.getMiddleCommand());
+        OPERATOR_CONTROLS.ALGAE_HAND_IN.whileTrue(m_algaeHandSubsystem.getManualInCommand());
     }
 
     public Command getAutonomousCommand() {

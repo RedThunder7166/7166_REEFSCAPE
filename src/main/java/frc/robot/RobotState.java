@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.lang.StackWalker.Option;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -63,6 +62,8 @@ public final class RobotState {
         targetScorePositionPublisher.set(targetScorePosition.toString());
         return true;
     }
+    // update nt
+    { setTargetScorePosition(targetScorePosition); }
 
     public static enum DesiredControlType {
         AUTOMATIC,
@@ -86,12 +87,33 @@ public final class RobotState {
         intakeState = intakeStateIn;
         intakeStatePublisher.set(intakeState.toString());
     }
-    public static void startIntake(boolean isForward) {
-        setIntakeState(isForward ? IntakeState.OUT : IntakeState.IN);
+    public static void startIntake(IntakeState intakeState) {
+        setIntakeState(intakeState);
     }
     public static void stopIntake() {
         setIntakeState(IntakeState.IDLE);
     }
+    // update nt
+    { setIntakeState(intakeState); }
+
+    public static enum ClimbActuatorState {
+        MANUAL,
+        HOME,
+        CLIMB
+    }
+
+    private static ClimbActuatorState climbActuatorState = ClimbActuatorState.HOME;
+    private static final StringPublisher climbActuatorStatePublisher = robotStateTable.getStringTopic("ClimbActuatorState").publish();
+
+    public static ClimbActuatorState getClimbActuatorState() {
+        return climbActuatorState;
+    }
+    public static void setClimbActuatorState(ClimbActuatorState climbStateIn) {
+        climbActuatorState = climbStateIn;
+        climbActuatorStatePublisher.set(climbActuatorState.toString());
+    }
+    // update nt
+    { setClimbActuatorState(climbActuatorState); }
 
     private static boolean elevatorHasClearance = true;
     private static final BooleanPublisher elevatorHasClearancePublisher = robotStateTable.getBooleanTopic("ElevatorHasClearance").publish();
@@ -103,6 +125,8 @@ public final class RobotState {
         elevatorHasClearance = elevatorHasClearanceIn;
         elevatorHasClearancePublisher.set(elevatorHasClearance);
     }
+    // update nt
+    { setElevatorHasClearance(elevatorHasClearance); }
 
     private static boolean coralIsGood = false;
     public static boolean getCoralIsGood() {

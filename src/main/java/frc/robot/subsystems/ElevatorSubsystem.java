@@ -49,9 +49,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         public void setIdle() { }
 
         @Override
-        public void setManualDirection(ElevatorManualDirection desiredManualDirection) { }
-
-        @Override
         public void incrementManualPosition(double value) { }
 
         @Override
@@ -154,7 +151,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorAutomaticPositionRotations").publish();
 
     private ElevatorManualDirection m_manualDirection = ElevatorManualDirection.NONE;
-    @Override
     public void setManualDirection(ElevatorManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
@@ -229,8 +225,17 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         third iter:
         kG = 0.223
+        kV = 0.67
+        kA = 0.03
+        kP = 10
+
+        fourth iter:
+        kG = 0.35
+        kV = 0.67
+        kA = 0.03
+        kP = 10
      */
-    private double m_kg = 0.223;
+    private double m_kg = 0.35;
     private double m_kv = 0.67;
     private double m_ka = 0.03;
 
@@ -276,6 +281,11 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         //     .withPeakReverseVoltage(Volts.of(-8));
 
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = ElevatorConstants.MAX_POSITION_ROTATIONS;
+        motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = ElevatorConstants.MIN_POSITION_ROTATIONS;
 
         motorConfig.Feedback.SensorToMechanismRatio = 4.909;
 

@@ -25,7 +25,7 @@
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "RightCoralStationClose"
     }
   ],
   "rotationTargets": [],
@@ -45,7 +45,7 @@
     "rotation": 55.813877513624895
   },
   "reversed": false,
-  "folder": null,
+  "folder": "ReefToCoralStation",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 120.57922687248904

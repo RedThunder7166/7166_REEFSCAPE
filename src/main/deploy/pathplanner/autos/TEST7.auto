@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "StartRightI-J"
+            "pathName": "StartE-F"
           }
         },
         {
@@ -38,7 +38,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "I-JtoCoralStation"
+            "pathName": "E-FtoCoralStation"
           }
         },
         {
@@ -63,7 +63,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "CoralStationToK-L"
+            "pathName": "CoralStationToC-D"
           }
         },
         {
@@ -90,11 +90,23 @@
               }
             ]
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "C-DToCoralStation"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CoralStationToC-D"
+          }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "TestAutos",
   "choreoAuto": false
 }

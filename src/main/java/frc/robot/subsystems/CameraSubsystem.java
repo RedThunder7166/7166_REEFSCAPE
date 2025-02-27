@@ -36,7 +36,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants;
 import frc.robot.LimelightHelpers;
-import frc.robot.RobotState;
 
 public class CameraSubsystem extends SubsystemBase {
     private static CameraSubsystem singleton = null;
@@ -50,6 +49,7 @@ public class CameraSubsystem extends SubsystemBase {
     private static final String limelightOneName = "limelight-fourone";
     private static final String limelightTwoName = "limelight-threeg";
     private static final boolean useLimelightTwo = false;
+    private static final boolean useMegaTag2 = true;
 
     private static final HashMap<Integer, AprilTag> aprilTagMap = new HashMap<>();
     private static final HashMap<Integer, PathPlannerPath> aprilTagLineUpMap = new HashMap<>();
@@ -226,7 +226,6 @@ public class CameraSubsystem extends SubsystemBase {
     private static final double rangePID_P = 0.065;
     private static final double targetTagRange = -12.5;
 
-    private static final boolean useMegaTag2 = true;
     private static final boolean tunePIDWithSmartDashboard = false;
 
     private Pose2d m_cachedPoseEstimate;

@@ -10,8 +10,10 @@ import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
@@ -48,9 +50,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         public void setIdle() { }
 
         @Override
-        public void setManualDirection(GantryManualDirection desiredManualDirection) { }
-
-        @Override
         public void incrementManualPosition(double value) { }
 
         @Override
@@ -67,6 +66,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             return true;
         }
 
+        @Override
+        public boolean getScoreEnterSensorTripped() {
+            return false;
+        }
         @Override
         public boolean getScoreExitSensorTripped() {
             return false;
@@ -131,7 +134,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.robotStateTable.getDoubleTopic("GantryAutomaticPositionRotations").publish();
 
     private GantryManualDirection m_manualDirection = GantryManualDirection.NONE;
-    @Override
     public void setManualDirection(GantryManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
@@ -139,8 +141,8 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private double m_manualPosition = 0;
     private void setManualPosition(double newValue) {
-        if (newValue < GantryConstants.MIN_POSITION_ROTATIONS)
-            newValue = GantryConstants.MIN_POSITION_ROTATIONS;
+        // if (newValue < GantryConstants.MIN_POSITION_ROTATIONS)
+        //     newValue = GantryConstants.MIN_POSITION_ROTATIONS;
         if (newValue > GantryConstants.MAX_POSITION_ROTATIONS)
             newValue = GantryConstants.MAX_POSITION_ROTATIONS;
 
@@ -168,6 +170,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
+    private final VoltageOut m_voltageOut = new VoltageOut(0);
     private final NeutralOut m_brake = new NeutralOut();
 
     private final StatusSignal<Angle> m_gantryMotorPosition = m_gantryMotor.getPosition();
@@ -195,7 +198,16 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         // FIXME: tune gantry PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
         motorConfig.Slot0.kP = 6;
-        motorConfig.Slot0.kI = 0;
+
+        motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        motorConfig.CurrentLimits.StatorCurrentLimit = 20;
+        motorConfig.CurrentLimits.SupplyCurrentLimit = 30;
+
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+        motorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = GantryConstants.MAX_POSITION_ROTATIONS;
+        // motorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        // motorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = GantryConstants.MIN_POSITION_ROTATIONS;
 
         var motionMagicConfigs = motorConfig.MotionMagic;
         motionMagicConfigs.MotionMagicCruiseVelocity = 40;
@@ -210,6 +222,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         OurUtils.tryApplyConfig(m_scoreMotor, scoreMotorConfig);
 
+        // TODO: make method and do for controller
         resetManualPosition();
         resetMotorPosition();
     }
@@ -230,6 +243,11 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         return err <= GantryConstants.POSITION_ERROR_THRESHOLD;
     }
     private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("GantryIsAtTargetPosition").publish();
+
+    @Override
+    public boolean getScoreEnterSensorTripped() {
+        return m_scoreEnterSensorTripped;
+    }
 
     @Override
     public boolean getScoreExitSensorTripped() {
@@ -332,7 +350,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                         break;
 
                     case L1:
-                        // TODO: GANTRY TROUGH POSITIONS
                         setAutomaticPosition(GantryPosition.CORAL_STATION);
                         break;
 
@@ -420,7 +437,12 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
 
             if (m_elevatorClearanceSensorTripped)
-                targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
+                // if we are in automatic control and we are targeting a non-coral-station position, don't move motor
+                if (m_desiredControlType == DesiredControlType.MANUAL || (m_position == GantryPosition.CORAL_STATION || m_position == GantryPosition.IDLE))
+                    // targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
+                    targetRequest = m_voltageOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_VOLTAGE);
+                else
+                    targetRequest = m_brake;
             else if (!m_scoreEnterSensorTripped && (targetScorePosition == TargetScorePosition.NONE || targetScorePosition == TargetScorePosition.CORAL_STATION))
                 targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_BACKWARD_OUTPUT);
             else
@@ -436,7 +458,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         // boolean elevatorHasClearance = !m_elevatorClearanceSensorTripped && (m_scoreEnterSensorTripped == m_scoreExitSensorTripped);
         boolean elevatorHasClearance = !m_elevatorClearanceSensorTripped;
         RobotState.setElevatorHasClearance(elevatorHasClearance);
-        // TODO: use coralIsGood here instead
+
         if (elevatorHasClearance && RobotState.getWantsToScore())
             targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.FORWARD_OUTPUT);
 

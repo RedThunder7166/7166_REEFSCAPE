@@ -3,35 +3,47 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.10983923364872,
-        "y": 5.118
+        "x": 1.6721966911764705,
+        "y": 7.401654411764705
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.109839233648711,
-        "y": 5.118
+        "x": 2.255320947712218,
+        "y": 7.080594807735197
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "LeftCoralStationClose"
     },
     {
       "anchor": {
-        "x": 6.193239795918368,
-        "y": 5.118
+        "x": 5.129503676470588,
+        "y": 5.143382352941176
       },
       "prevControl": {
-        "x": 7.193239795918368,
-        "y": 5.118
+        "x": 4.262057186564701,
+        "y": 5.644521407648495
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "ReefIJ"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "GoToPosition",
+      "waypointRelativePos": 0.6,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "GoToPosition"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -42,13 +54,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": -115.40771810894859
   },
   "reversed": false,
-  "folder": "BargeZoneEscape",
+  "folder": "CoralStationToReef",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": -51.98105740682981
   },
   "useDefaultConstraints": true
 }
