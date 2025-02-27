@@ -47,7 +47,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
 
     private static AlgaeHandSubsystemInterface singleton = null;
 
-    public static AlgaeHandSubsystemInterface getSingleton() {
+    public static synchronized AlgaeHandSubsystemInterface getSingleton() {
         if (singleton == null)
             singleton = AlgaeHandConstants.REAL ? new AlgaeHandSubsystem() : new FakeAlgaeHandSubsystem();
         return singleton;
@@ -132,11 +132,11 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
     private final Command m_manualInCommand = makeManualCommand(GenericDirection.IN);
 
     @Override
-    public Command getManualOutCommand() {
+    public synchronized Command getManualOutCommand() {
         return m_manualOutCommand;
     }
     @Override
-    public Command getManualInCommand() {
+    public synchronized Command getManualInCommand() {
         return m_manualInCommand;
     }
 
@@ -150,7 +150,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
     }, this);
 
     @Override
-    public Command getMiddleCommand() {
+    public synchronized Command getMiddleCommand() {
         return m_middleCommand;
     }
 }

@@ -87,7 +87,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private static GantrySubsystemInterface singleton = null;
 
-    public static GantrySubsystemInterface getSingleton() {
+    public static synchronized GantrySubsystemInterface getSingleton() {
         if (singleton == null)
             singleton = GantryConstants.REAL ? new GantrySubsystem() : new FakeGantrySubsystem();
         return singleton;
@@ -101,13 +101,13 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private GantryState m_state = GantryState.IDLE;
     @Override
-    public void setAutomaticState(GantryState desiredState) {
+    public synchronized void setAutomaticState(GantryState desiredState) {
         m_state = desiredState;
     }
     private final StringPublisher m_statePublisher = RobotState.robotStateTable.getStringTopic("GantryState").publish();
 
     @Override
-    public void setIdle() {
+    public synchronized void setIdle() {
         setAutomaticState(GantryState.IDLE);
         m_state = GantryState.IDLE;
         m_position = GantryPosition.IDLE;
@@ -127,20 +127,20 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         }
     }
     private GantryPosition m_position = GantryPosition.IDLE;
-    private void setAutomaticPosition(GantryPosition desiredPosition) {
+    private synchronized void setAutomaticPosition(GantryPosition desiredPosition) {
         m_position = desiredPosition;
     }
     private final StringPublisher m_positionPublisher = RobotState.robotStateTable.getStringTopic("GantryPosition").publish();
     private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.robotStateTable.getDoubleTopic("GantryAutomaticPositionRotations").publish();
 
     private GantryManualDirection m_manualDirection = GantryManualDirection.NONE;
-    public void setManualDirection(GantryManualDirection desiredManualDirection) {
+    public synchronized void setManualDirection(GantryManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
     private final StringPublisher m_manualDirectionPublisher = RobotState.robotStateTable.getStringTopic("GantryManualDirection").publish();
 
     private double m_manualPosition = 0;
-    private void setManualPosition(double newValue) {
+    private synchronized void setManualPosition(double newValue) {
         // if (newValue < GantryConstants.MIN_POSITION_ROTATIONS)
         //     newValue = GantryConstants.MIN_POSITION_ROTATIONS;
         if (newValue > GantryConstants.MAX_POSITION_ROTATIONS)
@@ -149,18 +149,18 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_manualPosition = newValue;
     }
     @Override
-    public void incrementManualPosition(double value) {
+    public synchronized void incrementManualPosition(double value) {
         setManualPosition(m_manualPosition + value);
     }
     @Override
-    public void resetManualPosition() {
+    public synchronized void resetManualPosition() {
         setManualPosition(0);
     }
     private final DoublePublisher m_manualPositionPublisher = RobotState.robotStateTable.getDoubleTopic("GantryManualTargetPosition").publish();
 
     private DesiredControlType m_desiredControlType = DesiredControlType.AUTOMATIC;
     @Override
-    public void setDesiredControlType(DesiredControlType desiredControlType) {
+    public synchronized void setDesiredControlType(DesiredControlType desiredControlType) {
         m_desiredControlType = desiredControlType;
     }
     private final StringPublisher m_desiredControlTypePublisher = RobotState.robotStateTable.getStringTopic("GantryDesiredControlType").publish();
@@ -245,12 +245,12 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("GantryIsAtTargetPosition").publish();
 
     @Override
-    public boolean getScoreEnterSensorTripped() {
+    public synchronized boolean getScoreEnterSensorTripped() {
         return m_scoreEnterSensorTripped;
     }
 
     @Override
-    public boolean getScoreExitSensorTripped() {
+    public synchronized boolean getScoreExitSensorTripped() {
         return m_scoreExitSensorTripped;
     }
 
@@ -273,11 +273,11 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final Command m_manualRightCommand = makeManualCommand(GantryManualDirection.RIGHT);
 
     @Override
-    public Command getManualLeftCommand() {
+    public synchronized Command getManualLeftCommand() {
         return m_manualLeftCommand;
     }
     @Override
-    public Command getManualRightCommand() {
+    public synchronized Command getManualRightCommand() {
         return m_manualRightCommand;
     }
 

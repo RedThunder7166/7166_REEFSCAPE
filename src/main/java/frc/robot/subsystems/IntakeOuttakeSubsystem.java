@@ -27,7 +27,7 @@ public class IntakeOuttakeSubsystem extends SubsystemBase implements IntakeOutta
 
     private static IntakeOuttakeSubsystemInterface singleton = null;
 
-    public static IntakeOuttakeSubsystemInterface getSingleton() {
+    public static synchronized IntakeOuttakeSubsystemInterface getSingleton() {
         if (singleton == null)
             singleton = IntakeOuttakeConstants.REAL ? new IntakeOuttakeSubsystem() : new FakeIntakeOuttakeSubsystem();
         return singleton;

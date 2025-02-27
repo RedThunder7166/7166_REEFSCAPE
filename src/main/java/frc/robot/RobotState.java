@@ -52,10 +52,10 @@ public final class RobotState {
     private static TargetScorePosition targetScorePosition = TargetScorePosition.NONE;
     private static final StringPublisher targetScorePositionPublisher = robotStateTable.getStringTopic("TargetScorePosition").publish();
 
-    public static TargetScorePosition getTargetScorePosition() {
+    public static synchronized TargetScorePosition getTargetScorePosition() {
         return targetScorePosition;
     }
-    public static boolean setTargetScorePosition(TargetScorePosition desiredPosition) {
+    public static synchronized boolean setTargetScorePosition(TargetScorePosition desiredPosition) {
         // FIXME: ask subsystems if we can switch to this position; if we can't, don't set target position (or set it to NONE) and return false
         // ^ e.g: we are trying to score a piece, we are intaking a piece
         targetScorePosition = desiredPosition;
@@ -79,18 +79,18 @@ public final class RobotState {
     private static IntakeState intakeState = IntakeState.IDLE;
     private static final StringPublisher intakeStatePublisher = robotStateTable.getStringTopic("IntakeState").publish();
 
-    public static IntakeState getIntakeState() {
+    public static synchronized IntakeState getIntakeState() {
         return intakeState;
     }
 
-    private static void setIntakeState(IntakeState intakeStateIn) {
+    private static synchronized void setIntakeState(IntakeState intakeStateIn) {
         intakeState = intakeStateIn;
         intakeStatePublisher.set(intakeState.toString());
     }
-    public static void startIntake(IntakeState intakeState) {
+    public static synchronized void startIntake(IntakeState intakeState) {
         setIntakeState(intakeState);
     }
-    public static void stopIntake() {
+    public static synchronized void stopIntake() {
         setIntakeState(IntakeState.IDLE);
     }
     // update nt
@@ -105,10 +105,10 @@ public final class RobotState {
     private static ClimbActuatorState climbActuatorState = ClimbActuatorState.HOME;
     private static final StringPublisher climbActuatorStatePublisher = robotStateTable.getStringTopic("ClimbActuatorState").publish();
 
-    public static ClimbActuatorState getClimbActuatorState() {
+    public static synchronized ClimbActuatorState getClimbActuatorState() {
         return climbActuatorState;
     }
-    public static void setClimbActuatorState(ClimbActuatorState climbStateIn) {
+    public static synchronized void setClimbActuatorState(ClimbActuatorState climbStateIn) {
         climbActuatorState = climbStateIn;
         climbActuatorStatePublisher.set(climbActuatorState.toString());
     }
@@ -118,10 +118,10 @@ public final class RobotState {
     private static boolean elevatorHasClearance = true;
     private static final BooleanPublisher elevatorHasClearancePublisher = robotStateTable.getBooleanTopic("ElevatorHasClearance").publish();
 
-    public static boolean getElevatorHasClearance() {
+    public static synchronized boolean getElevatorHasClearance() {
         return elevatorHasClearance;
     }
-    public static void setElevatorHasClearance(boolean elevatorHasClearanceIn) {
+    public static synchronized void setElevatorHasClearance(boolean elevatorHasClearanceIn) {
         elevatorHasClearance = elevatorHasClearanceIn;
         elevatorHasClearancePublisher.set(elevatorHasClearance);
     }
@@ -129,38 +129,38 @@ public final class RobotState {
     { setElevatorHasClearance(elevatorHasClearance); }
 
     private static boolean coralIsGood = false;
-    public static boolean getCoralIsGood() {
+    public static synchronized boolean getCoralIsGood() {
         return coralIsGood;
     }
-    public static void setCoralIsGood(boolean coralIsGoodIn) {
+    public static synchronized void setCoralIsGood(boolean coralIsGoodIn) {
         coralIsGood = coralIsGoodIn;
     }
 
     private static boolean wantsToScore = false;
 
-    public static boolean getWantsToScore() {
+    public static synchronized boolean getWantsToScore() {
         return wantsToScore;
     }
-    public static void setWantsToScore(boolean wantsToScoreIn) {
+    public static synchronized void setWantsToScore(boolean wantsToScoreIn) {
         wantsToScore = wantsToScoreIn;
     }
 
     public static final double reefTargetHorizontalDistanceOffset = 0; // 0.056
 
     private static Optional<Double> reefTargetHorizontalDistance = Optional.empty();
-    public static Optional<Double> getReefTargetHorizontalDistance() {
+    public static synchronized Optional<Double> getReefTargetHorizontalDistance() {
         return reefTargetHorizontalDistance;
     }
-    public static void setReefTargetHorizontalDistance(double distance) {
+    public static synchronized void setReefTargetHorizontalDistance(double distance) {
         reefTargetHorizontalDistance = Optional.of(distance);
     }
-    public static void clearReefTargetHorizontalDistance() {
+    public static synchronized void clearReefTargetHorizontalDistance() {
         reefTargetHorizontalDistance = Optional.empty();
     }
 
     public static Rotation2d initialSwerveRotation = null;
 
-    public static void updateState(RobotContainer robotContainer) {
+    public static synchronized void updateState(RobotContainer robotContainer) {
         var alliance = DriverStation.getAlliance();
         if (alliance.isPresent() && alliance.get() != ALLIANCE) {
             ALLIANCE = alliance.get();

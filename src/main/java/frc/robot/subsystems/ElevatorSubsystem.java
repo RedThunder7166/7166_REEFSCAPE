@@ -95,7 +95,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
     private static ElevatorSubsystemInterface singleton = null;
 
-    public static ElevatorSubsystemInterface getSingleton() {
+    public static synchronized ElevatorSubsystemInterface getSingleton() {
         if (singleton == null)
             singleton = ElevatorConstants.REAL ? new ElevatorSubsystem() : new FakeElevatorSubsystem();
         return singleton;
@@ -104,14 +104,14 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     private ElevatorState m_state = ElevatorState.HOME;
     private ElevatorState m_desiredState = m_state;
     @Override
-    public void setAutomaticState(ElevatorState desiredState) {
+    public synchronized void setAutomaticState(ElevatorState desiredState) {
         m_desiredState = desiredState;
     }
     private final StringPublisher m_statePublisher = RobotState.robotStateTable.getStringTopic("ElevatorState").publish();
     private final StringPublisher m_desiredStatePublisher = RobotState.robotStateTable.getStringTopic("ElevatorDesiredState").publish();
 
     @Override
-    public void setIdle() {
+    public synchronized void setIdle() {
         setAutomaticState(ElevatorState.IDLE);
         m_state = ElevatorState.IDLE;
         m_position = ElevatorPosition.IDLE;
@@ -141,7 +141,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         }
     }
     private ElevatorPosition m_position = ElevatorPosition.IDLE;
-    private void setAutomaticPosition(ElevatorPosition desiredPosition) {
+    private synchronized void setAutomaticPosition(ElevatorPosition desiredPosition) {
         if (desiredPosition.m_needsElevatorClearance && !RobotState.getElevatorHasClearance())
             return;
 
@@ -151,13 +151,13 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     private final DoublePublisher m_automaticPositionRotationsPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorAutomaticPositionRotations").publish();
 
     private ElevatorManualDirection m_manualDirection = ElevatorManualDirection.NONE;
-    public void setManualDirection(ElevatorManualDirection desiredManualDirection) {
+    public synchronized void setManualDirection(ElevatorManualDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
     private final StringPublisher m_manualDirectionPublisher = RobotState.robotStateTable.getStringTopic("ElevatorManualDirection").publish();
 
     private double m_manualPosition = 0;
-    private void setManualPosition(double newValue) {
+    private synchronized void setManualPosition(double newValue) {
         if (newValue < ElevatorConstants.MIN_POSITION_ROTATIONS)
             newValue = ElevatorConstants.MIN_POSITION_ROTATIONS;
         if (newValue > ElevatorConstants.MAX_POSITION_ROTATIONS)
@@ -169,18 +169,18 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         m_manualPosition = newValue;
     }
     @Override
-    public void incrementManualPosition(double value) {
+    public synchronized void incrementManualPosition(double value) {
         setManualPosition(m_manualPosition + value);
     }
     @Override
-    public void resetManualPosition() {
+    public synchronized void resetManualPosition() {
         setManualPosition(0);
     }
     private final DoublePublisher m_manualPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorManualTargetPosition").publish();
 
     private DesiredControlType m_desiredControlType = DesiredControlType.AUTOMATIC;
     @Override
-    public void setDesiredControlType(DesiredControlType desiredControlType) {
+    public synchronized void setDesiredControlType(DesiredControlType desiredControlType) {
         m_desiredControlType = desiredControlType;
     }
     private final StringPublisher m_desiredControlTypePublisher = RobotState.robotStateTable.getStringTopic("ElevatorDesiredControlType").publish();
@@ -347,11 +347,11 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     private final Command m_manualDownCommand = makeManualCommand(ElevatorManualDirection.DOWN);
 
     @Override
-    public Command getManualUpCommand() {
+    public synchronized Command getManualUpCommand() {
         return m_manualUpCommand;
     }
     @Override
-    public Command getManualDownCommand() {
+    public synchronized Command getManualDownCommand() {
         return m_manualDownCommand;
     }
 

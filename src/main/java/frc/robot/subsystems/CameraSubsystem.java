@@ -39,7 +39,7 @@ import frc.robot.LimelightHelpers;
 public class CameraSubsystem extends SubsystemBase {
     private static CameraSubsystem singleton = null;
 
-    public static CameraSubsystem getSingleton() {
+    public static synchronized CameraSubsystem getSingleton() {
         if (singleton == null)
             singleton = new CameraSubsystem();
         return singleton;
@@ -239,7 +239,7 @@ public class CameraSubsystem extends SubsystemBase {
     private Pigeon2 m_pigeon2;
     private double m_driveMaxSpeed;
     private double m_driveMaxAngularRate;
-    public void setDriveSubsystem(CommandSwerveDrivetrain driveSubsystem, double driveMaxSpeed, double driveMaxAngularRate) {
+    public synchronized void setDriveSubsystem(CommandSwerveDrivetrain driveSubsystem, double driveMaxSpeed, double driveMaxAngularRate) {
         m_driveSubsystem = driveSubsystem;
         m_pigeon2 = m_driveSubsystem.getPigeon2();
         m_driveMaxSpeed = driveMaxSpeed;
@@ -353,10 +353,10 @@ public class CameraSubsystem extends SubsystemBase {
             m_canAutoAdjust = canAutoAdjust;
         }
     }
-    public boolean getInsideReefZone() {
+    public synchronized boolean getInsideReefZone() {
         return m_insideReefZone;
     }
-    public boolean getCanAutoAdjust() {
+    public synchronized boolean getCanAutoAdjust() {
         return m_canAutoAdjust;
     }
 

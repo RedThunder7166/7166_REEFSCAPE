@@ -61,7 +61,7 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
 
     private static ClimbSubsystemInterface singleton = null;
 
-    public static ClimbSubsystemInterface getSingleton() {
+    public static synchronized ClimbSubsystemInterface getSingleton() {
         if (singleton == null)
             singleton = ClimbConstants.REAL ? new ClimbSubsystem() : new FakeClimbSubsystem();
         return singleton;
@@ -74,12 +74,12 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     }
 
     private GenericDirection m_manualDirection = GenericDirection.NONE;
-    public void setManualActuatorDirection(GenericDirection desiredManualDirection) {
+    public synchronized void setManualActuatorDirection(GenericDirection desiredManualDirection) {
         m_manualDirection = desiredManualDirection;
     }
 
     private double m_manualActuatorPosition = 0;
-    private void setManualActuatorPosition(double newValue) {
+    private synchronized void setManualActuatorPosition(double newValue) {
         if (newValue < ClimbConstants.MIN_ACTUATOR_POSITION_ROTATIONS)
             newValue = ClimbConstants.MIN_ACTUATOR_POSITION_ROTATIONS;
         if (newValue > ClimbConstants.MAX_ACTUATOR_POSITION_ROTATIONS)
@@ -88,11 +88,11 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
         m_manualActuatorPosition = newValue;
     }
     @Override
-    public void incrementManualPosition(double value) {
+    public synchronized void incrementManualPosition(double value) {
         setManualActuatorPosition(m_manualActuatorPosition + value);
     }
     @Override
-    public void resetManualPosition() {
+    public synchronized void resetManualPosition() {
         setManualActuatorPosition(0);
     }
 
@@ -241,11 +241,11 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     private final Command m_manualActuatorInCommand = makeManualActuatorCommand(GenericDirection.IN);
 
     @Override
-    public Command getManualActuatorOutCommand() {
+    public synchronized Command getManualActuatorOutCommand() {
         return m_manualActuatorOutCommand;
     }
     @Override
-    public Command getManualActuatorInCommand() {
+    public synchronized Command getManualActuatorInCommand() {
         return m_manualActuatorInCommand;
     }
 
@@ -265,11 +265,11 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     private final Command m_cageOutCommand = makeCageCommand(GenericDirection.OUT);
     private final Command m_cageInCommand = makeCageCommand(GenericDirection.IN);
     @Override
-    public Command getCageOutCommand() {
+    public synchronized Command getCageOutCommand() {
         return m_cageOutCommand;
     }
     @Override
-    public Command getCageInCommand() {
+    public synchronized Command getCageInCommand() {
         return m_cageInCommand;
     }
 }
