@@ -197,7 +197,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
     private final StatusSignal<Double> m_PIDPositionReference = m_leaderMotor.getClosedLoopReference();
     private final StatusSignal<Double> m_PIDPositionSlope = m_leaderMotor.getClosedLoopReferenceSlope();
-    private final StatusSignal<Double> m_PIDPositionError = m_leaderMotor.getClosedLoopError();
+    // private final StatusSignal<Double> m_PIDPositionError = m_leaderMotor.getClosedLoopError();
 
     private final DoublePublisher m_leaderMotorPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorLeaderMotorPosition").publish();
     private final DoublePublisher m_followerMotorPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorFollowerMotorPosition").publish();
@@ -311,10 +311,10 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     }
 
     // TODO: this should be called on sensor trip
-    private void resetMotorPositions() {
-        m_leaderMotor.setPosition(0);
-        m_followerMotor.setPosition(0);
-    }
+    // private void resetMotorPositions() {
+    //     m_leaderMotor.setPosition(0);
+    //     m_followerMotor.setPosition(0);
+    // }
 
     @Override
     public boolean getIsAtTargetPosition() {
@@ -322,7 +322,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         if (m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE)
             return true;
 
-        // double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
         final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
         SmartDashboard.putNumber("ElevatorPIDError", err);
         return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;

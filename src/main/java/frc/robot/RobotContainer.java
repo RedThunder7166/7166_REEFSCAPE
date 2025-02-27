@@ -103,34 +103,34 @@ public class RobotContainer {
             RobotState.stopIntake();
         }
     }
-    private static final class AutoPickupCommand extends PickupCommand {
-        private GantrySubsystemInterface m_gantrySubsystem;
+    // private static final class AutoPickupCommand extends PickupCommand {
+    //     private GantrySubsystemInterface m_gantrySubsystem;
 
-        public AutoPickupCommand(GantrySubsystemInterface gantrySubsystem) {
-            m_gantrySubsystem = gantrySubsystem;
-        }
+    //     public AutoPickupCommand(GantrySubsystemInterface gantrySubsystem) {
+    //         m_gantrySubsystem = gantrySubsystem;
+    //     }
 
-        @Override
-        public boolean isFinished() {
-            return m_gantrySubsystem.getScoreEnterSensorTripped();
-        }
+    //     @Override
+    //     public boolean isFinished() {
+    //         return m_gantrySubsystem.getScoreEnterSensorTripped();
+    //     }
 
-        @Override
-        public void end(boolean isInterrupted) { 
-            // do nothing: we don't want the intake to stop here; it will be stopped from auto
-        }
-    }
+    //     @Override
+    //     public void end(boolean isInterrupted) { 
+    //         // do nothing: we don't want the intake to stop here; it will be stopped from auto
+    //     }
+    // }
     private Command createPickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
             new PickupCommand()
         );
     }
 
-    private Command TESTcreatePickupCommand() {
-        return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new AutoPickupCommand(m_gantrySubsystem)
-        );
-    }
+    // private Command TESTcreatePickupCommand() {
+    //     return m_intakeOuttakeSubsystem.addToCommandRequirements(
+    //         new AutoPickupCommand(m_gantrySubsystem)
+    //     );
+    // }
 
     private Command createSetClimbStateCommand(ClimbActuatorState climbState) {
         return m_climbSubsystem.addToCommandRequirements(new InstantCommand(() -> {
