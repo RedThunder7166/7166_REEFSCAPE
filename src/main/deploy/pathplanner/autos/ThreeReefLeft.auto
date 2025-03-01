@@ -17,7 +17,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "StartRightI-J"
+                  "pathName": "StartI-J"
                 }
               },
               {
@@ -112,6 +112,12 @@
                 "type": "named",
                 "data": {
                   "name": "Score"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "GoToCoralStation"
                 }
               }
             ]

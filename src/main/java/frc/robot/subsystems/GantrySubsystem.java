@@ -15,12 +15,17 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import au.grapplerobotics.ConfigurationFailedException;
+import au.grapplerobotics.LaserCan;
+import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
+import au.grapplerobotics.interfaces.LaserCanInterface.RangingMode;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -167,6 +172,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private final TalonFX m_gantryMotor = new TalonFX(GantryConstants.GANTRY_MOTOR_ID);
     private final TalonFX m_scoreMotor = new TalonFX(GantryConstants.SCORE_MOTOR_ID);
+    // private final LaserCan m_gantryLaser = new LaserCan(GantryConstants.GANTRY_LASER_ID);
 
     private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
@@ -177,6 +183,8 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private final StatusSignal<Double> m_PIDPositionReference = m_gantryMotor.getClosedLoopReference();
     private final StatusSignal<Double> m_PIDPositionError = m_gantryMotor.getClosedLoopError();
+
+    // private Measurement m_gantryLaserMeasurement;
 
     public final DigitalInput m_elevatorClearanceSensor = new DigitalInput(GantryConstants.ELEVATOR_CLEARANCE_SENSOR_ID);
     public final DigitalInput m_scoreEnterSensor = new DigitalInput(GantryConstants.SCORE_ENTER_SENSOR_ID);
@@ -190,6 +198,8 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final DoublePublisher m_gantryPositionMetersPublisher = RobotState.robotStateTable.getDoubleTopic("GantryPositionMeters").publish();
     private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.robotStateTable.getDoubleTopic("GantryPIDPositionReferencePosition").publish();
 
+    // private final StringPublisher m_gantryLaserMeasurementPublisher = RobotState.robotStateTable.getStringTopic("GantryLaserMeasurement").publish();
+
     private final BooleanPublisher m_elevatorClearanceSensorPublisher = RobotState.robotStateTable.getBooleanTopic("GantryElevatorClearanceSensor").publish();
     private final BooleanPublisher m_scoreEnterSensorPublisher = RobotState.robotStateTable.getBooleanTopic("GantryScoreEnterSensor").publish();
     private final BooleanPublisher m_scoreExitSensorPublisher = RobotState.robotStateTable.getBooleanTopic("GantryScoreExitSensor").publish();
@@ -197,7 +207,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     public GantrySubsystem() {
         // FIXME: tune gantry PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
-        motorConfig.Slot0.kP = 6;
+        motorConfig.Slot0.kP = 20;
 
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
@@ -221,6 +231,14 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         scoreMotorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
         OurUtils.tryApplyConfig(m_scoreMotor, scoreMotorConfig);
+
+        // try {
+        //     m_gantryLaser.setRangingMode(LaserCan.RangingMode.SHORT);
+        //     // m_gantryLaser.setRegionOfInterest(new LaserCan.RegionOfInterest(8, 8, 16, 16));
+        //     m_gantryLaser.setTimingBudget(LaserCan.TimingBudget.TIMING_BUDGET_33MS);
+        // } catch (ConfigurationFailedException e) {
+        //     DriverStation.reportWarning("Could not apply configs to LaserCAN " + GantryConstants.GANTRY_LASER_ID + "; error code: " + e.toString(), false);
+        // }
 
         // TODO: make method and do for controller
         resetManualPosition();
@@ -283,6 +301,11 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     @Override
     public void periodic() {
+        m_gantryMotorPosition.refresh();
+        m_PIDPositionReference.refresh();
+
+        // m_gantryLaserMeasurement = m_gantryLaser.getMeasurement();
+
         // looks ugly, but compiler optimizes nicely
         if (RobotState.ENABLE_AUTOMATIC_GANTRY_CONTROL) {
             if (m_desiredControlType == DesiredControlType.AUTOMATIC)
@@ -294,12 +317,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         handleScoreMotor();
 
-        m_manualPositionPublisher.set(m_manualPosition);
-        m_desiredControlTypePublisher.set(m_desiredControlType.toString());
-
-        m_gantryMotorPosition.refresh();
-
-        m_PIDPositionReference.refresh();
 
         final double gantryMotorPosition = m_gantryMotorPosition.getValueAsDouble();
         final double gantryPositionMeters = gantryMotorPosition * GantryConstants.UNIT_TO_METERS;
@@ -322,6 +339,15 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_elevatorClearanceSensorPublisher.set(m_elevatorClearanceSensorTripped);
         m_scoreEnterSensorPublisher.set(m_scoreEnterSensorTripped);
         m_scoreExitSensorPublisher.set(m_scoreExitSensorTripped);
+
+        m_manualPositionPublisher.set(m_manualPosition);
+        m_desiredControlTypePublisher.set(m_desiredControlType.toString());
+
+        // if (m_gantryLaserMeasurement != null && m_gantryLaserMeasurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
+        //     m_gantryLaserMeasurementPublisher.set(m_gantryLaserMeasurement.distance_mm + "mm");
+        // } else {
+        //     m_gantryLaserMeasurementPublisher.set("INVALID");
+        // }
 
         final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : gantryMotorPosition;
         final boolean mechPositionIsPositive = mechPositionToUse > 0;

@@ -3,35 +3,47 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.317876838235294,
-        "y": 3.1862132352941175
+        "x": 7.163,
+        "y": 3.208
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.489736492296048,
-        "y": 3.095873108995662
+        "x": 6.329946717795319,
+        "y": 3.208
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.151011029411765,
-        "y": 2.9119944852941173
+        "x": 5.121,
+        "y": 2.932
       },
       "prevControl": {
-        "x": 5.387390777611046,
-        "y": 2.830602749588059
+        "x": 5.245913078711386,
+        "y": 2.715443488283442
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "ReefEF"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "GoToPosition",
+      "waypointRelativePos": 0.35,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "GoToPosition"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,

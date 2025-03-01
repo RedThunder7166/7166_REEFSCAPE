@@ -133,17 +133,20 @@ public class CameraSubsystem extends SubsystemBase {
         Left(AprilTagConstants.CORAL_STATION_LEFT_TAGID, AprilTagConstants.CORAL_STATION_LEFT_OFFSET),
         Right(AprilTagConstants.CORAL_STATION_RIGHT_TAGID, AprilTagConstants.CORAL_STATION_RIGHT_OFFSET);
 
-        // private final int m_tagID;
-        private final Translation2d m_translation;
-        private final Rotation2d m_rotation;
+        private final int m_tagID;
         private final Translation2d m_offset;
+        private Translation2d m_translation;
+        private Rotation2d m_rotation;
 
         CoralStationID(int tagID, Translation2d offset) {
-            // m_tagID = tagID;
-            final Pose2d pose = aprilTagMap.get(tagID).pose.toPose2d();
+            m_tagID = tagID;
+            m_offset = offset;
+        }
+
+        public void update() {
+            final Pose2d pose = aprilTagMap.get(m_tagID).pose.toPose2d();
             m_translation = pose.getTranslation();
             m_rotation = pose.getRotation();
-            m_offset = offset;
         }
     }
 
@@ -234,6 +237,9 @@ public class CameraSubsystem extends SubsystemBase {
 
     private final StructPublisher<Pose2d> swervePosePublisher = NetworkTableInstance.getDefault()
         .getStructTopic("MyPose", Pose2d.struct).publish();
+
+    private final StructPublisher<Pose2d> targetPosePublisher = NetworkTableInstance.getDefault()
+        .getStructTopic("TargetPose", Pose2d.struct).publish();
 
     private CommandSwerveDrivetrain m_driveSubsystem;
     private Pigeon2 m_pigeon2;
@@ -405,7 +411,7 @@ public class CameraSubsystem extends SubsystemBase {
         if (!aprilTagFieldLayoutSuccess || reefLocation.m_translation == null)
             return Commands.none();
 
-        final double offset = Units.inchesToMeters(25);
+        final double offset = Units.inchesToMeters(17); // 25
 
         // this code gets the target april tag position and applies a certain offset away from the reef
         final Translation2d targetTagTranslation = reefLocation.m_translation;
@@ -415,6 +421,8 @@ public class CameraSubsystem extends SubsystemBase {
             new Translation2d(targetTagTranslation.getX() + directionVector.getX() * offset, targetTagTranslation.getY() + directionVector.getY() * offset),
             reefLocation.m_rotation.plus(Rotation2d.k180deg)
         );
+
+        targetPosePublisher.set(targetPose);
 
         SmartDashboard.putNumber("PATHFINDING_POSEX", targetPose.getX());
         SmartDashboard.putNumber("PATHFINDING_POSEY", targetPose.getY());

@@ -3,16 +3,16 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.11875,
-        "y": 2.8797334558823526
+        "x": 5.121,
+        "y": 2.932
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.635329253932585,
-        "y": 2.552606999123653
+        "x": 4.637579253932585,
+        "y": 2.6048735432413004
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "ReefEF"
     },
     {
       "anchor": {
@@ -31,7 +31,19 @@
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "GoToCoralStation",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "GoToCoralStation"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -48,7 +60,7 @@
   "folder": "ReefToCoralStation",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 120.57922687248904
+    "rotation": 121.46414363086585
   },
   "useDefaultConstraints": true
 }

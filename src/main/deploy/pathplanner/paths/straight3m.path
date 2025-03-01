@@ -3,47 +3,35 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.121,
-        "y": 5.11
+        "x": 2.0,
+        "y": 7.0
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.5883554810900895,
-        "y": 5.511531991273067
+        "x": 3.0,
+        "y": 7.0
       },
       "isLocked": false,
-      "linkedName": "ReefIJ"
+      "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.6721966911764705,
-        "y": 7.401654411764705
+        "x": 5.0,
+        "y": 7.0
       },
       "prevControl": {
-        "x": 2.535913567771864,
-        "y": 6.863268738402359
+        "x": 4.0,
+        "y": 7.0
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "LeftCoralStationClose"
+      "linkedName": null
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [
-    {
-      "name": "GoToCoralStation",
-      "waypointRelativePos": 0,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "GoToCoralStation"
-        }
-      }
-    }
-  ],
+  "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -54,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -51.98105740682981
+    "rotation": 0.0
   },
   "reversed": false,
-  "folder": "ReefToCoralStation",
+  "folder": "SimplePaths",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -119.91364599153485
+    "rotation": 0.0
   },
   "useDefaultConstraints": true
 }

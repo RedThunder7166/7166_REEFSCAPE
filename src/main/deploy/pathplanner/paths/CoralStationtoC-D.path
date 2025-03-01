@@ -16,22 +16,34 @@
     },
     {
       "anchor": {
-        "x": 3.844439338235294,
-        "y": 2.895863970588234
+        "x": 3.858,
+        "y": 2.932
       },
       "prevControl": {
-        "x": 2.941788313289047,
-        "y": 2.022800631798196
+        "x": 3.2298942377797166,
+        "y": 1.844571097569411
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "ReefCD"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "GoToPosition",
+      "waypointRelativePos": 0.6,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "GoToPosition"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,

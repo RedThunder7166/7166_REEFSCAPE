@@ -175,6 +175,8 @@ public final class RobotState {
             CameraSubsystem.update();
             for (var value : CameraSubsystem.RelativeReefLocation.values())
                 value.update();
+            for (var value : CameraSubsystem.CoralStationID.values())
+                value.update();
             if (robotContainer != null) {
                 robotContainer.update(initialSwerveRotation);
             }

@@ -7,6 +7,8 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -15,6 +17,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -41,6 +44,8 @@ import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.AlgaeHandSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ClimbSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.ElevatorState;
+import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryState;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -181,6 +186,7 @@ public class RobotContainer {
         m_driveSubsystem.configureAutoBuilder();
 
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
+        m_autoChooser.addOption("thereisnoauto", Commands.none());
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
         initialize();
@@ -319,13 +325,54 @@ public class RobotContainer {
         SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
     }
 
+    public void autonomousInit() {
+        m_gantrySubsystem.resetManualPosition();
+        m_gantrySubsystem.resetMotorPosition();
+
+        if (RobotState.initialSwerveRotation != null)
+            m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
+    }
+
+    public void autonomousExit() {
+        RobotState.setTargetScorePosition(TargetScorePosition.NONE);
+        m_elevatorSubsystem.setIdle();
+        m_gantrySubsystem.setIdle();
+    }
+
+    final boolean testingthiswervethingplsdelete = false;
+    final TalonFX frontleftdrive = new TalonFX(20, Constants.CANIVORE_NAME);
+    final TalonFX frontrightdrive = new TalonFX(21, Constants.CANIVORE_NAME);
+    final TalonFX backleftdrive = new TalonFX(23, Constants.CANIVORE_NAME);
+    final TalonFX backrightdrive = new TalonFX(22, Constants.CANIVORE_NAME);
+    double frontleftrotations = 0;
+    double frontrightrotations = 0;
+    double backleftrotations = 0;
+    double backrightrotations = 0;
     public void teleopInit() {
         RobotState.setTargetScorePosition(TargetScorePosition.NONE);
 
         m_elevatorSubsystem.resetManualPosition();
+        if (testingthiswervethingplsdelete) {
+            frontleftrotations = frontleftdrive.getPosition().getValueAsDouble();
+            frontrightrotations = frontrightdrive.getPosition().getValueAsDouble();
+            backleftrotations = backleftdrive.getPosition().getValueAsDouble();
+            backrightrotations = backrightdrive.getPosition().getValueAsDouble();
+            SmartDashboard.putNumber("FRONTLEFT_DISTANCE", 0);
+            SmartDashboard.putNumber("FRONTRIGHT_DISTANCE", 0);
+            SmartDashboard.putNumber("BACKLEFT_DISTANCE", 0);
+            SmartDashboard.putNumber("BACKRIGHT_DISTANCE", 0);
+        }
     }
 
     public void robotPeriodic() {
+        if (testingthiswervethingplsdelete) {
+            // SmartDashboard.putNumber("SWERVEDISTANCE", m_driveSubsystem.getCustomEstimatedPose().getY());
+            SmartDashboard.putNumber("FRONTLEFT_DISTANCE", frontleftdrive.getPosition().getValueAsDouble() - frontleftrotations);
+            SmartDashboard.putNumber("FRONTRIGHT_DISTANCE", frontrightdrive.getPosition().getValueAsDouble() - frontrightrotations);
+            SmartDashboard.putNumber("BACKLEFT_DISTANCE", backleftdrive.getPosition().getValueAsDouble() - backleftrotations);
+            SmartDashboard.putNumber("BACKRIGHT_DISTANCE", backrightdrive.getPosition().getValueAsDouble() - backrightrotations);
+        }
+
         final Pose2d robotPose = m_driveSubsystem.getCustomEstimatedPose();
         Pose2d targetPose = m_targetReefLocation.getPose();
         if (targetPose != null) {

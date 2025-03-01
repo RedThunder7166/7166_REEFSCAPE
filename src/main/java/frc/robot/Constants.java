@@ -40,6 +40,7 @@ public class Constants {
         public static final boolean REAL = true;
         public static final int GANTRY_MOTOR_ID = 51;
         public static final int SCORE_MOTOR_ID = 53;
+        public static final int GANTRY_LASER_ID = 57;
 
         public static final int ELEVATOR_CLEARANCE_SENSOR_ID = 2;
         public static final int SCORE_ENTER_SENSOR_ID = 0;
@@ -55,7 +56,7 @@ public class Constants {
         public static final double LEFT_RIGHT_OFFSET = 0;
 
         // TODO: ensure within max and min
-        public static final double CORAL_STATION_POSITION = Units.inchesToMeters(7.92) * METERS_TO_UNIT;
+        public static final double CORAL_STATION_POSITION = Units.inchesToMeters(8.17) * METERS_TO_UNIT; // 7.92; 8.17; 8
         public static final double REEF_LEFT_POSITION = Units.inchesToMeters(2) * METERS_TO_UNIT;
         public static final double REEF_RIGHT_POSITION = Units.inchesToMeters(14) * METERS_TO_UNIT;
 
@@ -137,11 +138,11 @@ public class Constants {
 
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;
-            REEF_CD_TAGID = alliance == Alliance.Blue ? 19 : 8;
-            REEF_EF_TAGID = alliance == Alliance.Blue ? 20 : 9;
+            REEF_CD_TAGID = alliance == Alliance.Blue ? 17 : 8;
+            REEF_EF_TAGID = alliance == Alliance.Blue ? 22 : 9;
             REEF_GH_TAGID = alliance == Alliance.Blue ? 21 : 10;
-            REEF_IJ_TAGID = alliance == Alliance.Blue ? 22 : 11;
-            REEF_KL_TAGID = alliance == Alliance.Blue ? 17 : 6;
+            REEF_IJ_TAGID = alliance == Alliance.Blue ? 20 : 11;
+            REEF_KL_TAGID = alliance == Alliance.Blue ? 19 : 6;
 
             CORAL_STATION_LEFT_TAGID = alliance == Alliance.Blue ? 13 : 1;
             CORAL_STATION_RIGHT_TAGID = alliance == Alliance.Blue ? 12 : 2;
