@@ -4,9 +4,14 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.generated.TunerConstants;
 
 public class Constants {
     public static final String CANIVORE_NAME = "Canivore";
@@ -14,6 +19,16 @@ public class Constants {
     public static final class ControllerConstants {
         public static final int DRIVER_PORT = 0;
         public static final int OPERATOR_PORT = 1;
+    }
+
+    public static final class DriveConstants {
+        public static final double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+        public static final double MAX_ANGULAR_RATE = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+
+        public static final double TRACK_WIDTH_X = Units.inchesToMeters(23.375);
+        public static final double TRACK_WIDTH_Y = TRACK_WIDTH_X;
+
+        public static final double DRIVE_RADIUS = Math.hypot(TRACK_WIDTH_X / 2d, TRACK_WIDTH_Y / 2d);
     }
 
     public static final class ElevatorConstants {
