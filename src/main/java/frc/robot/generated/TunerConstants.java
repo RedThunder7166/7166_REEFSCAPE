@@ -80,9 +80,16 @@ public class TunerConstants {
     // This may need to be tuned to your individual robot
     private static final double kCoupleRatio = 0;
 
-    private static final double kDriveGearRatio = 4.13;
+    private static final double kDriveGearRatio = 4.71;
     private static final double kSteerGearRatio = 41.25;
     private static final Distance kWheelRadius = Inches.of(1.2526); // 1.45 , 1.228; 1.2414; 1.2526; 
+
+    /*
+        charactization results:
+        Effective Wheel Radius: 129258.2928015629 inches
+        Effective Wheel Radius: 95960.5303119536 inches
+        Effective Wheel Radius: Infinity inches
+     */
 
     private static final boolean kInvertLeftSide = true;
     private static final boolean kInvertRightSide = false;

@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -20,7 +22,9 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -31,6 +35,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.RobotState;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 /**
@@ -320,6 +325,62 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     public void resetCustomEstimatedPose(Pose2d pose) {
         m_poseEstimator.resetPose(pose);
+    }
+
+    public double[] getWheelRadiusCharacterizationPosition() {
+        return Arrays.stream(getState().ModulePositions).mapToDouble((module) -> module.angle.getRadians()).toArray();
+    }
+
+    public static boolean epsilonEquals(double a, double b, double epsilon) {
+        return (a - epsilon <= b) && (a + epsilon >= b);
+    }
+    public Command orientModules(Rotation2d[] orientations) {
+        // 7166's poorman's implementation: spin for 1 second; that should make the wheels a circle!
+        return run(() -> {
+            // for (int i = 0; i < orientations.length; i++) {
+            //     modules[i].runSetpoint(new SwerveModuleState(0.0, orientations[i]));
+            // }
+            setControl(new SwerveRequest.RobotCentric().withRotationalRate(DriveConstants.MAX_ANGULAR_RATE * 0.3));
+        })
+        .withTimeout(1)
+            // .until(
+            //     () -> {
+            //         boolean good = true;
+
+            //         var states = getState().ModuleStates;
+            //         for (int i = 0; i < states.length; i++) {
+            //             var state = states[i];
+            //             if (!epsilonEquals(state.angle.getDegrees(), orientations[i].getDegrees(), 2d)) {
+            //                 good = false;
+            //                 break;
+            //             }
+            //         }
+
+            //         return good;
+            //     })
+                    // Arrays.stream(getState().ModuleStates)
+                    //     .allMatch(
+                    //         module ->
+                    //             EqualsUtil.epsilonEquals(
+                    //                 module.angle.getDegrees(),
+                    //                 module.getSetpointState().angle.getDegrees(),
+                    //                 2.0)))
+            // .beforeStarting(() -> modulesOrienting = true)
+            // .finallyDo(() -> modulesOrienting = false)
+            .withName("Orient Modules");
+    }
+
+    public static final Translation2d[] moduleTranslations =
+        new Translation2d[] {
+        new Translation2d(DriveConstants.TRACK_WIDTH_X / 2d, DriveConstants.TRACK_WIDTH_Y / 2d),
+        new Translation2d(DriveConstants.TRACK_WIDTH_X / 2d, DriveConstants.TRACK_WIDTH_Y / 2d),
+        new Translation2d(-DriveConstants.TRACK_WIDTH_X / 2d, DriveConstants.TRACK_WIDTH_Y / 2d),
+        new Translation2d(-DriveConstants.TRACK_WIDTH_X / 2d, DriveConstants.TRACK_WIDTH_Y / 2d)
+    };
+    public static Rotation2d[] getCircleOrientations() {
+        return Arrays.stream(moduleTranslations)
+            .map(translation -> translation.getAngle().plus(new Rotation2d(Math.PI / 2d)))
+            .toArray(Rotation2d[]::new);
     }
 
     private void startSimThread() {

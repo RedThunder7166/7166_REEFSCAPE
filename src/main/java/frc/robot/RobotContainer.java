@@ -24,10 +24,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState.ClimbActuatorState;
 import frc.robot.RobotState.IntakeState;
 import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.commands.AutomaticCommands;
+import frc.robot.commands.WheelRadiusCharacterization;
+import frc.robot.commands.WheelRadiusCharacterization.Direction;
 import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
@@ -48,17 +52,16 @@ import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.Eleva
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryState;
 
 public class RobotContainer {
-    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
-
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric m_fieldCentricRequest = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+            .withDeadband(DriveConstants.MAX_SPEED * 0.1).withRotationalDeadband(DriveConstants.MAX_ANGULAR_RATE * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
     private final SwerveRequest.SwerveDriveBrake m_brakeRequest = new SwerveRequest.SwerveDriveBrake();
     // private final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
     private final SwerveRequest.RobotCentric m_robotCentricRequest = new SwerveRequest.RobotCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
+    private static final boolean shouldRunWheelRadiusCharacterization = true;
 
     private final CommandSwerveDrivetrain m_driveSubsystem;
     private final CameraSubsystem m_cameraSubsystem;
@@ -148,7 +151,7 @@ public class RobotContainer {
     public RobotContainer() {
         m_driveSubsystem = TunerConstants.createDrivetrain();
         m_cameraSubsystem = CameraSubsystem.getSingleton();
-        m_cameraSubsystem.setDriveSubsystem(m_driveSubsystem, MaxSpeed, MaxAngularRate);
+        m_cameraSubsystem.setDriveSubsystem(m_driveSubsystem, DriveConstants.MAX_SPEED, DriveConstants.MAX_ANGULAR_RATE);
 
         m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
         m_gantrySubsystem = GantrySubsystem.getSingleton();
@@ -187,6 +190,10 @@ public class RobotContainer {
 
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
         m_autoChooser.addOption("thereisnoauto", Commands.none());
+        m_autoChooser.addOption("Drive Wheel Radius Characterization", m_driveSubsystem
+            .orientModules(CommandSwerveDrivetrain.getCircleOrientations())
+            .andThen(new PrintCommand("modules oriented."))
+            .andThen(new WheelRadiusCharacterization(m_driveSubsystem, Direction.COUNTER_CLOCKWISE)));
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
         initialize();
@@ -219,11 +226,11 @@ public class RobotContainer {
                         if (m_robotCentricBackward) x = -robotCentricSpeed;
                         if (m_robotCentricLeft) y = robotCentricSpeed;
                         return m_robotCentricRequest.withVelocityX(x).withVelocityY(y)
-                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * MaxAngularRate);
+                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE);
                     } else
-                        return m_fieldCentricRequest.withVelocityX(-DRIVER_CONTROLS.getLeftY() * MaxSpeed)
-                            .withVelocityY(-DRIVER_CONTROLS.getLeftX() * MaxSpeed)
-                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * MaxAngularRate);
+                        return m_fieldCentricRequest.withVelocityX(-DRIVER_CONTROLS.getLeftY() * DriveConstants.MAX_SPEED)
+                            .withVelocityY(-DRIVER_CONTROLS.getLeftX() * DriveConstants.MAX_SPEED)
+                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE);
                 }
             )
         );
@@ -295,6 +302,7 @@ public class RobotContainer {
         OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.getManualLeftCommand());
         OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.getManualRightCommand());
 
+        // FIXME: why doesn't new InstantCommand(gantry::resetPositionStuff) work??
         OPERATOR_CONTROLS.GANTRY_RESET_POSITION.onTrue(new InstantCommand(() -> {
             m_gantrySubsystem.resetManualPosition();
             m_gantrySubsystem.resetMotorPosition();
