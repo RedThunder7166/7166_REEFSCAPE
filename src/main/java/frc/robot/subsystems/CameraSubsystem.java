@@ -125,12 +125,11 @@ public class CameraSubsystem extends SubsystemBase {
         }
         @Override
         public boolean isFinished() {
-            return m_command.isFinished();
+            return !m_command.isScheduled();
         }
         @Override
-        public void end(boolean interuppted) {
-            if (m_command.isScheduled())
-                m_command.cancel();
+        public void end(boolean isInterrupted) {
+            m_command.cancel();
         }
     }
 
@@ -413,7 +412,7 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
-        3.0, 2,
+        3.0, 3.0,
         Units.degreesToRadians(540), Units.degreesToRadians(720)
     );
 

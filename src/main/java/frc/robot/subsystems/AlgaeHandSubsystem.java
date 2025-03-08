@@ -95,7 +95,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
 
         switch (m_desiredControlType) {
             case MANUAL: {
-                final double amount = 0.075;
+                final double amount = AlgaeHandConstants.MAX_DUTY_CYCLE;
                 double output = 0;
                 switch (m_direction) {
                     case NONE:

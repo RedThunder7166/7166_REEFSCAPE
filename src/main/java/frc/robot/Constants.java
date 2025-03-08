@@ -10,7 +10,6 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.pathplanner.lib.config.PIDConstants;
 
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.generated.TunerConstants;
@@ -33,9 +32,9 @@ public class Constants {
         public static final double DRIVE_RADIUS = Math.hypot(TRACK_WIDTH_X / 2d, TRACK_WIDTH_Y / 2d);
 
         // FIXME: TUNE THESE
-        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(4, 0.1, 0.5);
-        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(10, 0, 0);
-        public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(4, 0.1, 0.5);
+        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(7, 0, 0);
+        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(10, 0, 0);
+        public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(7, 0, 0);
     }
 
     public static final class ElevatorConstants {
@@ -149,10 +148,10 @@ public class Constants {
         public static final int MOTOR_ID = 56;
 
         public static final double MIN_POSITION_ROTATIONS = 0.017;
-        public static final double MAX_POSITION_ROTATIONS = 1;
+        public static final double MAX_POSITION_ROTATIONS = 0.465;
         public static final double MIDDLE_POSITION_ROTATIONS = 0.5;
 
-        public static final double MAX_DUTY_CYCLE = 0.2;
+        public static final double MAX_DUTY_CYCLE = 0.15;
     }
 
     public static final class AprilTagConstants {
