@@ -4,6 +4,9 @@
 
 package frc.robot;
 
+import java.util.Random;
+import java.util.random.RandomGenerator;
+
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.led.CANdle;
 import com.ctre.phoenix.led.CANdleConfiguration;
@@ -13,7 +16,10 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.Constants.GantryConstants;
+import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 
 public final class OurUtils {
     // Phoenix 6 methods:
@@ -47,5 +53,54 @@ public final class OurUtils {
         }
         if (status != ErrorCode.OK)
             DriverStation.reportWarning("Could not apply configs to device " + deviceID + "; error code: " + status.toString(), false);
+    }
+
+    public static String formatReefLocation(RelativeReefLocation location) {
+        if (location == null)
+            return "NULL";
+
+        return location.toString() + '_' + location.getTagID();
+    }
+
+    public static interface DIOInterface {
+        public boolean get();
+    }
+    public static final class FakeDIO implements DIOInterface {
+        private final int m_channel;
+        private boolean m_value = true;
+
+        public FakeDIO(int channel) {
+            m_channel = channel;
+        }
+        public void set(boolean value) {
+            m_value = value;
+        }
+        public boolean get() {
+            switch (m_channel) {
+                case GantryConstants.ELEVATOR_CLEARANCE_SENSOR_ID:
+                    return false;
+                case GantryConstants.SCORE_EXIT_SENSOR_ID:
+                    return RandomGenerator.getDefault().nextBoolean();
+                default:
+                    return m_value;
+            }
+        }
+    }
+
+    public static final class WrappedDIO implements DIOInterface {
+        private final DigitalInput m_digitalInput;
+        public WrappedDIO(DigitalInput digitalInput) {
+            m_digitalInput = digitalInput;
+        }
+
+        public boolean get() {
+            return m_digitalInput.get();
+        }
+    }
+
+    public static DIOInterface getDIO(int channel) {
+        if (Robot.isSimulation())
+            return new FakeDIO(channel);
+        return new WrappedDIO(new DigitalInput(channel));
     }
 }

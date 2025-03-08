@@ -10,10 +10,8 @@ import frc.robot.RobotState;
 import frc.robot.Constants;
 import frc.robot.RobotState.DesiredControlType;
 import frc.robot.RobotState.TargetScorePosition;
-import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
-import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.ElevatorState;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
@@ -67,15 +65,13 @@ public class AutomaticCommands {
     }
 
     public static Command createSetTargetScorePositionCommand(TargetScorePosition targetScorePosition) {
-        return new InstantCommand(() -> {
-            m_targetScorePosition = targetScorePosition;
-        });
+        return new InstantCommand(() -> m_targetScorePosition = targetScorePosition);
     }
     public static Command createGoToPositionCommand() {
         return createAutomaticGoToPositionCommand(ElevatorState.TARGET, GantryState.TARGET);
     }
 
-    public static Command createSetAndGoToTargetScorePositionCommand(TargetScorePosition position) {
+    public static Command createGoToPositionCommand(TargetScorePosition position) {
         return createSetTargetScorePositionCommand(position).andThen(createGoToPositionCommand());
     }
 
@@ -83,12 +79,6 @@ public class AutomaticCommands {
         ElevatorState.IDLE,
         GantryState.IDLE
     );
-
-    public static Command createLocalizeToReefCommand(RelativeReefLocation targetLocation) {
-        return new CameraSubsystem.DynamicCommand(() -> {
-            return CameraSubsystem.getSingleton().getPathCommandFromReefTag(targetLocation);
-        });
-    }
 
     private static class TESTAutomaticGoToPositionCommand extends Command {
         private final ElevatorSubsystemInterface m_elevatorSubsystem = ElevatorSubsystem.getSingleton();

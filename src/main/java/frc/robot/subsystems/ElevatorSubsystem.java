@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
@@ -318,8 +319,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
     @Override
     public boolean getIsAtTargetPosition() {
-        // return true if we're not actively targeting a position
-        if (m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE)
+        // return true if we're not actively targeting a position / we're simulating
+        if ((m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE) || Robot.isSimulation())
             return true;
 
         final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
@@ -439,6 +440,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         m_PIDPositionReference.refresh();
         m_PIDPositionSlope.refresh();
+
+        BaseStatusSignal.waitForAll(0.020, m_leaderMotorPosition, m_followerMotorPosition, m_leaderMotorVelocity, m_PIDPositionReference, m_PIDPositionSlope);
 
         final double leaderMotorPosition = m_leaderMotorPosition.getValueAsDouble();
         m_followerMotorPositionPublisher.set(m_followerMotorPosition.getValueAsDouble());

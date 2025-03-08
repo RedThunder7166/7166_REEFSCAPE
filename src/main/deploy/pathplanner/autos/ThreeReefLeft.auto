@@ -113,14 +113,14 @@
                 "data": {
                   "name": "Score"
                 }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "GoToCoralStation"
-                }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "GoToCoralStation"
           }
         }
       ]

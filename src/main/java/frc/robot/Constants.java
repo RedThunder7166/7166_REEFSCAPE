@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import com.pathplanner.lib.config.PIDConstants;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -25,10 +27,15 @@ public class Constants {
         public static final double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
         public static final double MAX_ANGULAR_RATE = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-        public static final double TRACK_WIDTH_X = Units.inchesToMeters(23.375);
+        public static final double TRACK_WIDTH_X = Units.inchesToMeters(22.5);
         public static final double TRACK_WIDTH_Y = TRACK_WIDTH_X;
 
         public static final double DRIVE_RADIUS = Math.hypot(TRACK_WIDTH_X / 2d, TRACK_WIDTH_Y / 2d);
+
+        // FIXME: TUNE THESE
+        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(4, 0.1, 0.5);
+        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(10, 0, 0);
+        public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(4, 0.1, 0.5);
     }
 
     public static final class ElevatorConstants {
@@ -64,16 +71,33 @@ public class Constants {
         public static final double MIN_POSITION_ROTATIONS = 0;
         public static final double MAX_POSITION_ROTATIONS = 4.500732421875d;
 
+        public static final double MIN_POSITION_MM = 17;
+        public static final double MAX_POSITION_MM = 400;
+
         public static final double UNIT_TO_METERS = (0.4064d / MAX_POSITION_ROTATIONS);
         public static final double METERS_TO_UNIT = 1d / UNIT_TO_METERS;
+
+        public static double encoderUnitsToMeters(double encoderUnits) {
+            return encoderUnits * UNIT_TO_METERS;
+        }
+        public static double metersToEncoderUnits(double meters) {
+            return meters * METERS_TO_UNIT;
+        }
+        public static double millimetersToEncoderUnits(double mm) {
+            return metersToEncoderUnits(mm / 1000);
+        }
 
         // public static final double LEFT_RIGHT_OFFSET = Units.inchesToMeters(2);
         public static final double LEFT_RIGHT_OFFSET = 0;
 
         // TODO: ensure within max and min
-        public static final double CORAL_STATION_POSITION = Units.inchesToMeters(8.17) * METERS_TO_UNIT; // 7.92; 8.17; 8
-        public static final double REEF_LEFT_POSITION = Units.inchesToMeters(2) * METERS_TO_UNIT;
-        public static final double REEF_RIGHT_POSITION = Units.inchesToMeters(14) * METERS_TO_UNIT;
+        public static final double CORAL_STATION_POSITION_ROTATIONS = Units.inchesToMeters(8.17) * METERS_TO_UNIT; // 7.92; 8.17; 8
+        public static final double REEF_LEFT_POSITION_ROTATIONS = Units.inchesToMeters(2) * METERS_TO_UNIT;
+        public static final double REEF_RIGHT_POSITION_ROTATIONS = Units.inchesToMeters(14) * METERS_TO_UNIT;
+
+        public static final double CORAL_STATION_POSITION_MM = 190;
+        public static final double REEF_LEFT_POSITION_MM = 40;
+        public static final double REEF_RIGHT_POSITION_MM = 350;
 
         // FIXME: GANTRY POSITION ERROR THRESHOLD
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
@@ -146,11 +170,6 @@ public class Constants {
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
 
-        private static final double CORAL_STATION_OFFSET_HORIZONTAL = 0.3;
-        private static final double CORAL_STATION_OFFSET_VERTICAL = 0.3;
-        public static Translation2d CORAL_STATION_LEFT_OFFSET;
-        public static Translation2d CORAL_STATION_RIGHT_OFFSET;
-
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;
             REEF_CD_TAGID = alliance == Alliance.Blue ? 17 : 8;
@@ -161,13 +180,6 @@ public class Constants {
 
             CORAL_STATION_LEFT_TAGID = alliance == Alliance.Blue ? 13 : 1;
             CORAL_STATION_RIGHT_TAGID = alliance == Alliance.Blue ? 12 : 2;
-
-            CORAL_STATION_LEFT_OFFSET = alliance == Alliance.Blue ?
-                new Translation2d(CORAL_STATION_OFFSET_HORIZONTAL, -CORAL_STATION_OFFSET_VERTICAL) :
-                new Translation2d(CORAL_STATION_OFFSET_HORIZONTAL, CORAL_STATION_OFFSET_VERTICAL);
-            CORAL_STATION_RIGHT_OFFSET = alliance == Alliance.Blue ?
-                new Translation2d(-CORAL_STATION_OFFSET_HORIZONTAL, -CORAL_STATION_OFFSET_VERTICAL) :
-                new Translation2d(CORAL_STATION_OFFSET_HORIZONTAL, CORAL_STATION_OFFSET_VERTICAL);
         }
     }
 

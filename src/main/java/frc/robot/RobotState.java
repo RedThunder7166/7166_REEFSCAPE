@@ -7,6 +7,7 @@ package frc.robot;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -145,7 +146,7 @@ public final class RobotState {
         wantsToScore = wantsToScoreIn;
     }
 
-    public static final double reefTargetHorizontalDistanceOffset = 0; // 0.056
+    public static final double reefTargetHorizontalDistanceOffset = Units.inchesToMeters(2) - 0.011; // 0.056
 
     private static Optional<Double> reefTargetHorizontalDistance = Optional.empty();
     public static synchronized Optional<Double> getReefTargetHorizontalDistance() {

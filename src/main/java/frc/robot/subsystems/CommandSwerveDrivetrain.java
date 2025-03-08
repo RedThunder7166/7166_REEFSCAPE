@@ -36,6 +36,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.RobotState;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 /**
@@ -219,36 +220,28 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             m_poseEstimator.update(pigeon.getRotation2d(), state.ModulePositions);
         });
     }
-    public void configureAutoBuilder() {
-        try {
-            var config = RobotConfig.fromGUISettings();
-            AutoBuilder.configure(
-                // () -> getState().Pose,   // Supplier of current robot pose
-                // this::resetPose,         // Consumer for seeding pose against auto
-                this::getCustomEstimatedPose,
-                this::resetCustomEstimatedPose,
-                () -> getState().Speeds, // Supplier of current robot speeds
-                // Consumer of ChassisSpeeds and feedforwards to drive the robot
-                (speeds, feedforwards) -> setControl(
-                    m_pathApplyRobotSpeeds.withSpeeds(speeds)
-                        .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
-                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
-                ),
-                new PPHolonomicDriveController(
-                    // PID constants for translation
-                    // new PIDConstants(4, 0.1, 0.5), // FIXME: TUNE THESE
-                    new PIDConstants(10, 0, 0),
-                    // PID constants for rotation
-                    new PIDConstants(7, 0, 0)
-                ),
-                config,
-                // Assume the path needs to be flipped for Red vs Blue, this is normally the case // TODO: fact check this
-                () -> RobotState.ALLIANCE == Alliance.Red,
-                this
-            );
-        } catch (Exception ex) {
-            DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
-        }
+    public void configureAutoBuilder(RobotConfig config) {
+        AutoBuilder.configure(
+            // () -> getState().Pose,   // Supplier of current robot pose
+            // this::resetPose,         // Consumer for seeding pose against auto
+            this::getCustomEstimatedPose,
+            this::resetCustomEstimatedPose,
+            () -> getState().Speeds, // Supplier of current robot speeds
+            // Consumer of ChassisSpeeds and feedforwards to drive the robot
+            (speeds, feedforwards) -> setControl(
+                m_pathApplyRobotSpeeds.withSpeeds(speeds)
+                    .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                    .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+            ),
+            new PPHolonomicDriveController(
+                DriveConstants.PATH_PLANNER_TRANSLATION_PID,
+                DriveConstants.PATH_PLANNER_ROTATION_PID
+            ),
+            config,
+            // Assume the path needs to be flipped for Red vs Blue, this is normally the case // TODO: fact check this
+            () -> RobotState.ALLIANCE == Alliance.Red,
+            this
+        );
     }
 
     /**
@@ -328,7 +321,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     public double[] getWheelRadiusCharacterizationPosition() {
-        return Arrays.stream(getState().ModulePositions).mapToDouble((module) -> module.angle.getRadians()).toArray();
+        // return Arrays.stream(getState().ModulePositions).mapToDouble((module) -> module.angle.getRadians()).toArray();
+        return Arrays.stream(getModules()).mapToDouble((module) -> {
+            return module.getDriveMotor().getPosition().getValueAsDouble() * (2d * Math.PI) / TunerConstants.kDriveGearRatio;
+        }).toArray();
     }
 
     public static boolean epsilonEquals(double a, double b, double epsilon) {

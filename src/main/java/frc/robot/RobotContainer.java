@@ -4,15 +4,20 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.hardware.CANcoder;
+
+import java.io.IOException;
+
+import org.json.simple.parser.ParseException;
+
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.FileVersionException;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -25,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState.ClimbActuatorState;
 import frc.robot.RobotState.IntakeState;
@@ -37,6 +43,7 @@ import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeHandSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
+import frc.robot.subsystems.CameraSubsystem.CoralStationID;
 import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
@@ -48,20 +55,17 @@ import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.AlgaeHandSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ClimbSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
-import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface.ElevatorState;
-import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryState;
 
 public class RobotContainer {
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric m_fieldCentricRequest = new SwerveRequest.FieldCentric()
             .withDeadband(DriveConstants.MAX_SPEED * 0.1).withRotationalDeadband(DriveConstants.MAX_ANGULAR_RATE * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake m_brakeRequest = new SwerveRequest.SwerveDriveBrake();
-    // private final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
+    // private final SwerveRequest.SwerveDriveBrake m_brakeRequest = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.RobotCentric m_robotCentricRequest = new SwerveRequest.RobotCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    private static final boolean shouldRunWheelRadiusCharacterization = true;
+    // private static final boolean shouldRunWheelRadiusCharacterization = true;
 
     private final CommandSwerveDrivetrain m_driveSubsystem;
     private final CameraSubsystem m_cameraSubsystem;
@@ -72,16 +76,27 @@ public class RobotContainer {
     private final ClimbSubsystemInterface m_climbSubsystem;
     private final AlgaeHandSubsystemInterface m_algaeHandSubsystem;
 
+    // private RelativeReefLocation m_targetReefLocation;
+    private RelativeReefLocation m_closestReefLocation;
+
+    // NOTE: we use dynamic command to account for alliancestation changing
     private Command createLocalizeToReefCommand() {
-        return new CameraSubsystem.DynamicCommand(() -> {
-            return m_cameraSubsystem.getPathCommandFromReefTag(m_targetReefLocation);
-        });
+        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(m_closestReefLocation));
     }
+    private Command createLocalizeToReefCommand(RelativeReefLocation targetReefLocation) {
+        // m_targetReefLocation = targetReefLocation;
+        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(targetReefLocation));
+    }
+    private Command createLocalizeToCoralStationCommand(CoralStationID targetCoralStation) {
+        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromCoralStationTag(targetCoralStation));
+    }
+
     private Command createScoreCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
             @Override
-            public void initialize() {
-                RobotState.setWantsToScore(true);
+            public void execute() {
+                if (DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
+                    RobotState.setWantsToScore(true);
             }
 
             @Override
@@ -148,6 +163,23 @@ public class RobotContainer {
 
     private final SendableChooser<Command> m_autoChooser;
 
+    private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefLocation) {
+        return new SequentialCommandGroup(
+            new PrintCommand("ONE"),
+            createLocalizeToReefCommand(reefLocation),
+            new PrintCommand("TWO"),
+            AutomaticCommands.createGoToPositionCommand(scorePosition),
+            new PrintCommand("THREE"),
+            createScoreCommand()
+        );
+    }
+    private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
+        return new SequentialCommandGroup(
+            createLocalizeToCoralStationCommand(coralStation),
+            createPickupCommand()
+        );
+    }
+
     public RobotContainer() {
         m_driveSubsystem = TunerConstants.createDrivetrain();
         m_cameraSubsystem = CameraSubsystem.getSingleton();
@@ -162,7 +194,7 @@ public class RobotContainer {
         m_driveSubsystem.ensureThisFileHasBeenModified();
 
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
-        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.CORAL_STATION));
+        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
         NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
         NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
@@ -179,14 +211,23 @@ public class RobotContainer {
         NamedCommands.registerCommand("Pickup", createPickupCommand());
         // NamedCommands.registerCommand("Pickup", TESTcreatePickupCommand());
 
-        NamedCommands.registerCommand("LocalizeToReefAB", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.AB));
-        NamedCommands.registerCommand("LocalizeToReefCD", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.CD));
-        NamedCommands.registerCommand("LocalizeToReefEF", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.EF));
-        NamedCommands.registerCommand("LocalizeToReefGH", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.GH));
-        NamedCommands.registerCommand("LocalizeToReefIJ", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.IJ));
-        NamedCommands.registerCommand("LocalizeToReefKL", AutomaticCommands.createLocalizeToReefCommand(RelativeReefLocation.KL));
+        try {
+            var config = RobotConfig.fromGUISettings();
+            m_driveSubsystem.configureAutoBuilder(config);
+        } catch (Exception ex) {
+            DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
+        }
 
-        m_driveSubsystem.configureAutoBuilder();
+        // FIXME: verify if we can register commands after configuring autobuilder (99% sure you can)
+        NamedCommands.registerCommand("LocalizeToReefAB", createLocalizeToReefCommand(RelativeReefLocation.AB));
+        NamedCommands.registerCommand("LocalizeToReefCD", createLocalizeToReefCommand(RelativeReefLocation.CD));
+        NamedCommands.registerCommand("LocalizeToReefEF", createLocalizeToReefCommand(RelativeReefLocation.EF));
+        NamedCommands.registerCommand("LocalizeToReefGH", createLocalizeToReefCommand(RelativeReefLocation.GH));
+        NamedCommands.registerCommand("LocalizeToReefIJ", createLocalizeToReefCommand(RelativeReefLocation.IJ));
+        NamedCommands.registerCommand("LocalizeToReefKL", createLocalizeToReefCommand(RelativeReefLocation.KL));
+
+        NamedCommands.registerCommand("LocalizeToCoralStationLeft", createLocalizeToCoralStationCommand(CoralStationID.Left));
+        NamedCommands.registerCommand("LocalizeToCoralStationRight", createLocalizeToCoralStationCommand(CoralStationID.Right));
 
         m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
         m_autoChooser.addOption("thereisnoauto", Commands.none());
@@ -194,15 +235,25 @@ public class RobotContainer {
             .orientModules(CommandSwerveDrivetrain.getCircleOrientations())
             .andThen(new PrintCommand("modules oriented."))
             .andThen(new WheelRadiusCharacterization(m_driveSubsystem, Direction.COUNTER_CLOCKWISE)));
+
+        m_autoChooser.addOption("TwoReefLeftLocalize", new SequentialCommandGroup(
+            createEntireScoreCommand(TargetScorePosition.L4_L, RelativeReefLocation.IJ),
+            createEntirePickupCommand(CoralStationID.Left),
+            createEntireScoreCommand(TargetScorePosition.L4_L, RelativeReefLocation.KL),
+            // createEntirePickupCommand(CoralStationID.Left),
+            // createEntireScoreCommand(TargetScorePosition.L4_R, RelativeReefLocation.KL),
+            AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION)
+        ));
+
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
         initialize();
     }
 
-    private void setTargetReefLocation(RelativeReefLocation targetReefLocation) {
-        m_targetReefLocation = targetReefLocation;
-        SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
-    }
+    // private void setTargetReefLocation(RelativeReefLocation targetReefLocation) {
+    //     m_targetReefLocation = targetReefLocation;
+    //     SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+    // }
 
     private boolean m_robotCentricForward = false;
     private boolean m_robotCentricRight = false;
@@ -210,10 +261,9 @@ public class RobotContainer {
     private boolean m_robotCentricLeft = false;
     private static final double robotCentricSpeed = 0.6;
 
-    private RelativeReefLocation m_targetReefLocation;
     private void initialize() {
         DriverStation.silenceJoystickConnectionWarning(true);
-        m_targetReefLocation = RelativeReefLocation.AB;
+        // m_targetReefLocation = RelativeReefLocation.AB;
         RobotState.updateState(this);
 
         m_driveSubsystem.setDefaultCommand(
@@ -237,7 +287,7 @@ public class RobotContainer {
 
         // DRIVER CONTROLS
 
-        DRIVER_CONTROLS.brake.whileTrue(m_driveSubsystem.applyRequest(() -> m_brakeRequest));
+        // DRIVER_CONTROLS.brake.whileTrue(m_driveSubsystem.applyRequest(() -> m_brakeRequest));
         DRIVER_CONTROLS.seedFieldCentric.onTrue(m_driveSubsystem.runOnce(() -> m_driveSubsystem.seedFieldCentric()));
         // reset rotation to set rotation based on alliance
         DRIVER_CONTROLS.seedRotation.onTrue(m_driveSubsystem.runOnce(() -> {
@@ -265,15 +315,25 @@ public class RobotContainer {
             m_robotCentricLeft = false;
         }));
 
-        setTargetReefLocation(m_targetReefLocation);
-        DRIVER_CONTROLS.incrementTargetReefLocation.onTrue(new InstantCommand(() -> {
-            setTargetReefLocation(m_targetReefLocation.getNext());
-        }));
-        DRIVER_CONTROLS.decrementTargetReefLocation.onTrue(new InstantCommand(() -> {
-            setTargetReefLocation(m_targetReefLocation.getPrevious());
-        }));
+        // setTargetReefLocation(m_targetReefLocation);
+        // DRIVER_CONTROLS.incrementTargetReefLocation.onTrue(new InstantCommand(() -> {
+        //     setTargetReefLocation(m_targetReefLocation.getNext());
+        // }));
+        // DRIVER_CONTROLS.decrementTargetReefLocation.onTrue(new InstantCommand(() -> {
+        //     setTargetReefLocation(m_targetReefLocation.getPrevious());
+        // }));
 
-        DRIVER_CONTROLS.localizeToReef.whileTrue(createLocalizeToReefCommand());
+        // DRIVER_CONTROLS.localizeToReef.whileTrue(createLocalizeToReefCommand());
+
+        DRIVER_CONTROLS.localizeToReefAB.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.AB));
+        DRIVER_CONTROLS.localizeToReefCD.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.CD));
+        DRIVER_CONTROLS.localizeToReefEF.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.EF));
+        DRIVER_CONTROLS.localizeToReefGH.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.GH));
+        DRIVER_CONTROLS.localizeToReefIJ.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.IJ));
+        DRIVER_CONTROLS.localizeToReefKL.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.KL));
+
+        DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToReefCommand());
+        // DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToCoralStationCommand(CoralStationID.Left));
 
         // OPERATOR CONTROLS
 
@@ -284,15 +344,15 @@ public class RobotContainer {
         })));
         OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCommand());
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.CORAL_STATION));
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
-        OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L1));
-        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L2_L));
-        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L2_R));
-        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L3_L));
-        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L3_R));
-        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L4_L));
-        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.createSetAndGoToTargetScorePositionCommand(TargetScorePosition.L4_R));
+        OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L1));
+        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_L));
+        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_R));
+        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L3_L));
+        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L3_R));
+        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_L));
+        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_R));
 
         OPERATOR_CONTROLS.SCORE_PIECE.whileTrue(createScoreCommand());
 
@@ -324,13 +384,11 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return m_autoChooser.getSelected();
-        // return m_elevatorSubsystem.getTempGoUntilTargetIncreaseCommand(2.54).andThen(m_elevatorSubsystem.getTempHoldPositionCommand());
-        // return m_elevatorSubsystem.getTimeTravelCommand(4.2);
     }
 
     public void update(Rotation2d rotation) {
         m_driveSubsystem.resetCustomEstimatedRotation(rotation);
-        SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
+        // SmartDashboard.putString("TARGET_TAG", OurUtils.formatReefLocation(m_targetReefLocation));
     }
 
     public void autonomousInit() {
@@ -373,6 +431,9 @@ public class RobotContainer {
     }
 
     public void robotPeriodic() {
+        // SmartDashboard.putNumber("WHEEL_POSITION_0", m_driveSubsystem.getWheelRadiusCharacterizationPosition()[0]);
+        // System.out.println("what?");
+
         if (testingthiswervethingplsdelete) {
             // SmartDashboard.putNumber("SWERVEDISTANCE", m_driveSubsystem.getCustomEstimatedPose().getY());
             SmartDashboard.putNumber("FRONTLEFT_DISTANCE", frontleftdrive.getPosition().getValueAsDouble() - frontleftrotations);
@@ -382,23 +443,33 @@ public class RobotContainer {
         }
 
         final Pose2d robotPose = m_driveSubsystem.getCustomEstimatedPose();
-        Pose2d targetPose = m_targetReefLocation.getPose();
-        if (targetPose != null) {
-            double closest_distance = 1000;
-            for (var location : RelativeReefLocation.values()) {
-                var pose = location.getPose();
-                if (pose == null)
-                    continue;
-                final double distance = pose.getTranslation().getDistance(robotPose.getTranslation());
-                if (distance < closest_distance) {
-                    closest_distance = distance;
-                    targetPose = pose;
-                }
+        Pose2d targetPose = null;
+        RelativeReefLocation closestLocation = null;
+        double closest_distance = 1000;
+        for (var location : RelativeReefLocation.values()) {
+            var pose = location.getPose();
+            if (pose == null)
+                continue;
+            final double distance = pose.getTranslation().getDistance(robotPose.getTranslation());
+            if (distance < closest_distance) {
+                closest_distance = distance;
+                targetPose = pose;
+                closestLocation = location;
             }
+        }
 
+        if (targetPose == null) {
+            m_closestReefLocation = closestLocation;
+            SmartDashboard.putString("CLOSEST_REEF_LOCATION", "null");
+        } else {
+            m_closestReefLocation = closestLocation;
+            SmartDashboard.putString("CLOSEST_REEF_LOCATION", closestLocation.toString());
             final Translation2d targetCentricTranslation = robotPose.getTranslation().minus(targetPose.getTranslation())
                 .rotateBy(targetPose.getRotation().unaryMinus());
-            final double horizontalDifference = targetCentricTranslation.getY();
+            double horizontalDifference = targetCentricTranslation.getY();
+            horizontalDifference += RobotState.reefTargetHorizontalDistanceOffset;
+            double forwardDifference = targetCentricTranslation.getX();
+            SmartDashboard.putNumber("ReefTargetFowardDistanceInches", Units.metersToInches(forwardDifference));
 
             if (m_cameraSubsystem.getCanAutoAdjust())
                 RobotState.setReefTargetHorizontalDistance(horizontalDifference);

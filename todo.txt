@@ -1,0 +1,12 @@
+1
+determine section of the reef we're in (mapwise)
+DONE
+
+2
+automatic gantry horizontal adjustment
+
+3
+#2 but for elevator height
+
+4
+account for yaw so we ensure we're facing the reef section

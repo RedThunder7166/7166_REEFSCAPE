@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.468253140316923,
-        "y": 2.403084286133542
+        "x": 5.350063775510205,
+        "y": 2.6557716836734686
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.3040949770516175,
-        "y": 2.6045511228682363
+        "x": 5.220124569657504,
+        "y": 2.8808329901054983
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.337840206208768,
-        "y": 2.614564719822439
+        "x": 5.121,
+        "y": 2.932
       },
       "prevControl": {
-        "x": 5.474907593897938,
-        "y": 2.4054892998609647
+        "x": 5.246,
+        "y": 2.71549364905389
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "ReefEF"
     }
   ],
   "rotationTargets": [],
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 118.75964411331529
+    "rotation": 121.46414363086585
   },
   "reversed": false,
   "folder": "LINEUP",

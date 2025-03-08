@@ -72,12 +72,16 @@ public class SubsystemInterfaces {
 
         public void resetMotorPosition();
 
+        public void resetPositionStuff();
+
         public boolean getIsAtTargetPosition();
         public boolean getScoreEnterSensorTripped();
         public boolean getScoreExitSensorTripped();
 
         public Command getManualLeftCommand();
         public Command getManualRightCommand();
+
+        public Command getGantryResetPositionCommand();
     }
 
     public static interface IntakeOuttakeSubsystemInterface extends GenericInterface {
