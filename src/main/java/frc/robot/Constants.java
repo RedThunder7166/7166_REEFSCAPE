@@ -94,12 +94,12 @@ public class Constants {
         public static final double REEF_LEFT_POSITION_ROTATIONS = Units.inchesToMeters(2) * METERS_TO_UNIT;
         public static final double REEF_RIGHT_POSITION_ROTATIONS = Units.inchesToMeters(14) * METERS_TO_UNIT;
 
-        public static final double CORAL_STATION_POSITION_MM = 190;
         public static final double REEF_LEFT_POSITION_MM = 40;
-        public static final double REEF_RIGHT_POSITION_MM = 350;
+        public static final double CORAL_STATION_POSITION_MM = 195;
+        public static final double REEF_RIGHT_POSITION_MM = 355;
 
-        // FIXME: GANTRY POSITION ERROR THRESHOLD
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
+        public static final double POSITION_ERROR_THRESHOLD_MM = 10;
     }
     public static final class IntakeOuttakeConstants {
         public static final boolean REAL = true;

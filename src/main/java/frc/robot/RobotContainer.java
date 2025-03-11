@@ -112,10 +112,17 @@ public class RobotContainer {
             }
         }).andThen(Commands.waitSeconds(Constants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
-    private static class PickupCommand extends Command {
+    private class PickupCommand extends Command {
+        private final GantrySubsystemInterface m_gantrySubsytem;
+
+        public PickupCommand(GantrySubsystemInterface gantrySubsystem) {
+            m_gantrySubsytem = gantrySubsystem;
+        }
+
         @Override
-        public void initialize() {
-            RobotState.startIntake(IntakeState.IN);
+        public void execute() {
+            if (DriverStation.isAutonomous() || m_gantrySubsystem.getIsAtTargetPosition())
+                RobotState.startIntake(IntakeState.IN);
         }
 
         @Override
@@ -147,7 +154,7 @@ public class RobotContainer {
     // }
     private Command createPickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new PickupCommand()
+            new PickupCommand(m_gantrySubsystem)
         );
     }
 
@@ -289,8 +296,6 @@ public class RobotContainer {
             .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
             .pickup(CoralStationID.Left)
             .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
-            .pickup(CoralStationID.Left)
-            .score(TargetScorePosition.L4_R, RelativeReefLocation.KL)
             .positionCoralStation()
             .finish()
         );
@@ -314,8 +319,6 @@ public class RobotContainer {
             .score(TargetScorePosition.L4_L, RelativeReefLocation.EF)
             .pickup(CoralStationID.Right)
             .score(TargetScorePosition.L4_L, RelativeReefLocation.CD)
-            .pickup(CoralStationID.Right)
-            .score(TargetScorePosition.L4_R, RelativeReefLocation.CD)
             .positionCoralStation()
             .finish()
         );

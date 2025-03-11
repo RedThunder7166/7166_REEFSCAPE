@@ -206,7 +206,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private static final boolean tuneWithNetworkTables = false;
 
-    private static final double m_pidControllerP = 0.002;
+    private static final double m_pidControllerP = 0.0022;
     { if (tuneWithNetworkTables) SmartDashboard.putNumber("GANTRY_P", m_pidControllerP); }
     // private final ProfiledPIDController m_pidController = new ProfiledPIDController(
     //     SmartDashboard.getNumber("GANTRY_P", m_pidControllerP),
@@ -225,7 +225,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final StatusSignal<Angle> m_gantryMotorPosition = m_gantryMotor.getPosition();
 
     private final StatusSignal<Double> m_PIDPositionReference = m_gantryMotor.getClosedLoopReference();
-    private final StatusSignal<Double> m_PIDPositionError = m_gantryMotor.getClosedLoopError();
+    // private final StatusSignal<Double> m_PIDPositionError = m_gantryMotor.getClosedLoopError();
 
     private Measurement m_gantryLaserMeasurement;
 
@@ -278,7 +278,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         try {
             m_gantryLaser.setRangingMode(LaserCan.RangingMode.SHORT);
             m_gantryLaser.setRegionOfInterest(new LaserCan.RegionOfInterest(8, 8, 4, 4));
-            m_gantryLaser.setTimingBudget(LaserCan.TimingBudget.TIMING_BUDGET_33MS);
+            m_gantryLaser.setTimingBudget(LaserCan.TimingBudget.TIMING_BUDGET_50MS);
         } catch (ConfigurationFailedException e) {
             DriverStation.reportWarning("Could not apply configs to LaserCAN " + GantryConstants.GANTRY_LASER_ID + "; error code: " + e.toString(), false);
         }
@@ -303,9 +303,12 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         if ((m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == GantryPosition.IDLE) || Robot.isSimulation())
             return true;
 
-        double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
+        // double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
+        // SmartDashboard.putNumber("GantryPIDError", err);
+        // return err <= GantryConstants.POSITION_ERROR_THRESHOLD;
+        double err = Math.abs(m_pidController.getError());
         SmartDashboard.putNumber("GantryPIDError", err);
-        return err <= GantryConstants.POSITION_ERROR_THRESHOLD;
+        return err <= GantryConstants.POSITION_ERROR_THRESHOLD_MM;
     }
     private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("GantryIsAtTargetPosition").publish();
 
