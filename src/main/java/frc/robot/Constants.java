@@ -54,6 +54,8 @@ public class Constants {
         public static final double L3_POSITION = 2.21;
         public static final double L4_POSITION = 4.35;
 
+        public static final double ALGAE_HAND_POSITION_OFFSET = 0.25;
+
         // FIXME: ELEVATOR POSITION ERROR THRESHOLD
         public static final double POSITION_ERROR_THRESHOLD = 0.03;
     }
@@ -96,7 +98,7 @@ public class Constants {
 
         public static final double REEF_LEFT_POSITION_MM = 40;
         public static final double CORAL_STATION_POSITION_MM = 195;
-        public static final double REEF_RIGHT_POSITION_MM = 355;
+        public static final double REEF_RIGHT_POSITION_MM = 380; // 355
 
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
         public static final double POSITION_ERROR_THRESHOLD_MM = 10;

@@ -98,6 +98,8 @@ public class SubsystemInterfaces {
     }
 
     public static interface AlgaeHandSubsystemInterface extends GenericInterface {
+        public boolean isTargetingManualOut();
+
         public Command getManualOutCommand();
         public Command getManualInCommand();
 

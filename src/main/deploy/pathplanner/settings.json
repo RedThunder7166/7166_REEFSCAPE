@@ -27,7 +27,7 @@
   "robotTrackwidth": 0.546,
   "driveWheelRadius": 0.03758131036162379,
   "driveGearing": 4.71,
-  "maxDriveSpeed": 4.3162728,
+  "maxDriveSpeed": 4.65,
   "driveMotorType": "krakenX60",
   "driveCurrentLimit": 60.0,
   "wheelCOF": 1.2,

@@ -30,6 +30,11 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         }
 
         @Override
+        public boolean isTargetingManualOut() {
+            return false;
+        }
+
+        @Override
         public Command getManualOutCommand() {
             return Commands.none();
         }
@@ -59,7 +64,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         return command;
     }
 
-    private GenericDirection m_direction = GenericDirection.NONE;
+    private GenericDirection m_manualDirection = GenericDirection.NONE;
 
     private DesiredControlType m_desiredControlType = DesiredControlType.AUTOMATIC;
 
@@ -97,7 +102,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
             case MANUAL: {
                 final double amount = AlgaeHandConstants.MAX_DUTY_CYCLE;
                 double output = 0;
-                switch (m_direction) {
+                switch (m_manualDirection) {
                     case NONE:
                         break;
                     case OUT:
@@ -119,12 +124,17 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         m_motor.setControl(targetRequest);
     }
 
+    @Override
+    public boolean isTargetingManualOut() {
+        return m_manualDirection == GenericDirection.OUT;
+    }
+
     private Command makeManualCommand(GenericDirection desiredDirection) {
         return Commands.startEnd(() -> {
                 m_desiredControlType = DesiredControlType.MANUAL;
-                m_direction = desiredDirection;
+                m_manualDirection = desiredDirection;
             }, () -> {
-                m_direction = GenericDirection.NONE;
+                m_manualDirection = GenericDirection.NONE;
             }, this
         );
     }

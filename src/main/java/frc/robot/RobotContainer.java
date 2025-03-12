@@ -17,6 +17,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.FileVersionException;
@@ -186,27 +187,28 @@ public class RobotContainer {
             createPickupCommand()
         );
     }
+    // TODO: make this extend sequentialcommandgroup and the naddCommands instead of the arraylist
     private class AutoCommandBuilder {
-        private ArrayList<Supplier<Command>> m_supplierList = new ArrayList<>();
+        private ArrayList<Command> m_commandList = new ArrayList<>();
 
         public AutoCommandBuilder score(TargetScorePosition scorePosition, RelativeReefLocation reefLocation) {
-            m_supplierList.add(() -> createEntireScoreCommand(scorePosition, reefLocation));
+            m_commandList.add(createEntireScoreCommand(scorePosition, reefLocation));
             return this;
         }
         public AutoCommandBuilder pickup(CoralStationID coralStation) {
-            m_supplierList.add(() -> createEntirePickupCommand(coralStation));
+            m_commandList.add(createEntirePickupCommand(coralStation));
             return this;
         }
         public AutoCommandBuilder positionCoralStation() {
-            m_supplierList.add(() -> AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
+            m_commandList.add(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
             return this;
         }
 
         public Command finish() {
             SequentialCommandGroup group = new SequentialCommandGroup();
 
-            for (int i = 0; i < m_supplierList.size(); i++)
-                group.addCommands(m_supplierList.get(i).get());
+            for (int i = 0; i < m_commandList.size(); i++)
+                group.addCommands(m_commandList.get(i));
 
             return group;
         }
@@ -308,6 +310,17 @@ public class RobotContainer {
             .positionCoralStation()
             .finish()
         );
+        m_autoChooser.addOption("FourReefLeftL4Localize", new AutoCommandBuilder()
+            .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
+            .pickup(CoralStationID.Left)
+            .score(TargetScorePosition.L4_R, RelativeReefLocation.IJ)
+            .pickup(CoralStationID.Left)
+            .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
+            .pickup(CoralStationID.Left)
+            .score(TargetScorePosition.L4_R, RelativeReefLocation.KL)
+            .positionCoralStation()
+            .finish()
+        );
 
         // right autos
         m_autoChooser.addOption("OneReefRightL4Localize", new AutoCommandBuilder()
@@ -331,8 +344,21 @@ public class RobotContainer {
             .positionCoralStation()
             .finish()
         );
+        m_autoChooser.addOption("FourReefRightL4Localize", new AutoCommandBuilder()
+            .score(TargetScorePosition.L4_L, RelativeReefLocation.EF)
+            .pickup(CoralStationID.Right)
+            .score(TargetScorePosition.L4_R, RelativeReefLocation.EF)
+            .pickup(CoralStationID.Right)
+            .score(TargetScorePosition.L4_L, RelativeReefLocation.CD)
+            .pickup(CoralStationID.Right)
+            .score(TargetScorePosition.L4_R, RelativeReefLocation.CD)
+            .positionCoralStation()
+            .finish()
+        );
 
         SmartDashboard.putData("AutoChooser", m_autoChooser);
+
+        FollowPathCommand.warmupCommand().schedule();
 
         initialize();
     }

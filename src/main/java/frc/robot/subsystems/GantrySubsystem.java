@@ -206,7 +206,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private static final boolean tuneWithNetworkTables = false;
 
-    private static final double m_pidControllerP = 0.0022;
+    private static final double m_pidControllerP = 0.002;
     { if (tuneWithNetworkTables) SmartDashboard.putNumber("GANTRY_P", m_pidControllerP); }
     // private final ProfiledPIDController m_pidController = new ProfiledPIDController(
     //     SmartDashboard.getNumber("GANTRY_P", m_pidControllerP),

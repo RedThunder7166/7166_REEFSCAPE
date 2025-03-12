@@ -130,14 +130,15 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         ;
         private final double m_position;
+        private final double m_algaeHandPosition;
         private final boolean m_needsElevatorClearance;
 
         ElevatorPosition(double position) {
-            m_position = position;
-            m_needsElevatorClearance = false;
+            this(position, false);
         }
         ElevatorPosition(double position, boolean needsElevatorClearance) {
             m_position = position;
+            m_algaeHandPosition = position + ElevatorConstants.ALGAE_HAND_POSITION_OFFSET;
             m_needsElevatorClearance = needsElevatorClearance;
         }
     }
@@ -516,7 +517,10 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 desiredControl = m_brake; // redundant?
                 break;
             default:
-                desiredControl = m_positionControl.withPosition(m_position.m_position);
+                boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut() && (m_position == ElevatorPosition.L2 || m_position == ElevatorPosition.L3);
+                desiredControl = m_positionControl.withPosition(
+                    algaeHand ? m_position.m_algaeHandPosition : m_position.m_position
+                );
                 break;
         }
 

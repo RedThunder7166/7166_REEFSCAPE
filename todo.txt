@@ -1,8 +1,5 @@
-1
-determine section of the reef we're in (mapwise)
-DONE
-
 2
+(fix)
 automatic gantry horizontal adjustment
 
 3
@@ -10,3 +7,9 @@ automatic gantry horizontal adjustment
 
 4
 account for yaw so we ensure we're facing the reef section
+
+5
+in auto, elevator going down end condition should not be when at target position, but when the elevator is around l2 level
+
+6
+in auto, start the correct orientation for the reef section (limelight rotation should be good if we START the robot facing alliance wall (program needs to start); from there we should be able to move as much as we want)

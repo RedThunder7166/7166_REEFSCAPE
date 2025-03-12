@@ -412,7 +412,7 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
-        3.0, 3.0,
+        2.7, 4.0,
         Units.degreesToRadians(540), Units.degreesToRadians(720)
     );
 
