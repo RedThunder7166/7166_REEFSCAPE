@@ -135,6 +135,24 @@ public class CameraSubsystem extends SubsystemBase {
         }
     }
 
+    private static final double bumperOffset = Units.inchesToMeters(17); // 25
+    private static final double coralStationOffsetX = Units.inchesToMeters(2.5);
+    private static final double coralStationOffsetY = Units.inchesToMeters(8);
+
+    private static Translation2d getScaledDirectionVector(Translation2d directionVector, double scalarX, double scalarY) {
+        final double directionVectorMagnitude = Math.sqrt(Math.pow(directionVector.getX(), 2) + Math.pow(directionVector.getY(), 2)); // get magnitude
+        directionVector = new Translation2d(directionVector.getX() / directionVectorMagnitude, directionVector.getY() / directionVectorMagnitude); // normalize
+        return new Translation2d(directionVector.getX() * scalarX, directionVector.getY() * scalarY);
+    }
+    private static Translation2d getDirectionVector(Translation2d directionVector) {
+        return getScaledDirectionVector(directionVector, 1, 1);
+    }
+
+    private static Translation2d getReefTagDirectionVector(Translation2d targetTagTranslation) {
+        Translation2d directionVector = targetTagTranslation.minus(reefCenterTranslation); // get vector from center of reef to tag
+        return getScaledDirectionVector(directionVector, bumperOffset, bumperOffset);
+    }
+
     public static enum CoralStationID {
         Left,
         Right;
@@ -158,8 +176,9 @@ public class CameraSubsystem extends SubsystemBase {
             final Pose2d pose = aprilTagMap.get(m_tagID).pose.toPose2d();
             m_translation = pose.getTranslation();
             m_rotation = pose.getRotation();
-            m_offset = new Translation2d(DriveConstants.TRACK_WIDTH_X, DriveConstants.TRACK_WIDTH_Y * multiplier)
+            m_offset = new Translation2d((bumperOffset + coralStationOffsetX), (bumperOffset + coralStationOffsetY) * multiplier)
                 .rotateBy(m_rotation);
+            // m_offset = getScaledDirectionVector(m_translation, -DriveConstants.TRACK_WIDTH_X, DriveConstants.TRACK_WIDTH_Y * multiplier);
         }
     }
 
@@ -244,6 +263,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     private boolean m_insideReefZone = false;
     private boolean m_canAutoAdjust = false;
+    private boolean m_withinAutoTargetReefDistance = false;
 
     private final StructPublisher<Pose2d> m_swervePosePublisher = RobotState.robotStateTable
         .getStructTopic("MyPose", Pose2d.struct).publish();
@@ -271,6 +291,12 @@ public class CameraSubsystem extends SubsystemBase {
             SmartDashboard.putNumber("DRIVE_ROTATE_P", rotatePID_P);
             SmartDashboard.putNumber("DRIVE_RANGE_P", rangePID_P);
         }
+
+        RobotState.addTelemetry(() -> m_swervePosePublisher.set(m_cachedPoseEstimate), 24);
+    }
+
+    public Command getWaitUntilWithinAutoTargetReefDistanceCommand() {
+        return Commands.waitUntil(() -> m_withinAutoTargetReefDistance);
     }
 
     public double calculateRotateFromTag() {
@@ -362,6 +388,7 @@ public class CameraSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("ReefZoneDistance", distance);
         final boolean insideReefZone = distance <= AprilTagConstants.INSIDE_REEF_ZONE_THRESHOLD;
         final boolean canAutoAdjust = distance <= AprilTagConstants.AUTO_ADJUST_THRESHOLD;
+        final boolean withinAutoTargetReefDistance = distance <= AprilTagConstants.AUTO_TARGET_REEF_THRESHOLD;
         if (insideReefZone != m_insideReefZone) {
             SmartDashboard.putBoolean("InsideReefZone", insideReefZone);
             m_insideReefZone = insideReefZone;
@@ -370,6 +397,8 @@ public class CameraSubsystem extends SubsystemBase {
             SmartDashboard.putBoolean("CanAutoAdjust", canAutoAdjust);
             m_canAutoAdjust = canAutoAdjust;
         }
+        if (withinAutoTargetReefDistance != m_withinAutoTargetReefDistance)
+            m_withinAutoTargetReefDistance = withinAutoTargetReefDistance;
     }
     public synchronized boolean getInsideReefZone() {
         return m_insideReefZone;
@@ -391,8 +420,6 @@ public class CameraSubsystem extends SubsystemBase {
 
         final Translation2d robotTranslation = m_cachedPoseEstimate.getTranslation();
         updateDistanceBooleans(robotTranslation);
-
-        m_swervePosePublisher.set(m_cachedPoseEstimate);
     }
 
     private final PIDController targetRotatePIDController = new PIDController(5, 0, 0);
@@ -420,23 +447,6 @@ public class CameraSubsystem extends SubsystemBase {
         2.7, 4.0,
         Units.degreesToRadians(540), Units.degreesToRadians(720)
     );
-
-    private static final double m_bumperOffset = Units.inchesToMeters(17); // 25
-    private static final double m_coralStationOffsetX = 2;
-
-    private Translation2d getScaledDirectionVector(Translation2d directionVector, double scalarX, double scalarY) {
-        final double directionVectorMagnitude = Math.sqrt(Math.pow(directionVector.getX(), 2) + Math.pow(directionVector.getY(), 2)); // get magnitude
-        directionVector = new Translation2d(directionVector.getX() / directionVectorMagnitude, directionVector.getY() / directionVectorMagnitude); // normalize
-        return new Translation2d(directionVector.getX() * scalarX, directionVector.getY() * scalarY);
-    }
-    private Translation2d getDirectionVector(Translation2d directionVector) {
-        return getScaledDirectionVector(directionVector, 1, 1);
-    }
-
-    private Translation2d getReefTagDirectionVector(Translation2d targetTagTranslation) {
-        Translation2d directionVector = targetTagTranslation.minus(reefCenterTranslation); // get vector from center of reef to tag
-        return getScaledDirectionVector(directionVector, m_bumperOffset, m_bumperOffset);
-    }
 
     public Command getPathCommandFromReefTag(RelativeReefLocation reefLocation, boolean forAuto) {
         if (!aprilTagFieldLayoutSuccess || reefLocation.m_translation == null)

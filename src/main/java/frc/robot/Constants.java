@@ -129,7 +129,7 @@ public class Constants {
         public static final double MIN_ACTUATOR_POSITION_ROTATIONS = 0;
         public static final double MAX_ACTUATOR_POSITION_ROTATIONS = 0.110;
         // TODO: ensure within max and min
-        public static final double CLIMB_ACTUATOR_POSITION_ROTATIONS = 0.110;
+        public static final double CLIMB_ACTUATOR_POSITION_ROTATIONS = MAX_ACTUATOR_POSITION_ROTATIONS;
 
         // public static final double MIN_SAFE_ACTUATOR_POSITION_ROTATIONS = 50;
         // public static final double MAX_SAFE_ACTUATOR_POSITION_ROTATIONS = 10;
@@ -170,6 +170,7 @@ public class Constants {
         // below values are in meters
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
+        public static final double AUTO_TARGET_REEF_THRESHOLD = 1.6;
 
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;

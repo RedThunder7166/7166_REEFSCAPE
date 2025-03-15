@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
@@ -284,6 +285,49 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         }
 
         resetPositionStuff();
+
+        RobotState.addTelemetry(() -> {
+            BaseStatusSignal.waitForAll(0.020, m_gantryMotorPosition, m_PIDPositionReference);
+
+            final double gantryMotorPosition = m_gantryMotorPosition.getValueAsDouble();
+            final double gantryPositionMeters = GantryConstants.encoderUnitsToMeters(gantryMotorPosition);
+            m_gantryMotorPositionPublisher.set(gantryMotorPosition);
+            m_gantryPositionMetersPublisher.set(gantryPositionMeters);
+
+            final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
+            m_PIDPositionReferencePublisher.set(PIDPositionReference);
+
+            m_statePublisher.set(m_state.toString());
+            m_positionPublisher.set(m_position.toString());
+            m_manualDirectionPublisher.set(m_manualDirection.toString());
+
+            m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
+
+            m_elevatorClearanceSensorPublisher.set(m_elevatorClearanceSensorTripped);
+            m_scoreEnterSensorPublisher.set(m_scoreEnterSensorTripped);
+            m_scoreExitSensorPublisher.set(m_scoreExitSensorTripped);
+
+            m_manualPositionPublisher.set(m_manualPosition);
+            m_desiredControlTypePublisher.set(m_desiredControlType.toString());
+
+            if (tuneWithNetworkTables)
+                m_pidController.setP(SmartDashboard.getNumber("GANTRY_P", m_pidControllerP));
+
+            if (m_gantryLaserMeasurement != null && m_gantryLaserMeasurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
+                m_gantryLaserMeasurementPublisher.set(m_gantryLaserMeasurement.distance_mm + "mm");
+            } else {
+                m_gantryLaserMeasurementPublisher.set("INVALID");
+            }
+
+            final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : gantryMotorPosition;
+            final boolean mechPositionIsPositive = mechPositionToUse > 0;
+            final double mechPositionSign = mechPositionIsPositive ? 1 : -1;
+            double length = GantryMechanisms.widthInches * (mechPositionIsPositive ? (mechPositionToUse / GantryConstants.MAX_POSITION_ROTATIONS) : (mechPositionToUse / GantryConstants.MIN_POSITION_ROTATIONS));
+            length = Units.inchesToMeters(length * mechPositionSign);
+            if (Math.abs(length) == 0)
+                length = mechPositionSign * 0.05;
+            GantryMechanisms.ligament.setLength(length);
+        });
     }
 
     @Override
@@ -358,8 +402,9 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     @Override
     public void periodic() {
-        m_gantryMotorPosition.refresh();
-        m_PIDPositionReference.refresh();
+        m_elevatorClearanceSensorTripped = m_elevatorClearanceSensor.get();
+        m_scoreEnterSensorTripped = m_scoreEnterSensor.get();
+        m_scoreExitSensorTripped = m_scoreExitSensor.get();
 
         m_gantryLaserMeasurement = m_gantryLaser.getMeasurement();
 
@@ -380,49 +425,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         handleScoreMotor();
         m_oldIsResettingPosition = m_isResettingPosition;
-
-        final double gantryMotorPosition = m_gantryMotorPosition.getValueAsDouble();
-        final double gantryPositionMeters = GantryConstants.encoderUnitsToMeters(gantryMotorPosition);
-        m_gantryMotorPositionPublisher.set(gantryMotorPosition);
-        m_gantryPositionMetersPublisher.set(gantryPositionMeters);
-
-        final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
-        m_PIDPositionReferencePublisher.set(PIDPositionReference);
-
-        m_statePublisher.set(m_state.toString());
-        m_positionPublisher.set(m_position.toString());
-        m_manualDirectionPublisher.set(m_manualDirection.toString());
-
-        m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
-
-        m_elevatorClearanceSensorTripped = m_elevatorClearanceSensor.get();
-        m_scoreEnterSensorTripped = m_scoreEnterSensor.get();
-        m_scoreExitSensorTripped = m_scoreExitSensor.get();
-
-        m_elevatorClearanceSensorPublisher.set(m_elevatorClearanceSensorTripped);
-        m_scoreEnterSensorPublisher.set(m_scoreEnterSensorTripped);
-        m_scoreExitSensorPublisher.set(m_scoreExitSensorTripped);
-
-        m_manualPositionPublisher.set(m_manualPosition);
-        m_desiredControlTypePublisher.set(m_desiredControlType.toString());
-
-        if (tuneWithNetworkTables)
-            m_pidController.setP(SmartDashboard.getNumber("GANTRY_P", m_pidControllerP));
-
-        if (m_gantryLaserMeasurement != null && m_gantryLaserMeasurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
-            m_gantryLaserMeasurementPublisher.set(m_gantryLaserMeasurement.distance_mm + "mm");
-        } else {
-            m_gantryLaserMeasurementPublisher.set("INVALID");
-        }
-
-        final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : gantryMotorPosition;
-        final boolean mechPositionIsPositive = mechPositionToUse > 0;
-        final double mechPositionSign = mechPositionIsPositive ? 1 : -1;
-        double length = GantryMechanisms.widthInches * (mechPositionIsPositive ? (mechPositionToUse / GantryConstants.MAX_POSITION_ROTATIONS) : (mechPositionToUse / GantryConstants.MIN_POSITION_ROTATIONS));
-        length = Units.inchesToMeters(length * mechPositionSign);
-        if (Math.abs(length) == 0)
-            length = mechPositionSign * 0.05;
-        GantryMechanisms.ligament.setLength(length);
     }
 
     private void handleAutomatic() {

@@ -271,6 +271,18 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         }
     }
 
+    @Override
+    public boolean getIsAtTargetPosition() {
+        // return true if we're not actively targeting a position / we're simulating
+        if ((m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE) || Robot.isSimulation())
+            return true;
+
+        final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
+        SmartDashboard.putNumber("ElevatorPIDError", err);
+        return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
+    }
+    private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("ElevatorIsAtTargetPosition").publish();
+
     public ElevatorSubsystem() {
         // FIXME: tune elevator PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
@@ -318,6 +330,34 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         m_followerMotor.setPosition(0);
 
         SmartDashboard.putData("ElevatorMech2d", ElevatorMechanisms.mechanism2d);
+
+        RobotState.addTelemetry(() -> {
+            BaseStatusSignal.waitForAll(0.020, m_leaderMotorPosition, m_followerMotorPosition, m_leaderMotorVelocity, m_PIDPositionReference, m_PIDPositionSlope);
+
+            m_manualPositionPublisher.set(m_manualPosition);
+            m_desiredControlTypePublisher.set(m_desiredControlType.toString());
+
+            final double leaderMotorPosition = m_leaderMotorPosition.getValueAsDouble();
+            m_followerMotorPositionPublisher.set(m_followerMotorPosition.getValueAsDouble());
+            m_leaderMotorPositionPublisher.set(leaderMotorPosition);
+            m_leaderMotorVelocityPublisher.set(m_leaderMotorVelocity.getValueAsDouble());
+
+            final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
+            m_PIDPositionReferencePublisher.set(PIDPositionReference);
+            m_PIDPositionSlopePublisher.set(m_PIDPositionSlope.getValueAsDouble());
+
+            m_statePublisher.set(m_state.toString());
+            m_desiredStatePublisher.set(m_state.toString());
+            m_positionPublisher.set(m_position.toString());
+            m_manualDirectionPublisher.set(m_manualDirection.toString());
+
+            m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
+
+            final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : leaderMotorPosition;
+            ElevatorMechanisms.ligament.setLength(ElevatorMechanisms.baseHeightMeters + Units.inchesToMeters(
+                ElevatorMechanisms.maxHeightInches * (mechPositionToUse / ElevatorConstants.MAX_POSITION_ROTATIONS)
+            ));
+        });
     }
 
     // TODO: this should be called on sensor trip
@@ -325,18 +365,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     //     m_leaderMotor.setPosition(0);
     //     m_followerMotor.setPosition(0);
     // }
-
-    @Override
-    public boolean getIsAtTargetPosition() {
-        // return true if we're not actively targeting a position / we're simulating
-        if ((m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE) || Robot.isSimulation())
-            return true;
-
-        final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
-        SmartDashboard.putNumber("ElevatorPIDError", err);
-        return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
-    }
-    private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("ElevatorIsAtTargetPosition").publish();
 
     @Override
     public boolean getIsBelowL3() {
@@ -453,39 +481,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 handleManual();
         } else
             handleManual();
-
-        m_manualPositionPublisher.set(m_manualPosition);
-        m_desiredControlTypePublisher.set(m_desiredControlType.toString());
-
-        m_leaderMotorPosition.refresh();
-        m_followerMotorPosition.refresh();
-        m_leaderMotorVelocity.refresh();
-
-        m_PIDPositionReference.refresh();
-        m_PIDPositionSlope.refresh();
-
-        BaseStatusSignal.waitForAll(0.020, m_leaderMotorPosition, m_followerMotorPosition, m_leaderMotorVelocity, m_PIDPositionReference, m_PIDPositionSlope);
-
-        final double leaderMotorPosition = m_leaderMotorPosition.getValueAsDouble();
-        m_followerMotorPositionPublisher.set(m_followerMotorPosition.getValueAsDouble());
-        m_leaderMotorPositionPublisher.set(leaderMotorPosition);
-        m_leaderMotorVelocityPublisher.set(m_leaderMotorVelocity.getValueAsDouble());
-
-        final double PIDPositionReference = m_PIDPositionReference.getValueAsDouble();
-        m_PIDPositionReferencePublisher.set(PIDPositionReference);
-        m_PIDPositionSlopePublisher.set(m_PIDPositionSlope.getValueAsDouble());
-
-        m_statePublisher.set(m_state.toString());
-        m_desiredStatePublisher.set(m_state.toString());
-        m_positionPublisher.set(m_position.toString());
-        m_manualDirectionPublisher.set(m_manualDirection.toString());
-
-        m_isAtTargetPositionPublisher.set(getIsAtTargetPosition());
-
-        final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : leaderMotorPosition;
-        ElevatorMechanisms.ligament.setLength(ElevatorMechanisms.baseHeightMeters + Units.inchesToMeters(
-            ElevatorMechanisms.maxHeightInches * (mechPositionToUse / ElevatorConstants.MAX_POSITION_ROTATIONS)
-        ));
     }
 
     private void handleAutomatic() {

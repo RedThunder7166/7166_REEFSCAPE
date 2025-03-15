@@ -172,49 +172,58 @@ public class RobotContainer {
 
     private final SendableChooser<Command> m_autoChooser;
 
+    private Command getWaitUntilCoralIsGoodCommand() {
+        return Commands.waitUntil(RobotState::getCoralIsGood);
+    }
+
     // NOTE: these assume autonomous!!!
     private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
         return new SequentialCommandGroup(
             createLocalizeToReefCommand(reefPosition, true)
-                // toL2 RETURNS NULL!
-                .deadlineFor(AutomaticCommands.createGoToPositionCommand(scorePosition.toL2())),
-            AutomaticCommands.createGoToPositionCommand(scorePosition),
+                // toL2 MAY RETURN NULL!
+                .deadlineFor(
+                    getWaitUntilCoralIsGoodCommand()
+                    .andThen(AutomaticCommands.createInstantGoToPositionCommand(scorePosition.toL2()))
+                    .andThen(m_cameraSubsystem.getWaitUntilWithinAutoTargetReefDistanceCommand())
+                    .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition))
+                ),
+                AutomaticCommands.createGoToPositionCommand(scorePosition),
             createScoreCommand()
         );
     }
     private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
         return new SequentialCommandGroup(
-            AutomaticCommands.createGoToCoralStationCommand(),
+            AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION),
             createLocalizeToCoralStationCommand(coralStation),
             // createPickupCommand()
             TESTcreatePickupCommand()
         );
     }
-    // TODO: make this extend sequentialcommandgroup and the naddCommands instead of the arraylist
-    private class AutoCommandBuilder {
-        private ArrayList<Command> m_commandList = new ArrayList<>();
-
-        public AutoCommandBuilder score(TargetScorePosition scorePosition, RelativeReefLocation reefLocation) {
-            m_commandList.add(createEntireScoreCommand(scorePosition, reefLocation));
+    private class AutoCommandSequence extends SequentialCommandGroup {
+        public AutoCommandSequence score(TargetScorePosition scorePosition, RelativeReefLocation reefLocation) {
+            addCommands(createEntireScoreCommand(scorePosition, reefLocation));
             return this;
         }
-        public AutoCommandBuilder pickup(CoralStationID coralStation) {
-            m_commandList.add(createEntirePickupCommand(coralStation));
+        public AutoCommandSequence pickup(CoralStationID coralStation) {
+            addCommands(createEntirePickupCommand(coralStation));
             return this;
         }
-        public AutoCommandBuilder positionCoralStation() {
-            m_commandList.add(AutomaticCommands.createGoToCoralStationCommand());
+        public AutoCommandSequence finish() {
+            addCommands(AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
             return this;
         }
+    }
 
-        public Command finish() {
-            SequentialCommandGroup group = new SequentialCommandGroup();
+    private boolean m_followPathCommandIsDone = false;
+    private boolean m_pathFindingCommandIsDone = false;
 
-            for (int i = 0; i < m_commandList.size(); i++)
-                group.addCommands(m_commandList.get(i));
-
-            return group;
-        }
+    private void followPathCommandFinish() {
+        m_followPathCommandIsDone = true;
+        SmartDashboard.putBoolean("PathPlannerWarmedUp", m_followPathCommandIsDone && m_pathFindingCommandIsDone);
+    }
+    private void pathFindingCommandFinish() {
+        m_pathFindingCommandIsDone = true;
+        SmartDashboard.putBoolean("PathPlannerWarmedUp", m_followPathCommandIsDone && m_pathFindingCommandIsDone);
     }
 
     public RobotContainer() {
@@ -231,7 +240,7 @@ public class RobotContainer {
         m_driveSubsystem.ensureThisFileHasBeenModified();
 
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
-        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createGoToCoralStationCommand());
+        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
         NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
         NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
@@ -242,7 +251,6 @@ public class RobotContainer {
         NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_R));
 
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
-        // NamedCommands.registerCommand("GoToPosition", AutomaticCommands.TESTcreateGoToPositionCommand());
 
         NamedCommands.registerCommand("Score", createScoreCommand());
         NamedCommands.registerCommand("Pickup", createPickupCommand());
@@ -279,41 +287,31 @@ public class RobotContainer {
         , () ->
             m_driveSubsystem.setControl(m_robotCentricRequest.withVelocityX(0).withVelocityY(0))
         , m_driveSubsystem).withTimeout(0.5));
-        m_autoChooser.addOption("OneReefMiddleL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("OneReefMiddleL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.GH)
-            .positionCoralStation()
             .finish()
         );
 
         // left autos
-        m_autoChooser.addOption("OneReefLeftL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("OneReefLeftL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
-            .positionCoralStation()
             .finish()
         );
-        // m_autoChooser.addOption("TwoReefLeftL4Localize", new SequentialCommandGroup(
-        //     createEntireScoreCommand(new ScoreLocationPair(TargetScorePosition.L4_L, RelativeReefLocation.IJ)),
-        //     createEntirePickupCommand(CoralStationID.Left),
-        //     createEntireScoreCommand(new ScoreLocationPair(TargetScorePosition.L4_L, RelativeReefLocation.KL)),
-        //     AutomaticCommands.createGoToCoralStationCommand()
-        // ));
-        m_autoChooser.addOption("TwoReefLeftL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("TwoReefLeftL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
             .pickup(CoralStationID.Left)
             .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
-            .positionCoralStation()
             .finish()
         );
-        m_autoChooser.addOption("ThreeReefLeftL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("ThreeReefLeftL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
             .pickup(CoralStationID.Left)
             .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
             .pickup(CoralStationID.Left)
             .score(TargetScorePosition.L4_R, RelativeReefLocation.KL)
-            .positionCoralStation()
             .finish()
         );
-        m_autoChooser.addOption("FourReefLeftL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("FourReefLeftL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
             .pickup(CoralStationID.Left)
             .score(TargetScorePosition.L4_R, RelativeReefLocation.IJ)
@@ -321,33 +319,29 @@ public class RobotContainer {
             .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
             .pickup(CoralStationID.Left)
             .score(TargetScorePosition.L4_R, RelativeReefLocation.KL)
-            .positionCoralStation()
             .finish()
         );
 
         // right autos
-        m_autoChooser.addOption("OneReefRightL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("OneReefRightL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.EF)
-            .positionCoralStation()
             .finish()
         );
-        m_autoChooser.addOption("TwoReefRightL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("TwoReefRightL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.EF)
             .pickup(CoralStationID.Right)
             .score(TargetScorePosition.L4_L, RelativeReefLocation.CD)
-            .positionCoralStation()
             .finish()
         );
-        m_autoChooser.addOption("ThreeReefRightL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("ThreeReefRightL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.EF)
             .pickup(CoralStationID.Right)
             .score(TargetScorePosition.L4_L, RelativeReefLocation.CD)
             .pickup(CoralStationID.Right)
             .score(TargetScorePosition.L4_R, RelativeReefLocation.CD)
-            .positionCoralStation()
             .finish()
         );
-        m_autoChooser.addOption("FourReefRightL4Localize", new AutoCommandBuilder()
+        m_autoChooser.addOption("FourReefRightL4Localize", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.EF)
             .pickup(CoralStationID.Right)
             .score(TargetScorePosition.L4_R, RelativeReefLocation.EF)
@@ -355,22 +349,27 @@ public class RobotContainer {
             .score(TargetScorePosition.L4_L, RelativeReefLocation.CD)
             .pickup(CoralStationID.Right)
             .score(TargetScorePosition.L4_R, RelativeReefLocation.CD)
-            .positionCoralStation()
             .finish()
         );
 
         // test autos
-        m_autoChooser.addOption("TESTSpeed1", new AutoCommandBuilder()
+        m_autoChooser.addOption("TESTSpeed1", new AutoCommandSequence()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
-            .positionCoralStation()
             .pickup(CoralStationID.Left)
             .finish()
         );
 
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
-        FollowPathCommand.warmupCommand().schedule();
-        PathfindingCommand.warmupCommand().schedule();
+        SmartDashboard.putBoolean("PathPlannerWarmedUp", false);
+        FollowPathCommand.warmupCommand()
+            .andThen(this::followPathCommandFinish)
+            .ignoringDisable(true)
+            .schedule();
+        PathfindingCommand.warmupCommand()
+            .andThen(this::pathFindingCommandFinish)
+            .ignoringDisable(true)
+            .schedule();
 
         initialize();
     }
@@ -470,7 +469,7 @@ public class RobotContainer {
         })));
         OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCommand());
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createGoToCoralStationCommand());
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
         OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L1));
         OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_L));
@@ -531,42 +530,16 @@ public class RobotContainer {
         m_gantrySubsystem.setIdle();
     }
 
-    final boolean testingthiswervethingplsdelete = false;
-    final TalonFX frontleftdrive = new TalonFX(20, Constants.CANIVORE_NAME);
-    final TalonFX frontrightdrive = new TalonFX(21, Constants.CANIVORE_NAME);
-    final TalonFX backleftdrive = new TalonFX(23, Constants.CANIVORE_NAME);
-    final TalonFX backrightdrive = new TalonFX(22, Constants.CANIVORE_NAME);
-    double frontleftrotations = 0;
-    double frontrightrotations = 0;
-    double backleftrotations = 0;
-    double backrightrotations = 0;
     public void teleopInit() {
         RobotState.setTargetScorePosition(TargetScorePosition.NONE);
 
         m_elevatorSubsystem.resetManualPosition();
-        if (testingthiswervethingplsdelete) {
-            frontleftrotations = frontleftdrive.getPosition().getValueAsDouble();
-            frontrightrotations = frontrightdrive.getPosition().getValueAsDouble();
-            backleftrotations = backleftdrive.getPosition().getValueAsDouble();
-            backrightrotations = backrightdrive.getPosition().getValueAsDouble();
-            SmartDashboard.putNumber("FRONTLEFT_DISTANCE", 0);
-            SmartDashboard.putNumber("FRONTRIGHT_DISTANCE", 0);
-            SmartDashboard.putNumber("BACKLEFT_DISTANCE", 0);
-            SmartDashboard.putNumber("BACKRIGHT_DISTANCE", 0);
-        }
+        m_gantrySubsystem.resetManualPosition();
     }
 
     public void robotPeriodic() {
         // SmartDashboard.putNumber("WHEEL_POSITION_0", m_driveSubsystem.getWheelRadiusCharacterizationPosition()[0]);
         // System.out.println("what?");
-
-        if (testingthiswervethingplsdelete) {
-            // SmartDashboard.putNumber("SWERVEDISTANCE", m_driveSubsystem.getCustomEstimatedPose().getY());
-            SmartDashboard.putNumber("FRONTLEFT_DISTANCE", frontleftdrive.getPosition().getValueAsDouble() - frontleftrotations);
-            SmartDashboard.putNumber("FRONTRIGHT_DISTANCE", frontrightdrive.getPosition().getValueAsDouble() - frontrightrotations);
-            SmartDashboard.putNumber("BACKLEFT_DISTANCE", backleftdrive.getPosition().getValueAsDouble() - backleftrotations);
-            SmartDashboard.putNumber("BACKRIGHT_DISTANCE", backrightdrive.getPosition().getValueAsDouble() - backrightrotations);
-        }
 
         final Pose2d robotPose = m_driveSubsystem.getCustomEstimatedPose();
         Pose2d targetPose = null;

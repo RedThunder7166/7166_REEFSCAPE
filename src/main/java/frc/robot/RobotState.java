@@ -4,10 +4,11 @@
 
 package frc.robot;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -34,6 +35,35 @@ public final class RobotState {
 
     public static final NetworkTableInstance NETWORK_TABLE_INSTANCE = NetworkTableInstance.getDefault();
     public static final NetworkTable robotStateTable = NETWORK_TABLE_INSTANCE.getTable("RobotState");
+
+    private static HashMap<Long, ArrayList<Runnable>> telemetryRunnableListMap = new HashMap<>();
+
+    public synchronized static ArrayList<Runnable> getTelemetryRunnableList(long rate) {
+        var list = telemetryRunnableListMap.getOrDefault(rate, null);
+        if (list == null) {
+            list = new ArrayList<>();
+            telemetryRunnableListMap.put(rate, list);
+
+            new Thread(() -> {
+                while (true) {
+                    var lista = telemetryRunnableListMap.get(rate);
+                    for (int i = 0; i < lista.size(); i++)
+                        lista.get(i).run();
+                    try {
+                        Thread.sleep(rate);
+                    } catch (InterruptedException e) { }
+                }
+            }, "RobotStateTelemetry" + rate + "ms").start();
+        }
+        return list;
+    }
+
+    public synchronized static void addTelemetry(Runnable runnable) {
+        getTelemetryRunnableList(60).add(runnable);
+    }
+    public synchronized static void addTelemetry(Runnable runnable, long rate) {
+        getTelemetryRunnableList(rate).add(runnable);
+    }
 
     public static enum TargetScorePosition {
         NONE,
@@ -73,10 +103,11 @@ public final class RobotState {
         return targetScorePosition;
     }
     public static synchronized boolean setTargetScorePosition(TargetScorePosition desiredPosition) {
+        if (targetScorePosition != desiredPosition)
+            targetScorePositionPublisher.set(desiredPosition.toString());
         // FIXME: ask subsystems if we can switch to this position; if we can't, don't set target position (or set it to NONE) and return false
         // ^ e.g: we are trying to score a piece, we are intaking a piece
         targetScorePosition = desiredPosition;
-        targetScorePositionPublisher.set(targetScorePosition.toString());
         return true;
     }
     // update nt
@@ -100,9 +131,10 @@ public final class RobotState {
         return intakeState;
     }
 
-    private static synchronized void setIntakeState(IntakeState intakeStateIn) {
-        intakeState = intakeStateIn;
-        intakeStatePublisher.set(intakeState.toString());
+    private static synchronized void setIntakeState(IntakeState desiredState) {
+        if (intakeState != desiredState)
+            intakeStatePublisher.set(intakeState.toString());
+        intakeState = desiredState;
     }
     public static synchronized void startIntake(IntakeState intakeState) {
         setIntakeState(intakeState);
@@ -125,9 +157,10 @@ public final class RobotState {
     public static synchronized ClimbActuatorState getClimbActuatorState() {
         return climbActuatorState;
     }
-    public static synchronized void setClimbActuatorState(ClimbActuatorState climbStateIn) {
-        climbActuatorState = climbStateIn;
-        climbActuatorStatePublisher.set(climbActuatorState.toString());
+    public static synchronized void setClimbActuatorState(ClimbActuatorState desiredState) {
+        if (climbActuatorState != desiredState)
+            climbActuatorStatePublisher.set(desiredState.toString());
+        climbActuatorState = desiredState;
     }
     // update nt
     { setClimbActuatorState(climbActuatorState); }
@@ -139,8 +172,9 @@ public final class RobotState {
         return elevatorHasClearance;
     }
     public static synchronized void setElevatorHasClearance(boolean elevatorHasClearanceIn) {
+        if (elevatorHasClearance != elevatorHasClearanceIn)
+            elevatorHasClearancePublisher.set(elevatorHasClearance);
         elevatorHasClearance = elevatorHasClearanceIn;
-        elevatorHasClearancePublisher.set(elevatorHasClearance);
     }
     // update nt
     { setElevatorHasClearance(elevatorHasClearance); }
