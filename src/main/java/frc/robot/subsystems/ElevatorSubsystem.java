@@ -62,6 +62,10 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         public boolean getIsAtTargetPosition() {
             return true;
         }
+        @Override
+        public boolean getIsBelowL3() {
+            return true;
+        }
 
         @Override
         public Command getManualUpCommand() {
@@ -124,8 +128,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         CORAL_STATION(ElevatorConstants.CORAL_STATION_POSITION),
 
         L1(ElevatorConstants.L1_POSITION),
-        L2(ElevatorConstants.L2_POSITION, true),
-        L3(ElevatorConstants.L3_POSITION, true),
+        L2(ElevatorConstants.L2_POSITION, ElevatorConstants.L2_POSITION + ElevatorConstants.ALGAE_HAND_POSITION_OFFSET, true),
+        L3(ElevatorConstants.L3_POSITION, ElevatorConstants.L3_POSITION + ElevatorConstants.ALGAE_HAND_POSITION_OFFSET, true),
         L4(ElevatorConstants.L4_POSITION, true)
 
         ;
@@ -137,8 +141,11 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
             this(position, false);
         }
         ElevatorPosition(double position, boolean needsElevatorClearance) {
+            this(position, position, needsElevatorClearance);
+        }
+        ElevatorPosition(double position, double algaeHandPosition, boolean needsElevatorClearance) {
             m_position = position;
-            m_algaeHandPosition = position + ElevatorConstants.ALGAE_HAND_POSITION_OFFSET;
+            m_algaeHandPosition = algaeHandPosition;
             m_needsElevatorClearance = needsElevatorClearance;
         }
     }
@@ -158,17 +165,18 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     }
     private final StringPublisher m_manualDirectionPublisher = RobotState.robotStateTable.getStringTopic("ElevatorManualDirection").publish();
 
+    private double clampPosition(double position) {
+        if (position < ElevatorConstants.MIN_POSITION_ROTATIONS)
+            position = ElevatorConstants.MIN_POSITION_ROTATIONS;
+        if (position > ElevatorConstants.MAX_POSITION_ROTATIONS)
+            position = ElevatorConstants.MAX_POSITION_ROTATIONS;
+
+        return position;
+    }
+
     private double m_manualPosition = 0;
-    private synchronized void setManualPosition(double newValue) {
-        if (newValue < ElevatorConstants.MIN_POSITION_ROTATIONS)
-            newValue = ElevatorConstants.MIN_POSITION_ROTATIONS;
-        if (newValue > ElevatorConstants.MAX_POSITION_ROTATIONS)
-            newValue = ElevatorConstants.MAX_POSITION_ROTATIONS;
-
-        // if (!RobotState.getWristHasElevatorClearance() && newValue > ElevatorConstants.MAX_TARGET_POSITION_WITH_WRIST)
-        //     newValue = ElevatorConstants.MAX_TARGET_POSITION_WITH_WRIST;
-
-        m_manualPosition = newValue;
+    private synchronized void setManualPosition(double position) {
+        m_manualPosition = clampPosition(position);
     }
     @Override
     public synchronized void incrementManualPosition(double value) {
@@ -329,6 +337,20 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
     }
     private final BooleanPublisher m_isAtTargetPositionPublisher = RobotState.robotStateTable.getBooleanTopic("ElevatorIsAtTargetPosition").publish();
+
+    @Override
+    public boolean getIsBelowL3() {
+        if (m_desiredControlType == DesiredControlType.MANUAL || Robot.isSimulation())
+            return false;
+
+        final double a = m_leaderMotorPosition.getValueAsDouble();
+        final double b = ElevatorConstants.L3_POSITION;
+        final boolean result = a <= b;
+
+        SmartDashboard.putString("pleasehelp", result + " ; " + a + " ; " + b);
+
+        return result;
+    }
 
     private Command makeManualCommand(ElevatorManualDirection desiredDirection) {
         return startEnd(() -> {
@@ -517,7 +539,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 desiredControl = m_brake; // redundant?
                 break;
             default:
-                boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut() && (m_position == ElevatorPosition.L2 || m_position == ElevatorPosition.L3);
+                boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut();
                 desiredControl = m_positionControl.withPosition(
                     algaeHand ? m_position.m_algaeHandPosition : m_position.m_position
                 );

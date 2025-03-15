@@ -5,9 +5,11 @@
 package frc.robot.subsystems;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
+import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -393,22 +395,25 @@ public class CameraSubsystem extends SubsystemBase {
         m_swervePosePublisher.set(m_cachedPoseEstimate);
     }
 
-    private final PIDController targetRotatePIDController = new PIDController(3, 0, 0);
+    private final PIDController targetRotatePIDController = new PIDController(5, 0, 0);
     public double calculateRotateFromTag(int tagID) {
-        Pose2d robotPose = m_cachedPoseEstimate;
+        final Pose2d robotPose = m_cachedPoseEstimate;
 
-        AprilTag targetTag = aprilTagMap.get(tagID);
-        Pose2d targetTagPose = targetTag.pose.toPose2d();
+        final AprilTag targetTag = aprilTagMap.get(tagID);
+        final Pose2d targetTagPose = targetTag.pose.toPose2d();
 
-        // double desiredAngle = Math.atan2(targetTagPose.getY() - robotPose.getY(), targetTagPose.getX() - robotPose.getX());
-        // SmartDashboard.putNumber("ROTATEFROMTAG_DESIREDANGLE", desiredAngle);
-
-        double desiredAngle = targetTagPose.getRotation().minus(robotPose.getRotation()).getRadians();
-        SmartDashboard.putNumber("ROTATEFROMTAG_DESIREDANGLE", desiredAngle);
-
-        double result = targetRotatePIDController.calculate(robotPose.getRotation().getRadians(), desiredAngle);
+        // FIXME: anglemodulus robot pose
+        double result = targetRotatePIDController.calculate(robotPose.getRotation().getRadians(), targetTagPose.getRotation().rotateBy(Rotation2d.k180deg).getRadians());
         SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
         return result;
+    }
+
+    private Command createFaceTagCommand(int tagID) {
+        return m_driveSubsystem.applyRequest(() -> new RobotCentric()
+            .withVelocityX(0)
+            .withVelocityY(0)
+            .withRotationalRate(calculateRotateFromTag(tagID))
+        );
     }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
@@ -433,7 +438,7 @@ public class CameraSubsystem extends SubsystemBase {
         return getScaledDirectionVector(directionVector, m_bumperOffset, m_bumperOffset);
     }
 
-    public Command getPathCommandFromReefTag(RelativeReefLocation reefLocation) {
+    public Command getPathCommandFromReefTag(RelativeReefLocation reefLocation, boolean forAuto) {
         if (!aprilTagFieldLayoutSuccess || reefLocation.m_translation == null)
             return Commands.none();
 
@@ -458,10 +463,15 @@ public class CameraSubsystem extends SubsystemBase {
         // }
 
         result.addRequirements(m_driveSubsystem);
-        return new InstantCommand(() -> {
+        result = new InstantCommand(() -> {
             m_targetPosePublisher.set(targetPose);
             m_targetReefLocationPublisher.set(OurUtils.formatReefLocation(reefLocation));
         }).andThen(result);
+
+        // if (!forAuto)
+        //     result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
+
+        return result;
     }
 
     public Command getPathCommandFromCoralStationTag(CoralStationID coralStationID) {

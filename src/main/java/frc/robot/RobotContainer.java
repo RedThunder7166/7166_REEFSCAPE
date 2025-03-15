@@ -18,6 +18,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.FileVersionException;
@@ -84,11 +85,11 @@ public class RobotContainer {
 
     // NOTE: we use dynamic command to account for alliancestation changing
     private Command createLocalizeToReefCommand() {
-        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(m_closestReefLocation));
+        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(m_closestReefLocation, false));
     }
-    private Command createLocalizeToReefCommand(RelativeReefLocation targetReefLocation) {
+    private Command createLocalizeToReefCommand(RelativeReefLocation targetReefLocation, boolean forAuto) {
         // m_targetReefLocation = targetReefLocation;
-        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(targetReefLocation));
+        return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(targetReefLocation, forAuto));
     }
     private Command createLocalizeToCoralStationCommand(CoralStationID targetCoralStation) {
         return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromCoralStationTag(targetCoralStation));
@@ -136,34 +137,32 @@ public class RobotContainer {
             RobotState.stopIntake();
         }
     }
-    // private static final class AutoPickupCommand extends PickupCommand {
-    //     private GantrySubsystemInterface m_gantrySubsystem;
+    private final class AutoPickupCommand extends PickupCommand {
+        public AutoPickupCommand(GantrySubsystemInterface gantrySubsystem) {
+            super(gantrySubsystem);
+        }
 
-    //     public AutoPickupCommand(GantrySubsystemInterface gantrySubsystem) {
-    //         m_gantrySubsystem = gantrySubsystem;
-    //     }
+        @Override
+        public boolean isFinished() {
+            return m_gantrySubsystem.getScoreEnterSensorTripped();
+        }
 
-    //     @Override
-    //     public boolean isFinished() {
-    //         return m_gantrySubsystem.getScoreEnterSensorTripped();
-    //     }
-
-    //     @Override
-    //     public void end(boolean isInterrupted) { 
-    //         // do nothing: we don't want the intake to stop here; it will be stopped from auto
-    //     }
-    // }
+        @Override
+        public void end(boolean isInterrupted) { 
+            // do nothing: we don't want the intake to stop here; it will be stopped from auto
+        }
+    }
     private Command createPickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
             new PickupCommand(m_gantrySubsystem)
         );
     }
 
-    // private Command TESTcreatePickupCommand() {
-    //     return m_intakeOuttakeSubsystem.addToCommandRequirements(
-    //         new AutoPickupCommand(m_gantrySubsystem)
-    //     );
-    // }
+    private Command TESTcreatePickupCommand() {
+        return m_intakeOuttakeSubsystem.addToCommandRequirements(
+            new AutoPickupCommand(m_gantrySubsystem)
+        );
+    }
 
     private Command createSetClimbStateCommand(ClimbActuatorState climbState) {
         return m_climbSubsystem.addToCommandRequirements(new InstantCommand(() -> {
@@ -173,18 +172,22 @@ public class RobotContainer {
 
     private final SendableChooser<Command> m_autoChooser;
 
+    // NOTE: these assume autonomous!!!
     private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
         return new SequentialCommandGroup(
-            createLocalizeToReefCommand(reefPosition),
+            createLocalizeToReefCommand(reefPosition, true)
+                // toL2 RETURNS NULL!
+                .deadlineFor(AutomaticCommands.createGoToPositionCommand(scorePosition.toL2())),
             AutomaticCommands.createGoToPositionCommand(scorePosition),
             createScoreCommand()
         );
     }
     private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
         return new SequentialCommandGroup(
-            AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION),
+            AutomaticCommands.createGoToCoralStationCommand(),
             createLocalizeToCoralStationCommand(coralStation),
-            createPickupCommand()
+            // createPickupCommand()
+            TESTcreatePickupCommand()
         );
     }
     // TODO: make this extend sequentialcommandgroup and the naddCommands instead of the arraylist
@@ -200,7 +203,7 @@ public class RobotContainer {
             return this;
         }
         public AutoCommandBuilder positionCoralStation() {
-            m_commandList.add(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
+            m_commandList.add(AutomaticCommands.createGoToCoralStationCommand());
             return this;
         }
 
@@ -228,7 +231,7 @@ public class RobotContainer {
         m_driveSubsystem.ensureThisFileHasBeenModified();
 
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
-        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
+        NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createGoToCoralStationCommand());
 
         NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
         NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
@@ -253,12 +256,12 @@ public class RobotContainer {
         }
 
         // FIXME: verify if we can register commands after configuring autobuilder (99% sure you can)
-        NamedCommands.registerCommand("LocalizeToReefAB", createLocalizeToReefCommand(RelativeReefLocation.AB));
-        NamedCommands.registerCommand("LocalizeToReefCD", createLocalizeToReefCommand(RelativeReefLocation.CD));
-        NamedCommands.registerCommand("LocalizeToReefEF", createLocalizeToReefCommand(RelativeReefLocation.EF));
-        NamedCommands.registerCommand("LocalizeToReefGH", createLocalizeToReefCommand(RelativeReefLocation.GH));
-        NamedCommands.registerCommand("LocalizeToReefIJ", createLocalizeToReefCommand(RelativeReefLocation.IJ));
-        NamedCommands.registerCommand("LocalizeToReefKL", createLocalizeToReefCommand(RelativeReefLocation.KL));
+        NamedCommands.registerCommand("LocalizeToReefAB", createLocalizeToReefCommand(RelativeReefLocation.AB, true));
+        NamedCommands.registerCommand("LocalizeToReefCD", createLocalizeToReefCommand(RelativeReefLocation.CD, true));
+        NamedCommands.registerCommand("LocalizeToReefEF", createLocalizeToReefCommand(RelativeReefLocation.EF, true));
+        NamedCommands.registerCommand("LocalizeToReefGH", createLocalizeToReefCommand(RelativeReefLocation.GH, true));
+        NamedCommands.registerCommand("LocalizeToReefIJ", createLocalizeToReefCommand(RelativeReefLocation.IJ, true));
+        NamedCommands.registerCommand("LocalizeToReefKL", createLocalizeToReefCommand(RelativeReefLocation.KL, true));
 
         NamedCommands.registerCommand("LocalizeToCoralStationLeft", createLocalizeToCoralStationCommand(CoralStationID.Left));
         NamedCommands.registerCommand("LocalizeToCoralStationRight", createLocalizeToCoralStationCommand(CoralStationID.Right));
@@ -292,7 +295,7 @@ public class RobotContainer {
         //     createEntireScoreCommand(new ScoreLocationPair(TargetScorePosition.L4_L, RelativeReefLocation.IJ)),
         //     createEntirePickupCommand(CoralStationID.Left),
         //     createEntireScoreCommand(new ScoreLocationPair(TargetScorePosition.L4_L, RelativeReefLocation.KL)),
-        //     AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION)
+        //     AutomaticCommands.createGoToCoralStationCommand()
         // ));
         m_autoChooser.addOption("TwoReefLeftL4Localize", new AutoCommandBuilder()
             .score(TargetScorePosition.L4_L, RelativeReefLocation.IJ)
@@ -356,9 +359,18 @@ public class RobotContainer {
             .finish()
         );
 
+        // test autos
+        m_autoChooser.addOption("TESTSpeed1", new AutoCommandBuilder()
+            .score(TargetScorePosition.L4_L, RelativeReefLocation.KL)
+            .positionCoralStation()
+            .pickup(CoralStationID.Left)
+            .finish()
+        );
+
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
         FollowPathCommand.warmupCommand().schedule();
+        PathfindingCommand.warmupCommand().schedule();
 
         initialize();
     }
@@ -381,6 +393,7 @@ public class RobotContainer {
 
         m_driveSubsystem.setDefaultCommand(
             m_driveSubsystem.applyRequest(() -> {
+                    final double rotation = -DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE;
                     if (m_robotCentricForward || m_robotCentricRight || m_robotCentricBackward || m_robotCentricLeft) {
                         double x = 0;
                         double y = 0;
@@ -389,11 +402,11 @@ public class RobotContainer {
                         if (m_robotCentricBackward) x = -robotCentricSpeed;
                         if (m_robotCentricLeft) y = robotCentricSpeed;
                         return m_robotCentricRequest.withVelocityX(x).withVelocityY(y)
-                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE);
+                            .withRotationalRate(rotation);
                     } else
                         return m_fieldCentricRequest.withVelocityX(-DRIVER_CONTROLS.getLeftY() * DriveConstants.MAX_SPEED)
                             .withVelocityY(-DRIVER_CONTROLS.getLeftX() * DriveConstants.MAX_SPEED)
-                            .withRotationalRate(-DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE);
+                            .withRotationalRate(rotation);
                 }
             )
         );
@@ -438,12 +451,12 @@ public class RobotContainer {
 
         // DRIVER_CONTROLS.localizeToReef.whileTrue(createLocalizeToReefCommand());
 
-        DRIVER_CONTROLS.localizeToReefAB.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.AB));
-        DRIVER_CONTROLS.localizeToReefCD.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.CD));
-        DRIVER_CONTROLS.localizeToReefEF.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.EF));
-        DRIVER_CONTROLS.localizeToReefGH.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.GH));
-        DRIVER_CONTROLS.localizeToReefIJ.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.IJ));
-        DRIVER_CONTROLS.localizeToReefKL.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.KL));
+        DRIVER_CONTROLS.localizeToReefAB.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.AB, false));
+        DRIVER_CONTROLS.localizeToReefCD.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.CD, false));
+        DRIVER_CONTROLS.localizeToReefEF.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.EF, false));
+        DRIVER_CONTROLS.localizeToReefGH.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.GH, false));
+        DRIVER_CONTROLS.localizeToReefIJ.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.IJ, false));
+        DRIVER_CONTROLS.localizeToReefKL.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.KL, false));
 
         DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToReefCommand());
         // DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToCoralStationCommand(CoralStationID.Left));
@@ -457,7 +470,7 @@ public class RobotContainer {
         })));
         OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCommand());
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.CORAL_STATION));
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createGoToCoralStationCommand());
 
         OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L1));
         OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_L));

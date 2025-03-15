@@ -32,8 +32,8 @@ public class Constants {
         public static final double DRIVE_RADIUS = Math.hypot(TRACK_WIDTH_X / 2d, TRACK_WIDTH_Y / 2d);
 
         // FIXME: TUNE THESE
-        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(7, 0, 0);
-        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(10, 0, 0);
+        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(5, 0, 0);
+        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(10, 0, 0);
         public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(7, 0, 0);
     }
 
@@ -113,8 +113,8 @@ public class Constants {
         public static final double FORWARD_OUTPUT = 0.4;
         public static final double BACKWARD_OUTPUT = -0.2;
 
-        public static final double CRAWL_FORWARD_OUTPUT = 0.11;
-        public static final double CRAWL_BACKWARD_OUTPUT = -CRAWL_FORWARD_OUTPUT;
+        public static final double CRAWL_FORWARD_OUTPUT = 0.08;
+        public static final double CRAWL_BACKWARD_OUTPUT = -0.10;
 
         public static final double CRAWL_FORWARD_VOLTAGE = 1.5;
         public static final double CRAWL_BACKWARD_VOLTAGE = -CRAWL_FORWARD_VOLTAGE;
@@ -186,5 +186,5 @@ public class Constants {
 
     // FIXME: AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS; should be slightly above actual time needed
     public static final double AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS = 2;
-    public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.25;
+    public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.05;
 }

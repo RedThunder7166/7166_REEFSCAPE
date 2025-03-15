@@ -47,7 +47,23 @@ public final class RobotState {
         L3_R,
 
         L4_L,
-        L4_R
+        L4_R;
+
+        // RETURNS NULL
+        public TargetScorePosition toL2() {
+            switch (this) {
+                case L2_L:
+                case L3_L:
+                case L4_L:
+                    return L2_L;
+                case L2_R:
+                case L3_R:
+                case L4_R:
+                    return L2_R;
+                default:
+                    return null;
+            }
+        }
     }
 
     private static TargetScorePosition targetScorePosition = TargetScorePosition.NONE;
@@ -146,7 +162,8 @@ public final class RobotState {
         wantsToScore = wantsToScoreIn;
     }
 
-    public static final double reefTargetHorizontalDistanceOffset = Units.inchesToMeters(2) - 0.011; // 0.056
+    // public static final double reefTargetHorizontalDistanceOffset = Units.inchesToMeters(2) - 0.011; // 0.056
+    public static final double reefTargetHorizontalDistanceOffset = 0; // 0.056
 
     private static Optional<Double> reefTargetHorizontalDistance = Optional.empty();
     public static synchronized Optional<Double> getReefTargetHorizontalDistance() {

@@ -549,16 +549,19 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         if (intakeState == IntakeState.OUT) {
             targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
         } else {
-            TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
+            final boolean isGoodToMove = !RobotState.getWantsToScore();
+            // TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
 
             if (m_elevatorClearanceSensorTripped)
                 // if we are in automatic control and we are targeting a non-coral-station position, don't move motor
-                if (m_desiredControlType == DesiredControlType.MANUAL || (m_position == GantryPosition.CORAL_STATION || m_position == GantryPosition.IDLE))
-                    // targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
-                    targetRequest = m_voltageOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_VOLTAGE);
+                // if (m_desiredControlType == DesiredControlType.MANUAL || (m_position == GantryPosition.CORAL_STATION || m_position == GantryPosition.IDLE))
+                if (isGoodToMove)
+                    targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
+                    // targetRequest = m_voltageOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_VOLTAGE);
                 else
                     targetRequest = m_brake;
-            else if (!m_scoreEnterSensorTripped && (targetScorePosition == TargetScorePosition.NONE || targetScorePosition == TargetScorePosition.CORAL_STATION))
+            // else if (!m_scoreEnterSensorTripped && (targetScorePosition == TargetScorePosition.NONE || targetScorePosition == TargetScorePosition.CORAL_STATION))
+            else if (!m_scoreEnterSensorTripped && isGoodToMove)
                 targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_BACKWARD_OUTPUT);
             else
                 targetRequest = m_brake;

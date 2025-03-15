@@ -1,6 +1,6 @@
 {
-  "robotWidth": 0.864,
-  "robotLength": 0.864,
+  "robotWidth": 0.852,
+  "robotLength": 0.852,
   "holonomicMode": true,
   "pathFolders": [
     "CoralStationToReef",
@@ -31,7 +31,7 @@
   "driveMotorType": "krakenX60",
   "driveCurrentLimit": 60.0,
   "wheelCOF": 1.2,
-  "flModuleX": 0.28575,
+  "flModuleX": 0.286,
   "flModuleY": 0.28575,
   "frModuleX": 0.28575,
   "frModuleY": -0.28575,
