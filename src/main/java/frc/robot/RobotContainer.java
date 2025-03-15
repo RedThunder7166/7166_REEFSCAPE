@@ -187,7 +187,7 @@ public class RobotContainer {
                     .andThen(m_cameraSubsystem.getWaitUntilWithinAutoTargetReefDistanceCommand())
                     .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition))
                 ),
-                AutomaticCommands.createGoToPositionCommand(scorePosition),
+            AutomaticCommands.createGoToPositionCommand(scorePosition),
             createScoreCommand()
         );
     }
