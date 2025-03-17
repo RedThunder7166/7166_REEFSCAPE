@@ -96,6 +96,9 @@ public class SubsystemInterfaces {
 
         public Command getCageOutCommand();
         public Command getCageInCommand();
+
+        public Command getAutomaticCageHomeCommand();
+        public Command getAutomaticCageOutCommand();
     }
 
     public static interface AlgaeHandSubsystemInterface extends GenericInterface {

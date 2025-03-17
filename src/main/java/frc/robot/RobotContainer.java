@@ -502,6 +502,10 @@ public class RobotContainer {
         OPERATOR_CONTROLS.CAGE_OUT.whileTrue(m_climbSubsystem.getCageOutCommand());
         OPERATOR_CONTROLS.CAGE_IN.whileTrue(m_climbSubsystem.getCageInCommand());
 
+        OPERATOR_CONTROLS.CLIMB_OUT_AND_CAGE_OUT.whileTrue(createSetClimbStateCommand(ClimbActuatorState.CLIMB)
+            .andThen(m_climbSubsystem.getAutomaticCageOutCommand())
+        );
+
         OPERATOR_CONTROLS.ALGAE_HAND_OUT.whileTrue(m_algaeHandSubsystem.getManualOutCommand());
         // OPERATOR_CONTROLS.ALGAE_HAND_OUT.whileTrue(m_algaeHandSubsystem.getMiddleCommand());
         OPERATOR_CONTROLS.ALGAE_HAND_IN.whileTrue(m_algaeHandSubsystem.getManualInCommand());

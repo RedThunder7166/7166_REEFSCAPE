@@ -22,6 +22,7 @@ import frc.robot.Constants;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
 import frc.robot.RobotState.ClimbActuatorState;
+import frc.robot.RobotState.DesiredControlType;
 import frc.robot.subsystems.SubsystemInterfaces.ClimbSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GenericDirection;
 
@@ -55,6 +56,16 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
 
         @Override
         public Command getCageInCommand() {
+            return Commands.none();
+        }
+
+        @Override
+        public Command getAutomaticCageHomeCommand() {
+            return Commands.none();
+        }
+
+        @Override
+        public Command getAutomaticCageOutCommand() {
             return Commands.none();
         }
     }
@@ -98,10 +109,32 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
 
     private GenericDirection m_cageClimbDirection = GenericDirection.NONE;
 
+    private DesiredControlType m_cageClimbDesiredControlType = DesiredControlType.MANUAL;
+    public synchronized void setCageClimbDesiredControlType(DesiredControlType desiredControlType) {
+        m_cageClimbDesiredControlType = desiredControlType;
+    }
+
+    private static enum CageClimbPosition {
+        IDLE(ClimbConstants.MIN_CAGE_POSITION_ROTATIONS), // m_position here should never be used, but we have it min to be safe
+        HOME(ClimbConstants.MIN_CAGE_POSITION_ROTATIONS),
+        OUT(ClimbConstants.MAX_CAGE_POSITION_ROTATIONS),
+
+        ;
+        private final double m_position;
+
+        CageClimbPosition(double position) {
+            m_position = position;
+        }
+    }
+    private CageClimbPosition m_position = CageClimbPosition.IDLE;
+    private synchronized void setCageClimbAutomaticPosition(CageClimbPosition desiredPosition) {
+        m_position = desiredPosition;
+    }
     private final TalonFX m_actuatorMotor = new TalonFX(ClimbConstants.ACTUATOR_MOTOR_ID);
     private final TalonFX m_cageClimbMotor = new TalonFX(ClimbConstants.CAGE_CLIMB_MOTOR_ID, Constants.CANIVORE_NAME);
 
     private final MotionMagicVoltage m_actuatorPositionControl = new MotionMagicVoltage(0).withSlot(0);
+    private final MotionMagicVoltage m_cagePositionControl = new MotionMagicVoltage(0).withSlot(0);
     private final DutyCycleOut m_cageDutyCycleOut = new DutyCycleOut(0);
     private final DutyCycleOut m_actuatorDutyCycleOut = new DutyCycleOut(0);
     private final NeutralOut m_brake = new NeutralOut();
@@ -142,6 +175,11 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
 
         cageClimbConfigs.CurrentLimits.StatorCurrentLimit = 120d / 3;
         cageClimbConfigs.CurrentLimits.SupplyCurrentLimit = 40d / 3;
+
+        cageClimbConfigs.Slot0.kV = 0.155;
+
+        cageClimbConfigs.MotionMagic.MotionMagicCruiseVelocity = 350;
+        cageClimbConfigs.MotionMagic.MotionMagicAcceleration = 200;
 
         OurUtils.tryApplyConfig(m_cageClimbMotor, cageClimbConfigs);
 
@@ -200,23 +238,36 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     private void handleCageClimb() {
         ControlRequest targetRequest = m_brake;
 
-        // final double actuatorMotorPosition = m_actuatorMotorPosition.getValueAsDouble();
-        // final boolean canGoIn = actuatorMotorPosition >= ClimbConstants.MIN_SAFE_ACTUATOR_POSITION_ROTATIONS;
-        // final boolean canGoOut = actuatorMotorPosition <= ClimbConstants.MAX_SAFE_ACTUATOR_POSITION_ROTATIONS;
-        final boolean canGoIn = true;
-        final boolean canGoOut = true;
-
-        switch (m_cageClimbDirection) {
-            case NONE:
-                targetRequest = m_brake;
+        switch (m_cageClimbDesiredControlType) {
+            case AUTOMATIC:
+                switch (m_position) {
+                    case IDLE:
+                        targetRequest = m_brake;
+                        break;
+                    default:
+                        targetRequest = m_cagePositionControl.withPosition(m_position.m_position);
+                }
                 break;
-            case OUT:
-                if (canGoOut)
-                    targetRequest = m_cageDutyCycleOut.withOutput(ClimbConstants.CAGE_DUTY_CYCLE_OUT);
-                break;
-            case IN:
-                if (canGoIn)
-                    targetRequest = m_cageDutyCycleOut.withOutput(ClimbConstants.CAGE_DUTY_CYCLE_IN);
+            case MANUAL:
+                // final double actuatorMotorPosition = m_actuatorMotorPosition.getValueAsDouble();
+                // final boolean canGoIn = actuatorMotorPosition >= ClimbConstants.MIN_SAFE_ACTUATOR_POSITION_ROTATIONS;
+                // final boolean canGoOut = actuatorMotorPosition <= ClimbConstants.MAX_SAFE_ACTUATOR_POSITION_ROTATIONS;
+                final boolean canGoIn = true;
+                final boolean canGoOut = true;
+        
+                switch (m_cageClimbDirection) {
+                    case NONE:
+                        targetRequest = m_brake;
+                        break;
+                    case OUT:
+                        if (canGoOut)
+                            targetRequest = m_cageDutyCycleOut.withOutput(ClimbConstants.CAGE_DUTY_CYCLE_OUT);
+                        break;
+                    case IN:
+                        if (canGoIn)
+                            targetRequest = m_cageDutyCycleOut.withOutput(ClimbConstants.CAGE_DUTY_CYCLE_IN);
+                        break;
+                }
                 break;
         }
 
@@ -249,11 +300,13 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
         return m_manualActuatorInCommand;
     }
 
-    private Command makeCageCommand(GenericDirection direction) {
+    private Command makeManualCageCommand(GenericDirection direction) {
         return new Command() {
             @Override
             public void initialize() {
                 m_cageClimbDirection = direction;
+                setCageClimbAutomaticPosition(CageClimbPosition.IDLE);
+                setCageClimbDesiredControlType(DesiredControlType.MANUAL);
             }
 
             @Override
@@ -262,14 +315,37 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
             }
         };
     }
-    private final Command m_cageOutCommand = makeCageCommand(GenericDirection.OUT);
-    private final Command m_cageInCommand = makeCageCommand(GenericDirection.IN);
+    private final Command m_cageManualOutCommand = makeManualCageCommand(GenericDirection.OUT);
+    private final Command m_cageManualInCommand = makeManualCageCommand(GenericDirection.IN);
+
     @Override
     public synchronized Command getCageOutCommand() {
-        return m_cageOutCommand;
+        return m_cageManualOutCommand;
     }
     @Override
     public synchronized Command getCageInCommand() {
-        return m_cageInCommand;
+        return m_cageManualInCommand;
+    }
+
+    private Command makeAutomaticCageCommand(CageClimbPosition position) {
+        return new Command() {
+            @Override
+            public void initialize() {
+                setCageClimbAutomaticPosition(position);
+                setCageClimbDesiredControlType(DesiredControlType.AUTOMATIC);
+            }
+        };
+    }
+
+    private final Command m_automaticCageHomeCommand = makeAutomaticCageCommand(CageClimbPosition.HOME);
+    private final Command m_automaticCageOutCommand = makeAutomaticCageCommand(CageClimbPosition.OUT);
+
+    @Override
+    public synchronized Command getAutomaticCageHomeCommand() {
+        return m_automaticCageHomeCommand;
+    }
+    @Override
+    public synchronized Command getAutomaticCageOutCommand() {
+        return m_automaticCageOutCommand;
     }
 }

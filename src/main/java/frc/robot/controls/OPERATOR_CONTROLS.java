@@ -43,6 +43,8 @@ public final class OPERATOR_CONTROLS {
     public static final Trigger CAGE_OUT = operatorController.button(16);
     public static final Trigger CAGE_IN = operatorController.button(17);
 
+    public static final Trigger CLIMB_OUT_AND_CAGE_OUT = operatorController.button(14);
+
     public static final Trigger ALGAE_HAND_OUT = operatorController.button(18);
     public static final Trigger ALGAE_HAND_IN = operatorController.button(19);
 }

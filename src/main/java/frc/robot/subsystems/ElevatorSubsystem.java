@@ -317,9 +317,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         // FIXME: tune elevator Motion Magic; may be different per motor?
         var motionMagicConfigs = motorConfig.MotionMagic;
 
-        var value = 15;
-        motionMagicConfigs.MotionMagicCruiseVelocity = value;
-        motionMagicConfigs.MotionMagicAcceleration = value;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 15;
+        motionMagicConfigs.MotionMagicAcceleration = 25;
 
         OurUtils.tryApplyConfig(m_leaderMotor, motorConfig);
         OurUtils.tryApplyConfig(m_followerMotor, motorConfig);

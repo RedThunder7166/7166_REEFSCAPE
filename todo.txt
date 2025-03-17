@@ -7,3 +7,9 @@ account for yaw to ensure we're facing the reef section
 
 6
 in auto, start the correct orientation for the reef section (we would need to ensure drive team turns on the robot facing the alliance wall and then remove the code in autonomousInit)
+
+8
+consider ignoring gantry auto adjust when an april tag isn't visible
+
+9
+measure time and add back timeout in automaticcommands.createAutomaticGoToPositionCommand
