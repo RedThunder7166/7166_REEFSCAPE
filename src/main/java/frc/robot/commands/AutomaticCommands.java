@@ -23,6 +23,12 @@ import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface.GantryS
 public class AutomaticCommands {
     private static TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
 
+    public static TargetScorePosition getTargetScorePosition() {
+        return targetScorePosition;
+    }
+
+    private static final boolean ADD_COMMANDS_TO_REQUIREMENTS = false;
+
     private static class InstantAutomaticGoToPositionCommand extends Command {
         private TargetScorePosition m_targetScorePosition;
 
@@ -36,8 +42,10 @@ public class AutomaticCommands {
             m_elevatorState = elevatorState;
             m_gantryState = gantryState;
 
-            m_elevatorSubsystem.addToCommandRequirements(this);
-            m_gantrySubsystem.addToCommandRequirements(this);
+            if (ADD_COMMANDS_TO_REQUIREMENTS) {
+                m_elevatorSubsystem.addToCommandRequirements(this);
+                m_gantrySubsystem.addToCommandRequirements(this);
+            }
         }
 
         @Override
@@ -76,8 +84,10 @@ public class AutomaticCommands {
             m_elevatorState = elevatorState;
             m_gantryState = gantryState;
 
-            m_elevatorSubsystem.addToCommandRequirements(this);
-            m_gantrySubsystem.addToCommandRequirements(this);
+            if (ADD_COMMANDS_TO_REQUIREMENTS) {
+                m_elevatorSubsystem.addToCommandRequirements(this);
+                m_gantrySubsystem.addToCommandRequirements(this);
+            }
         }
 
         @Override

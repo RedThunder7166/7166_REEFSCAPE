@@ -32,8 +32,6 @@ public final class OPERATOR_CONTROLS {
     public static final Trigger GANTRY_MANUAL_LEFT = operatorController.button(30);
     public static final Trigger GANTRY_MANUAL_RIGHT = operatorController.button(31);
 
-    public static final Trigger GANTRY_RESET_POSITION = operatorController.button(13);
-
     public static final Trigger CLIMBER_OUT = operatorController.button(24);
     public static final Trigger CLIMBER_IN = operatorController.button(23);
 
@@ -43,7 +41,7 @@ public final class OPERATOR_CONTROLS {
     public static final Trigger CAGE_OUT = operatorController.button(16);
     public static final Trigger CAGE_IN = operatorController.button(17);
 
-    public static final Trigger CLIMB_OUT_AND_CAGE_OUT = operatorController.button(14);
+    public static final Trigger CLIMB_OUT_AND_CAGE_OUT = operatorController.button(13);
 
     public static final Trigger ALGAE_HAND_OUT = operatorController.button(18);
     public static final Trigger ALGAE_HAND_IN = operatorController.button(19);

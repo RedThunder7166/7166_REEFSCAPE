@@ -176,28 +176,45 @@ public class RobotContainer {
         return Commands.waitUntil(RobotState::getCoralIsGood);
     }
 
+    private SequentialCommandGroup createPrepareScoreCommand(TargetScorePosition scorePosition) {
+        return getWaitUntilCoralIsGoodCommand()
+            .andThen(AutomaticCommands.createInstantGoToPositionCommand(scorePosition.toL2()))
+            .andThen(m_cameraSubsystem.getWaitUntilWithinAutoTargetReefDistanceCommand())
+            .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition));
+    }
+    private Command createDynamicPrepareScoreCommand() {
+        return new CameraSubsystem.DynamicCommand(() -> createPrepareScoreCommand(AutomaticCommands.getTargetScorePosition()));
+    }
+
     // NOTE: these assume autonomous!!!
-    private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
+    private SequentialCommandGroup createGenericEntireScoreCommand(Command driveCommand, TargetScorePosition scorePosition) {
         return new SequentialCommandGroup(
-            createLocalizeToReefCommand(reefPosition, true)
+            driveCommand
                 // toL2 MAY RETURN NULL!
-                .deadlineFor(
-                    getWaitUntilCoralIsGoodCommand()
-                    .andThen(AutomaticCommands.createInstantGoToPositionCommand(scorePosition.toL2()))
-                    .andThen(m_cameraSubsystem.getWaitUntilWithinAutoTargetReefDistanceCommand())
-                    .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition))
-                ),
+                .deadlineFor(createPrepareScoreCommand(scorePosition)),
             AutomaticCommands.createGoToPositionCommand(scorePosition),
             createScoreCommand()
         );
     }
-    private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
+    private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
+        return createGenericEntireScoreCommand(createLocalizeToReefCommand(reefPosition, true), scorePosition);
+    }
+    private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, PathPlannerPath scorePath) {
+        return createGenericEntireScoreCommand(AutoBuilder.followPath(scorePath), scorePosition);
+    }
+    private SequentialCommandGroup createGenericEntirePickupCommand(Command driveCommand) {
         return new SequentialCommandGroup(
             AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION),
-            createLocalizeToCoralStationCommand(coralStation),
+            driveCommand,
             // createPickupCommand()
             TESTcreatePickupCommand()
         );
+    }
+    private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
+        return createGenericEntirePickupCommand(createLocalizeToCoralStationCommand(coralStation));
+    }
+    private SequentialCommandGroup createEntirePickupCommand(PathPlannerPath coralStationPath) {
+        return createGenericEntirePickupCommand(AutoBuilder.followPath(coralStationPath));
     }
     private class AutoCommandSequence extends SequentialCommandGroup {
         public AutoCommandSequence score(TargetScorePosition scorePosition, RelativeReefLocation reefLocation) {
@@ -242,19 +259,26 @@ public class RobotContainer {
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
         NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
-        NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
-        NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
-        NamedCommands.registerCommand("PositionL2_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_R));
-        NamedCommands.registerCommand("PositionL3_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_L));
-        NamedCommands.registerCommand("PositionL3_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_R));
-        NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_L));
-        NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_R));
+        for (var value : TargetScorePosition.values()) {
+            NamedCommands.registerCommand("Position" + value.toString(), AutomaticCommands.createSetTargetScorePositionCommand(value));
+        }
+
+        // NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
+        // NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
+        // NamedCommands.registerCommand("PositionL2_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_R));
+        // NamedCommands.registerCommand("PositionL3_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_L));
+        // NamedCommands.registerCommand("PositionL3_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_R));
+        // NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_L));
+        // NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_R));
 
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
 
         NamedCommands.registerCommand("Score", createScoreCommand());
         NamedCommands.registerCommand("Pickup", createPickupCommand());
         // NamedCommands.registerCommand("Pickup", TESTcreatePickupCommand());
+
+        // NamedCommands.registerCommand("GoToPositionAndScore", AutomaticCommands.createGoToPositionCommand().andThen(createScoreCommand()));
+        NamedCommands.registerCommand("PrepareScore", createDynamicPrepareScoreCommand());
 
         try {
             var config = RobotConfig.fromGUISettings();
@@ -358,6 +382,18 @@ public class RobotContainer {
             .pickup(CoralStationID.Left)
             .finish()
         );
+
+        // try {
+        //     m_autoChooser.addOption("TESTLocalizeLeft", new SequentialCommandGroup(
+        //         createEntireScoreCommand(TargetScorePosition.L4_L, RelativeReefLocation.IJ),
+        //         createEntirePickupCommand(PathPlannerPath.fromPathFile("I-JtoCoralStation")),
+        //         createEntireScoreCommand(TargetScorePosition.L4_L, PathPlannerPath.fromPathFile("CoralStationToK-L")),
+        //         createEntirePickupCommand(PathPlannerPath.fromPathFile("K-LtoCoralStation")),
+        //         createEntireScoreCommand(TargetScorePosition.L4_R, PathPlannerPath.fromPathFile("CoralStationToK-L"))
+        //     ));
+        // } catch (FileVersionException | IOException | ParseException ex) {
+        //     DriverStation.reportError("Failed to load read path from file", ex.getStackTrace());
+        // }
 
         SmartDashboard.putData("AutoChooser", m_autoChooser);
 
@@ -487,12 +523,6 @@ public class RobotContainer {
         OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.getManualLeftCommand());
         OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.getManualRightCommand());
 
-        // FIXME: why doesn't new InstantCommand(gantry::resetPositionStuff) work??
-        OPERATOR_CONTROLS.GANTRY_RESET_POSITION.onTrue(new InstantCommand(() -> {
-            m_gantrySubsystem.resetManualPosition();
-            m_gantrySubsystem.resetMotorPosition();
-        }));
-
         OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(m_climbSubsystem.getManualActuatorOutCommand());
         OPERATOR_CONTROLS.CLIMBER_IN.whileTrue(m_climbSubsystem.getManualActuatorInCommand());
 
@@ -528,15 +558,25 @@ public class RobotContainer {
             m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
     }
 
+    private TargetScorePosition m_targetScorePositionAfterAuto = null;
+
     public void autonomousExit() {
+        m_targetScorePositionAfterAuto = RobotState.getTargetScorePosition();
+
         RobotState.setTargetScorePosition(TargetScorePosition.NONE);
         m_elevatorSubsystem.setIdle();
         m_gantrySubsystem.setIdle();
     }
 
     public void teleopInit() {
-        RobotState.setTargetScorePosition(TargetScorePosition.NONE);
+        if (m_targetScorePositionAfterAuto != null)
+            RobotState.setTargetScorePosition(m_targetScorePositionAfterAuto);
+        else
+            RobotState.setTargetScorePosition(TargetScorePosition.NONE);
 
+        m_targetScorePositionAfterAuto = null;
+
+        // FIXME: better solutions for these
         m_elevatorSubsystem.resetManualPosition();
         m_gantrySubsystem.resetManualPosition();
     }
