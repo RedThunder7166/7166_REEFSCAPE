@@ -149,9 +149,9 @@ public class Constants {
 
         public static final int MOTOR_ID = 56;
 
-        public static final double MIN_POSITION_ROTATIONS = 0.017;
-        public static final double MAX_POSITION_ROTATIONS = 0.465;
-        public static final double MIDDLE_POSITION_ROTATIONS = 0.5;
+        public static final double MIN_POSITION_ROTATIONS = 0;
+        public static final double MAX_POSITION_ROTATIONS = 0.495;
+        // public static final double MIDDLE_POSITION_ROTATIONS = 0.5;
 
         public static final double MAX_DUTY_CYCLE = 0.15;
     }
@@ -170,7 +170,7 @@ public class Constants {
         // below values are in meters
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
-        public static final double AUTO_TARGET_REEF_THRESHOLD = 1.6;
+        public static final double AUTO_TARGET_REEF_THRESHOLD = 2.0;
 
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;

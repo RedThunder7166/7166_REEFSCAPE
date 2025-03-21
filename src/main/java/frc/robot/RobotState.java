@@ -133,7 +133,7 @@ public final class RobotState {
 
     private static synchronized void setIntakeState(IntakeState desiredState) {
         if (intakeState != desiredState)
-            intakeStatePublisher.set(intakeState.toString());
+            intakeStatePublisher.set(desiredState.toString());
         intakeState = desiredState;
     }
     public static synchronized void startIntake(IntakeState intakeState) {
@@ -208,6 +208,15 @@ public final class RobotState {
     }
     public static synchronized void clearReefTargetHorizontalDistance() {
         reefTargetHorizontalDistance = Optional.empty();
+    }
+
+    private static boolean visionPoseSuccess = false;
+
+    public static synchronized void setVisionPoseSuccess(boolean newValue) {
+        visionPoseSuccess = newValue;
+    }
+    public static synchronized boolean getVisionPoseSuccess() {
+        return visionPoseSuccess;
     }
 
     public static Rotation2d initialSwerveRotation = null;

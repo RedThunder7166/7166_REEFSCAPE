@@ -411,8 +411,14 @@ public class CameraSubsystem extends SubsystemBase {
     public void periodic() {
         m_cachedPoseEstimate = m_driveSubsystem.getCustomEstimatedPose();
         if (useMegaTag2) {
-            SmartDashboard.putBoolean("MegaTag2SuccessOne", updateVisionMegaTag2(limelightOneName));
-            if (useLimelightTwo) SmartDashboard.putBoolean("MegaTag2SuccessTwo", updateVisionMegaTag2(limelightTwoName));
+            final boolean successOne = updateVisionMegaTag2(limelightOneName);
+            final boolean successTwo = useLimelightTwo ? updateVisionMegaTag2(limelightTwoName) : false;
+            boolean success = successOne || successTwo;
+
+            RobotState.setVisionPoseSuccess(success);
+
+            SmartDashboard.putBoolean("MegaTag2SuccessOne", successOne);
+            if (useLimelightTwo) SmartDashboard.putBoolean("MegaTag2SuccessTwo", successTwo);
         } else {
             updateVisionMegaTag1(limelightOneName);
             if (useLimelightTwo) updateVisionMegaTag1(limelightTwoName);

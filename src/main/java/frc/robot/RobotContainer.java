@@ -569,12 +569,17 @@ public class RobotContainer {
     }
 
     public void teleopInit() {
-        if (m_targetScorePositionAfterAuto != null)
-            RobotState.setTargetScorePosition(m_targetScorePositionAfterAuto);
-        else
-            RobotState.setTargetScorePosition(TargetScorePosition.NONE);
-
+        // if (m_targetScorePositionAfterAuto != null)
+        //     RobotState.setTargetScorePosition(m_targetScorePositionAfterAuto);
+        // else
+        //     RobotState.setTargetScorePosition(TargetScorePosition.NONE);
+        RobotState.setTargetScorePosition(TargetScorePosition.NONE);
         m_targetScorePositionAfterAuto = null;
+
+        m_elevatorSubsystem.setIdle();
+        m_gantrySubsystem.setIdle();
+
+        RobotState.stopIntake();
 
         // FIXME: better solutions for these
         m_elevatorSubsystem.resetManualPosition();

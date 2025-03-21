@@ -75,6 +75,8 @@ public class AutomaticCommands {
         private final ElevatorState m_elevatorState;
         private final GantryState m_gantryState;
 
+        private boolean m_hasDoneAction = false;
+
         private boolean m_coralHasBeenGood = false;
         private boolean m_alreadyTargetingTarget = false;
 
@@ -92,15 +94,17 @@ public class AutomaticCommands {
 
         @Override
         public void initialize() {
+            m_hasDoneAction = false;
             m_targetScorePosition = targetScorePosition;
             m_alreadyTargetingTarget = RobotState.getTargetScorePosition() == m_targetScorePosition;
-            m_coralHasBeenGood = false;
+            m_coralHasBeenGood = DriverStation.isTeleop();
             m_timer.restart();
         }
 
         @Override
         public void execute() {
-            if (m_coralHasBeenGood || DriverStation.isTeleop()) {
+            if (!m_hasDoneAction && m_coralHasBeenGood) {
+                m_hasDoneAction = true;
                 RobotState.setTargetScorePosition(m_targetScorePosition);
 
                 m_elevatorSubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);

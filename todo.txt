@@ -1,3 +1,6 @@
+2
+spin intake in auto before getting to coral station so that flap will go down
+
 3
 elevator height account for X distance from reef
 

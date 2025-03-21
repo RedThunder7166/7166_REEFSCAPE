@@ -539,6 +539,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 targetPositionMillimeters  = Optional.of(m_position.m_position);
                 break;
             default:
+                // auto adjust
                 double position = m_position.m_position;
                 // var reefTargetHorizontalDistance = RobotState.getReefTargetHorizontalDistance();
                 // if (reefTargetHorizontalDistance.isPresent()) {
@@ -550,7 +551,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 // desiredControl = m_positionControl.withPosition(position);
 
                 var reefTargetHorizontalDistance = RobotState.getReefTargetHorizontalDistance();
-                if (reefTargetHorizontalDistance.isPresent()) {
+                if (reefTargetHorizontalDistance.isPresent() /*&& RobotState.getVisionPoseSuccess()*/) {
                     double distance = reefTargetHorizontalDistance.get();
                     distance *= 1000; // meters to mm
                     double desiredPosition = position + distance;

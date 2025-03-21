@@ -122,6 +122,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         m_position = ElevatorPosition.IDLE;
     }
 
+    private static final boolean shouldApplyAlgaeHandPosition = false;
+
     private static enum ElevatorPosition {
         HOME(ElevatorConstants.HOME_POSITION),
         IDLE(ElevatorConstants.HOME_POSITION), // this position should never be used, so we have it home to be safe
@@ -533,10 +535,14 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 desiredControl = m_brake; // redundant?
                 break;
             default:
-                boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut();
-                desiredControl = m_positionControl.withPosition(
-                    algaeHand ? m_position.m_algaeHandPosition : m_position.m_position
-                );
+                final double position;
+                if (shouldApplyAlgaeHandPosition) {
+                    final boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut();
+                    position = algaeHand ? m_position.m_algaeHandPosition : m_position.m_position;
+                } else {
+                    position = m_position.m_position;
+                }
+                desiredControl = m_positionControl.withPosition(position);
                 break;
         }
 

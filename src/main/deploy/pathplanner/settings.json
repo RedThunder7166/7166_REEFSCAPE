@@ -11,6 +11,7 @@
     "TestPaths"
   ],
   "autoFolders": [
+    "Working4",
     "SimpleAutos",
     "TestAutos",
     "Working2",
@@ -25,7 +26,7 @@
   "robotMass": 63.548,
   "robotMOI": 7.906387968,
   "robotTrackwidth": 0.546,
-  "driveWheelRadius": 0.03758131036162379,
+  "driveWheelRadius": 0.037457079733496185,
   "driveGearing": 4.71,
   "maxDriveSpeed": 4.65,
   "driveMotorType": "krakenX60",
