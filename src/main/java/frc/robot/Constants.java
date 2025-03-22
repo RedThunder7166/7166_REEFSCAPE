@@ -50,9 +50,9 @@ public class Constants {
 
         // TODO: ensure within max and min
         public static final double L1_POSITION = HOME_POSITION;
-        public static final double L2_POSITION = 0.9;
-        public static final double L3_POSITION = 2.21;
-        public static final double L4_POSITION = 4.3;
+        public static final double L2_POSITION = 0.9; // mason?: 0.75
+        public static final double L3_POSITION = 2.21; // mason?: 2.06
+        public static final double L4_POSITION = 4.3; // mason?: 4.15
 
         public static final double ALGAE_HAND_POSITION_OFFSET = 0.25;
 
