@@ -204,7 +204,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final LaserCan m_gantryLaser = new LaserCan(GantryConstants.GANTRY_LASER_ID);
 
     // private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
-    private final DutyCycleOut m_intakeDutyCycleOut = new DutyCycleOut(0);
+    private final DutyCycleOut m_scoreDutyCycleOut = new DutyCycleOut(0);
     private final DutyCycleOut m_gantryDutyCycleOut = new DutyCycleOut(0);
     // private final VoltageOut m_voltageOut = new VoltageOut(0);
     private final NeutralOut m_brake = new NeutralOut();
@@ -608,7 +608,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         RobotState.IntakeState intakeState = RobotState.getIntakeState();
         if (intakeState == IntakeState.OUT) {
-            targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
+            targetRequest = m_scoreDutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
         } else {
             final boolean isGoodToMove = !RobotState.getWantsToScore() && (m_desiredControlType == DesiredControlType.MANUAL || m_position != GantryPosition.TROUGH);
             // TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
@@ -617,13 +617,13 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 // if we are in automatic control and we are targeting a non-coral-station position, don't move motor
                 // if (m_desiredControlType == DesiredControlType.MANUAL || (m_position == GantryPosition.CORAL_STATION || m_position == GantryPosition.IDLE))
                 if (isGoodToMove)
-                    targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
+                    targetRequest = m_scoreDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
                     // targetRequest = m_voltageOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_VOLTAGE);
                 else
                     targetRequest = m_brake;
             // else if (!m_scoreEnterSensorTripped && (targetScorePosition == TargetScorePosition.NONE || targetScorePosition == TargetScorePosition.CORAL_STATION))
             else if (!m_scoreEnterSensorTripped && isGoodToMove)
-                targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_BACKWARD_OUTPUT);
+                targetRequest = m_scoreDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_BACKWARD_OUTPUT);
             else
                 targetRequest = m_brake;
         }
@@ -640,7 +640,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         // FIXME: below has a removed check (was elevatorHasClearance WHICH WAS DUMB it should be just [exit and enter])
         if (m_scoreExitSensorTripped && RobotState.getWantsToScore())
-            targetRequest = m_intakeDutyCycleOut.withOutput(IntakeOuttakeConstants.FORWARD_OUTPUT);
+            targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.SCORE_OUTPUT);
 
         m_scoreMotor.setControl(targetRequest);
     }

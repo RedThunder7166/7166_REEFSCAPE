@@ -52,7 +52,7 @@ public class Constants {
         public static final double L1_POSITION = HOME_POSITION;
         public static final double L2_POSITION = 0.9; // mason?: 0.75
         public static final double L3_POSITION = 2.21; // mason?: 2.06
-        public static final double L4_POSITION = 4.3; // mason?: 4.15
+        public static final double L4_POSITION = 4.15; // 4.3; mason?: 4.15
 
         public static final double ALGAE_HAND_POSITION_OFFSET = 0.25;
 
@@ -102,6 +102,8 @@ public class Constants {
 
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
         public static final double POSITION_ERROR_THRESHOLD_MM = 14;
+
+        public static final double SCORE_OUTPUT = 0.35; // 0.4
     }
     public static final class IntakeOuttakeConstants {
         public static final boolean REAL = true;
