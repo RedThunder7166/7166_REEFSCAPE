@@ -1,18 +1,7 @@
-2
-spin intake in auto before getting to coral station so that flap will go down
-
-3
-elevator height account for X distance from reef
-
-4
-(redundant because path planner is good)
-account for yaw to ensure we're facing the reef section
-
-6
-in auto, start the correct orientation for the reef section (we would need to ensure drive team turns on the robot facing the alliance wall and then remove the code in autonomousInit)
-
-8
-consider ignoring gantry auto adjust when an april tag isn't visible
-
-9
-measure time and add back timeout in automaticcommands.createAutomaticGoToPositionCommand
+ordered by priority:
+    * elevator height account for X distance from reef
+    * account for yaw from reef
+    * lower gantry position threshold? auto shoots before gantry is in position
+    * in auto, start the correct orientation for the reef section (we would need to ensure drive team turns on the robot facing the alliance wall and then remove the code in autonomousInit)
+    * ignore gantry auto adjust when an april tag isn't visible (code exists (UNTESTED), just uncomment)
+    * measure and add back in timeout for automaticcommands.createAutomaticGoToPositionCommand

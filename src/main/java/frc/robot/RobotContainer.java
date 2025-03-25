@@ -550,31 +550,31 @@ public class RobotContainer {
         // SmartDashboard.putString("TARGET_TAG", OurUtils.formatReefLocation(m_targetReefLocation));
     }
 
+    private Command deployIntakeFlap = Commands.startEnd(
+        () -> RobotState.startIntake(IntakeState.IN),
+        () -> RobotState.stopIntake()
+    ).withTimeout(0.1);
+
     public void autonomousInit() {
         m_gantrySubsystem.resetManualPosition();
         m_gantrySubsystem.resetMotorPosition();
 
         if (RobotState.initialSwerveRotation != null)
             m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
+
+        if (deployIntakeFlap.isScheduled())
+            deployIntakeFlap.cancel();
+        deployIntakeFlap.schedule();
     }
 
-    private TargetScorePosition m_targetScorePositionAfterAuto = null;
-
     public void autonomousExit() {
-        m_targetScorePositionAfterAuto = RobotState.getTargetScorePosition();
-
         RobotState.setTargetScorePosition(TargetScorePosition.NONE);
         m_elevatorSubsystem.setIdle();
         m_gantrySubsystem.setIdle();
     }
 
     public void teleopInit() {
-        // if (m_targetScorePositionAfterAuto != null)
-        //     RobotState.setTargetScorePosition(m_targetScorePositionAfterAuto);
-        // else
-        //     RobotState.setTargetScorePosition(TargetScorePosition.NONE);
         RobotState.setTargetScorePosition(TargetScorePosition.NONE);
-        m_targetScorePositionAfterAuto = null;
 
         m_elevatorSubsystem.setIdle();
         m_gantrySubsystem.setIdle();
