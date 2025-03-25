@@ -52,7 +52,7 @@ public class Constants {
         public static final double L1_POSITION = HOME_POSITION;
         public static final double L2_POSITION = 0.9; // mason?: 0.75
         public static final double L3_POSITION = 2.21; // mason?: 2.06
-        public static final double L4_POSITION = 4.15; // 4.3; mason?: 4.15
+        public static final double L4_POSITION = 4.3; // 4.3; mason?: 4.15
 
         public static final double ALGAE_HAND_POSITION_OFFSET = 0.25;
 
@@ -172,7 +172,7 @@ public class Constants {
         // below values are in meters
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
-        public static final double AUTO_TARGET_REEF_THRESHOLD = 2.0;
+        public static final double GO_TO_POSITION_DISTANCE = 2.6;
 
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;
@@ -187,7 +187,8 @@ public class Constants {
         }
     }
 
-    // FIXME: AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS; should be slightly above actual time needed
-    public static final double AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS = 2;
-    public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.05;
+    public static final class AutoConstants {
+        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 2;
+        public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.05;
+    }
 }

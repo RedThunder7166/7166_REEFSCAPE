@@ -52,6 +52,7 @@ public class AutomaticCommands {
         public void initialize() {
             m_targetScorePosition = targetScorePosition;
             RobotState.setTargetScorePosition(m_targetScorePosition);
+            RobotState.stopIntake();
 
             m_elevatorSubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
             m_gantrySubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
@@ -78,7 +79,7 @@ public class AutomaticCommands {
         private boolean m_hasDoneAction = false;
 
         private boolean m_coralHasBeenGood = false;
-        private boolean m_alreadyTargetingTarget = false;
+        private boolean m_alreadyTargeting = false;
 
         private Timer m_timer = new Timer();
 
@@ -96,7 +97,7 @@ public class AutomaticCommands {
         public void initialize() {
             m_hasDoneAction = false;
             m_targetScorePosition = targetScorePosition;
-            m_alreadyTargetingTarget = RobotState.getTargetScorePosition() == m_targetScorePosition;
+            m_alreadyTargeting = m_elevatorSubsystem.getIsTargetingAScoreLocation() && RobotState.getTargetScorePosition().getIsOnReef();
             m_coralHasBeenGood = DriverStation.isTeleop();
             m_timer.restart();
         }
@@ -106,6 +107,7 @@ public class AutomaticCommands {
             if (!m_hasDoneAction && m_coralHasBeenGood) {
                 m_hasDoneAction = true;
                 RobotState.setTargetScorePosition(m_targetScorePosition);
+                RobotState.stopIntake();
 
                 m_elevatorSubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
                 m_gantrySubsystem.setDesiredControlType(DesiredControlType.AUTOMATIC);
@@ -120,7 +122,10 @@ public class AutomaticCommands {
         public boolean isFinished() {
             if (!m_coralHasBeenGood)
                 return false;
-            if (!m_alreadyTargetingTarget && !m_timer.hasElapsed(0.75))
+            if (m_alreadyTargeting) {
+                if (!m_hasDoneAction)
+                    return false;
+            } else if (!m_timer.hasElapsed(0.75))
                 return false;
 
             return m_elevatorSubsystem.getIsAtTargetPosition() && m_gantrySubsystem.getIsAtTargetPosition();

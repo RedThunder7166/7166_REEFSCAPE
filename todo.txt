@@ -1,4 +1,5 @@
 ordered by priority:
+    * go to coral station at the end of 3 piece auto
     * elevator height account for X distance from reef
     * account for yaw from reef
     * lower gantry position threshold? auto shoots before gantry is in position

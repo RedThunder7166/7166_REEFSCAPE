@@ -6,13 +6,6 @@ package frc.robot;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.function.Supplier;
-
-import org.json.simple.parser.ParseException;
-
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -21,7 +14,6 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.util.FileVersionException;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState.ClimbActuatorState;
 import frc.robot.RobotState.IntakeState;
@@ -112,16 +105,9 @@ public class RobotContainer {
             public void end(boolean isInterrupted) {
                 RobotState.setWantsToScore(false);
             }
-        }).andThen(Commands.waitSeconds(Constants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
+        }).andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
     private class PickupCommand extends Command {
-        private final GantrySubsystemInterface m_gantrySubsytem;
-
-        public PickupCommand(GantrySubsystemInterface gantrySubsystem) {
-            m_gantrySubsytem = gantrySubsystem;
-        }
-
-        @Override
         public void execute() {
             if (DriverStation.isAutonomous() || m_gantrySubsystem.getIsAtTargetPosition())
                 RobotState.startIntake(IntakeState.IN);
@@ -138,10 +124,6 @@ public class RobotContainer {
         }
     }
     private final class AutoPickupCommand extends PickupCommand {
-        public AutoPickupCommand(GantrySubsystemInterface gantrySubsystem) {
-            super(gantrySubsystem);
-        }
-
         @Override
         public boolean isFinished() {
             return m_gantrySubsystem.getScoreEnterSensorTripped();
@@ -154,13 +136,13 @@ public class RobotContainer {
     }
     private Command createPickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new PickupCommand(m_gantrySubsystem)
+            new PickupCommand()
         );
     }
 
     private Command TESTcreatePickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new AutoPickupCommand(m_gantrySubsystem)
+            new AutoPickupCommand()
         );
     }
 
@@ -178,9 +160,9 @@ public class RobotContainer {
 
     private SequentialCommandGroup createPrepareScoreCommand(TargetScorePosition scorePosition) {
         return getWaitUntilCoralIsGoodCommand()
-            .andThen(AutomaticCommands.createInstantGoToPositionCommand(scorePosition.toL2()))
-            .andThen(m_cameraSubsystem.getWaitUntilWithinAutoTargetReefDistanceCommand())
-            .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition));
+            .andThen(AutomaticCommands.createInstantGoToPositionCommand(scorePosition.toStage1()))
+            .andThen(m_cameraSubsystem.getWaitUntilWithinGoToPositionDistance())
+            .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition.toStage3()));
     }
     private Command createDynamicPrepareScoreCommand() {
         return new CameraSubsystem.DynamicCommand(() -> createPrepareScoreCommand(AutomaticCommands.getTargetScorePosition()));
@@ -190,7 +172,6 @@ public class RobotContainer {
     private SequentialCommandGroup createGenericEntireScoreCommand(Command driveCommand, TargetScorePosition scorePosition) {
         return new SequentialCommandGroup(
             driveCommand
-                // toL2 MAY RETURN NULL!
                 .deadlineFor(createPrepareScoreCommand(scorePosition)),
             AutomaticCommands.createGoToPositionCommand(scorePosition),
             createScoreCommand()

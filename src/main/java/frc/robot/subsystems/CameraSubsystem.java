@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
@@ -263,7 +264,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     private boolean m_insideReefZone = false;
     private boolean m_canAutoAdjust = false;
-    private boolean m_withinAutoTargetReefDistance = false;
+    private boolean m_withinGoToPositionDistance = false;
 
     private final StructPublisher<Pose2d> m_swervePosePublisher = RobotState.robotStateTable
         .getStructTopic("MyPose", Pose2d.struct).publish();
@@ -295,8 +296,8 @@ public class CameraSubsystem extends SubsystemBase {
         RobotState.addTelemetry(() -> m_swervePosePublisher.set(m_cachedPoseEstimate), 24);
     }
 
-    public Command getWaitUntilWithinAutoTargetReefDistanceCommand() {
-        return Commands.waitUntil(() -> m_withinAutoTargetReefDistance);
+    public Command getWaitUntilWithinGoToPositionDistance() {
+        return Commands.waitUntil(() -> m_withinGoToPositionDistance);
     }
 
     public double calculateRotateFromTag() {
@@ -386,9 +387,11 @@ public class CameraSubsystem extends SubsystemBase {
 
         final double distance = robotTranslation.getDistance(reefCenterTranslation);
         SmartDashboard.putNumber("ReefZoneDistance", distance);
+
         final boolean insideReefZone = distance <= AprilTagConstants.INSIDE_REEF_ZONE_THRESHOLD;
         final boolean canAutoAdjust = distance <= AprilTagConstants.AUTO_ADJUST_THRESHOLD;
-        final boolean withinAutoTargetReefDistance = distance <= AprilTagConstants.AUTO_TARGET_REEF_THRESHOLD;
+        final boolean withinGoToPositionDistance = distance <= AprilTagConstants.GO_TO_POSITION_DISTANCE;
+
         if (insideReefZone != m_insideReefZone) {
             SmartDashboard.putBoolean("InsideReefZone", insideReefZone);
             m_insideReefZone = insideReefZone;
@@ -397,8 +400,9 @@ public class CameraSubsystem extends SubsystemBase {
             SmartDashboard.putBoolean("CanAutoAdjust", canAutoAdjust);
             m_canAutoAdjust = canAutoAdjust;
         }
-        if (withinAutoTargetReefDistance != m_withinAutoTargetReefDistance)
-            m_withinAutoTargetReefDistance = withinAutoTargetReefDistance;
+
+        if (withinGoToPositionDistance != m_withinGoToPositionDistance)
+            m_withinGoToPositionDistance = withinGoToPositionDistance;
     }
     public synchronized boolean getInsideReefZone() {
         return m_insideReefZone;

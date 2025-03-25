@@ -63,6 +63,10 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
             return true;
         }
         @Override
+        public boolean getIsTargetingAScoreLocation() {
+            return true;
+        }
+        @Override
         public boolean getIsBelowL3() {
             return true;
         }
@@ -366,6 +370,17 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     //     m_leaderMotor.setPosition(0);
     //     m_followerMotor.setPosition(0);
     // }
+
+    @Override
+    public boolean getIsTargetingAScoreLocation() {
+        if (m_desiredControlType == DesiredControlType.MANUAL)
+            return false;
+
+        if (m_state != ElevatorState.TARGET)
+            return false;
+
+        return true;
+    }
 
     @Override
     public boolean getIsBelowL3() {

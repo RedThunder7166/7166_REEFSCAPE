@@ -79,8 +79,11 @@ public final class RobotState {
         L4_L,
         L4_R;
 
-        // RETURNS NULL
-        public TargetScorePosition toL2() {
+        public boolean getIsOnReef() {
+            return !(this == NONE || this == CORAL_STATION);
+        }
+
+        public TargetScorePosition toStage1() {
             switch (this) {
                 case L2_L:
                 case L3_L:
@@ -91,8 +94,25 @@ public final class RobotState {
                 case L4_R:
                     return L2_R;
                 default:
-                    return null;
+                    return this;
             }
+        }
+
+        public TargetScorePosition toStage2() {
+            switch (this) {
+                case L3_L:
+                case L4_L:
+                    return L3_L;
+                case L3_R:
+                case L4_R:
+                    return L3_R;
+                default:
+                    return this;
+            }
+        }
+
+        public TargetScorePosition toStage3() {
+            return this;
         }
     }
 

@@ -41,6 +41,7 @@ public class SubsystemInterfaces {
         public void setDesiredControlType(DesiredControlType desiredControlType);
 
         public boolean getIsAtTargetPosition();
+        public boolean getIsTargetingAScoreLocation();
         public boolean getIsBelowL3();
 
         public Command getManualUpCommand();
