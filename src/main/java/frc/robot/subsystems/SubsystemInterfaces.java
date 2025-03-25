@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.RobotState.DesiredControlType;
+import frc.robot.RobotState.TargetScorePosition;
 
 public class SubsystemInterfaces {
     private static interface GenericInterface {
@@ -39,6 +40,8 @@ public class SubsystemInterfaces {
         public void resetManualPosition();
 
         public void setDesiredControlType(DesiredControlType desiredControlType);
+
+        public boolean getIsAtPosition(TargetScorePosition position);
 
         public boolean getIsAtTargetPosition();
         public boolean getIsTargetingAScoreLocation();
@@ -75,6 +78,8 @@ public class SubsystemInterfaces {
         public void resetMotorPosition();
 
         public void resetPositionStuff();
+
+        public boolean getIsAtPosition(TargetScorePosition position);
 
         public boolean getIsAtTargetPosition();
         public boolean getScoreEnterSensorTripped();

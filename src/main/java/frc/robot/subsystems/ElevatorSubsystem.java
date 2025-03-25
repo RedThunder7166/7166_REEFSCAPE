@@ -33,6 +33,7 @@ import frc.robot.OurUtils;
 import frc.robot.Robot;
 import frc.robot.RobotState;
 import frc.robot.RobotState.DesiredControlType;
+import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.subsystems.Mechanisms.ElevatorMechanisms;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 
@@ -57,6 +58,11 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
         @Override
         public void setDesiredControlType(DesiredControlType desiredControlType) { }
+
+        @Override
+        public boolean getIsAtPosition(TargetScorePosition position) {
+            return true;
+        }
 
         @Override
         public boolean getIsAtTargetPosition() {
@@ -277,10 +283,49 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         }
     }
 
+    private boolean skipIsAtPositionCheck() {
+        // we're not actively targeting a position / we're simulating
+        return (m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE) || Robot.isSimulation();
+    }
+
+    private ElevatorPosition getElevatorPositionFromTargetScorePosition(TargetScorePosition position) {
+        switch (RobotState.getTargetScorePosition()) {
+            case NONE:
+                return ElevatorPosition.IDLE;
+
+            case CORAL_STATION:
+                return ElevatorPosition.CORAL_STATION;
+
+            case L1:
+                return ElevatorPosition.L1;
+
+            case L2_L:
+            case L2_R:
+                return ElevatorPosition.L2;
+
+            case L3_L:
+            case L3_R:
+                return ElevatorPosition.L3;
+
+            case L4_L:
+            case L4_R:
+                return ElevatorPosition.L4;
+        }
+        return null; // java is dumb; the above switch statement covers all cases... unless position is null 
+    }
+
+    @Override
+    public boolean getIsAtPosition(TargetScorePosition position) {
+        if (skipIsAtPositionCheck())
+            return true;
+
+        final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - getElevatorPositionFromTargetScorePosition(position).m_position);
+        return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
+    }
+
     @Override
     public boolean getIsAtTargetPosition() {
-        // return true if we're not actively targeting a position / we're simulating
-        if ((m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == ElevatorPosition.IDLE) || Robot.isSimulation())
+        if (skipIsAtPositionCheck())
             return true;
 
         final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
@@ -512,34 +557,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 setAutomaticPosition(ElevatorPosition.IDLE);
                 break;
             case TARGET:
-                switch (RobotState.getTargetScorePosition()) {
-                    case NONE:
-                        setAutomaticPosition(ElevatorPosition.IDLE);
-                        break;
-
-                    case CORAL_STATION:
-                        setAutomaticPosition(ElevatorPosition.CORAL_STATION);
-                        break;
-
-                    case L1:
-                        setAutomaticPosition(ElevatorPosition.L1);
-                        break;
-
-                    case L2_L:
-                    case L2_R:
-                        setAutomaticPosition(ElevatorPosition.L2);
-                        break;
-
-                    case L3_L:
-                    case L3_R:
-                        setAutomaticPosition(ElevatorPosition.L3);
-                        break;
-
-                    case L4_L:
-                    case L4_R:
-                        setAutomaticPosition(ElevatorPosition.L4);
-                        break;
-                }
+                setAutomaticPosition(getElevatorPositionFromTargetScorePosition(RobotState.getTargetScorePosition()));
                 break;
         }
 

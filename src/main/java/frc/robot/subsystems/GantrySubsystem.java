@@ -44,6 +44,7 @@ import frc.robot.Robot;
 import frc.robot.RobotState;
 import frc.robot.RobotState.DesiredControlType;
 import frc.robot.RobotState.IntakeState;
+import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.subsystems.Mechanisms.GantryMechanisms;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
 
@@ -74,6 +75,11 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         @Override
         public void resetPositionStuff() { }
+
+        @Override
+        public boolean getIsAtPosition(TargetScorePosition position) {
+            return true;
+        }
 
         @Override
         public boolean getIsAtTargetPosition() {
@@ -211,7 +217,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private static final boolean tuneWithNetworkTables = true;
 
-    private static final double m_pidControllerP = 0.0015; // 0.002; 0.00149; 0.00225; 0.0016
+    private static final double m_pidControllerP = 0.0019; // 0.002; 0.00149; 0.00225; 0.0016; 0.0015
     private static final double m_pidControllerI = 0;
     private static final double m_pidControllerD = 0;
 
@@ -379,10 +385,51 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         resetMotorPosition();
     }
 
+    private boolean skipIsAtPositionCheck() {
+        // we're not actively targeting a position or we're simulating
+        return (m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == GantryPosition.IDLE) || Robot.isSimulation();
+    }
+
+    private GantryPosition getGantryPositionFromTargetScorePosition(TargetScorePosition position) {
+        switch (position) {
+            case NONE:
+                return GantryPosition.IDLE;
+
+            case CORAL_STATION:
+                return GantryPosition.CORAL_STATION;
+
+            case L1:
+                return GantryPosition.TROUGH;
+
+            case L2_L:
+            case L3_L:
+            case L4_L:
+                return GantryPosition.REEF_LEFT;
+
+            case L2_R:
+            case L3_R:
+            case L4_R:
+                return GantryPosition.REEF_RIGHT;
+        }
+        return null; // java is dumb; the above switch statement covers all cases... unless position is null
+    }
+
+    @Override
+    public boolean getIsAtPosition(TargetScorePosition position) {
+        if (skipIsAtPositionCheck())
+            return true;
+
+        var measurement = m_gantryLaserMeasurement;
+        if (measurement.status != LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT)
+            return false;
+
+        double err = Math.abs(measurement.distance_mm - getGantryPositionFromTargetScorePosition(position).m_position);
+        return err <= GantryConstants.POSITION_ERROR_THRESHOLD_MM;
+    }
+
     @Override
     public boolean getIsAtTargetPosition() {
-        // return true if we're not actively targeting a position / we're simulating
-        if ((m_desiredControlType == DesiredControlType.AUTOMATIC && m_position == GantryPosition.IDLE) || Robot.isSimulation())
+        if (skipIsAtPositionCheck())
             return true;
 
         // double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
@@ -497,31 +544,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 setAutomaticPosition(GantryPosition.IDLE);
                 break;
             case TARGET:
-                switch (RobotState.getTargetScorePosition()) {
-                    case NONE:
-                        setAutomaticPosition(GantryPosition.IDLE);
-                        break;
-
-                    case CORAL_STATION:
-                        setAutomaticPosition(GantryPosition.CORAL_STATION);
-                        break;
-
-                    case L1:
-                        setAutomaticPosition(GantryPosition.TROUGH);
-                        break;
-
-                    case L2_L:
-                    case L3_L:
-                    case L4_L:
-                        setAutomaticPosition(GantryPosition.REEF_LEFT);
-                        break;
-
-                    case L2_R:
-                    case L3_R:
-                    case L4_R:
-                        setAutomaticPosition(GantryPosition.REEF_RIGHT);
-                        break;
-                }
+                setAutomaticPosition(getGantryPositionFromTargetScorePosition(RobotState.getTargetScorePosition()));
                 break;
         }
 

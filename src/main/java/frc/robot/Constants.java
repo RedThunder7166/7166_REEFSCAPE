@@ -101,7 +101,7 @@ public class Constants {
         public static final double REEF_RIGHT_POSITION_MM = 35; // 380; 35
 
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
-        public static final double POSITION_ERROR_THRESHOLD_MM = 14;
+        public static final double POSITION_ERROR_THRESHOLD_MM = 10;
 
         public static final double SCORE_OUTPUT = 0.35; // 0.4
     }
@@ -172,7 +172,7 @@ public class Constants {
         // below values are in meters
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
-        public static final double GO_TO_POSITION_DISTANCE = 2.6;
+        public static final double GO_TO_POSITION_DISTANCE = 2.2; // 2.6
 
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;
