@@ -11,11 +11,11 @@
     "TestPaths"
   ],
   "autoFolders": [
-    "Working4",
     "SimpleAutos",
     "TestAutos",
     "Working2",
     "Working3",
+    "Working4",
     "Working4(gimmiemymill)"
   ],
   "defaultMaxVel": 3.0,

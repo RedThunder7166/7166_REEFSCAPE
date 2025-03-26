@@ -92,8 +92,9 @@ public class RobotContainer {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
             @Override
             public void execute() {
-                if (DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
-                    RobotState.setWantsToScore(true);
+                // if (DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
+                //     RobotState.setWantsToScore(true);
+                RobotState.setWantsToScore(true);
             }
 
             @Override
@@ -240,23 +241,16 @@ public class RobotContainer {
         NamedCommands.registerCommand("PositionNone", AutomaticCommands.positionNONE);
         NamedCommands.registerCommand("GoToCoralStation", AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
-        for (var value : TargetScorePosition.values()) {
+        for (var value : TargetScorePosition.values())
             NamedCommands.registerCommand("Position" + value.toString(), AutomaticCommands.createSetTargetScorePositionCommand(value));
-        }
-
-        // NamedCommands.registerCommand("PositionL1", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L1));
-        // NamedCommands.registerCommand("PositionL2_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_L));
-        // NamedCommands.registerCommand("PositionL2_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L2_R));
-        // NamedCommands.registerCommand("PositionL3_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_L));
-        // NamedCommands.registerCommand("PositionL3_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L3_R));
-        // NamedCommands.registerCommand("PositionL4_L", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_L));
-        // NamedCommands.registerCommand("PositionL4_R", AutomaticCommands.createSetTargetScorePositionCommand(TargetScorePosition.L4_R));
 
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
 
         NamedCommands.registerCommand("Score", createScoreCommand());
-        NamedCommands.registerCommand("Pickup", createPickupCommand());
-        // NamedCommands.registerCommand("Pickup", TESTcreatePickupCommand());
+        // NamedCommands.registerCommand("Pickup", createPickupCommand());
+        NamedCommands.registerCommand("Pickup", TESTcreatePickupCommand());
+
+        NamedCommands.registerCommand("StartIntake", m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN))));
 
         // NamedCommands.registerCommand("GoToPositionAndScore", AutomaticCommands.createGoToPositionCommand().andThen(createScoreCommand()));
         NamedCommands.registerCommand("PrepareScore", createDynamicPrepareScoreCommand());
@@ -268,19 +262,14 @@ public class RobotContainer {
             DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
         }
 
-        // FIXME: verify if we can register commands after configuring autobuilder (99% sure you can)
-        NamedCommands.registerCommand("LocalizeToReefAB", createLocalizeToReefCommand(RelativeReefLocation.AB, true));
-        NamedCommands.registerCommand("LocalizeToReefCD", createLocalizeToReefCommand(RelativeReefLocation.CD, true));
-        NamedCommands.registerCommand("LocalizeToReefEF", createLocalizeToReefCommand(RelativeReefLocation.EF, true));
-        NamedCommands.registerCommand("LocalizeToReefGH", createLocalizeToReefCommand(RelativeReefLocation.GH, true));
-        NamedCommands.registerCommand("LocalizeToReefIJ", createLocalizeToReefCommand(RelativeReefLocation.IJ, true));
-        NamedCommands.registerCommand("LocalizeToReefKL", createLocalizeToReefCommand(RelativeReefLocation.KL, true));
+        for (var value : RelativeReefLocation.values())
+            NamedCommands.registerCommand("LocalizeToReef" + value.toString(), createLocalizeToReefCommand(value, true));
 
         NamedCommands.registerCommand("LocalizeToCoralStationLeft", createLocalizeToCoralStationCommand(CoralStationID.Left));
         NamedCommands.registerCommand("LocalizeToCoralStationRight", createLocalizeToCoralStationCommand(CoralStationID.Right));
 
-        m_autoChooser = AutoBuilder.buildAutoChooser("thereisnoauto");
-        m_autoChooser.addOption("thereisnoauto", Commands.none());
+        m_autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier((stream) -> stream.filter(auto -> auto.getName().startsWith("COMP")));
+        m_autoChooser.setDefaultOption("thereisnoauto", Commands.none());
         m_autoChooser.addOption("Drive Wheel Radius Characterization", m_driveSubsystem
             .orientModules(CommandSwerveDrivetrain.getCircleOrientations())
             .andThen(new PrintCommand("modules oriented."))

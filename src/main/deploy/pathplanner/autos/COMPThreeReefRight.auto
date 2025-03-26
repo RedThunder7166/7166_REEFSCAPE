@@ -19,9 +19,9 @@
                 "data": {
                   "commands": [
                     {
-                      "type": "named",
+                      "type": "path",
                       "data": {
-                        "name": "LocalizeToReefIJ"
+                        "pathName": "StartE-F"
                       }
                     },
                     {
@@ -36,12 +36,6 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "GoToPosition"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
                   "name": "Score"
                 }
               }
@@ -55,51 +49,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "I-JtoCoralStation"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Pickup"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "sequential",
-          "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "PositionL4_R"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "CoralStationToI-J"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "Score"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "sequential",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "I-JtoCoralStation"
+                  "pathName": "E-FtoCoralStation"
                 }
               },
               {
@@ -122,9 +72,22 @@
                 }
               },
               {
-                "type": "path",
+                "type": "deadline",
                 "data": {
-                  "pathName": "CoralStationToK-L"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "CoralStationToC-D"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PrepareScore"
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -143,7 +106,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "K-LtoCoralStation"
+                  "pathName": "C-DToCoralStation"
                 }
               },
               {
@@ -166,9 +129,22 @@
                 }
               },
               {
-                "type": "path",
+                "type": "deadline",
                 "data": {
-                  "pathName": "CoralStationToK-L"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "CoralStationToC-D"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PrepareScore"
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -190,6 +166,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "TestAutos",
+  "folder": "Working3",
   "choreoAuto": false
 }

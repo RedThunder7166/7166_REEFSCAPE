@@ -34,6 +34,7 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -124,15 +125,24 @@ public class CameraSubsystem extends SubsystemBase {
         @Override
         public void initialize() {
             m_command = m_commandSupplier.get();
-            m_command.schedule();
+            CommandScheduler.getInstance().registerComposedCommands(m_command);
+
+            m_command.initialize();;
         }
+
+        @Override
+        public void execute() {
+            m_command.execute();;
+        }
+
         @Override
         public boolean isFinished() {
-            return !m_command.isScheduled();
+            return m_command.isFinished();
         }
         @Override
         public void end(boolean isInterrupted) {
-            m_command.cancel();
+            CommandScheduler.getInstance().removeComposedCommand(m_command);
+            m_command.end(isInterrupted);
         }
     }
 
@@ -454,7 +464,7 @@ public class CameraSubsystem extends SubsystemBase {
     }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
-        2.7, 4.0,
+        3, 4,
         Units.degreesToRadians(540), Units.degreesToRadians(720)
     );
 

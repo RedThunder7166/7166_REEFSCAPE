@@ -19,9 +19,9 @@
                 "data": {
                   "commands": [
                     {
-                      "type": "path",
+                      "type": "named",
                       "data": {
-                        "pathName": "StartI-J"
+                        "name": "LocalizeToReefIJ"
                       }
                     },
                     {
@@ -72,22 +72,9 @@
                 }
               },
               {
-                "type": "deadline",
+                "type": "path",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "CoralStationToK-L"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "PrepareScore"
-                      }
-                    }
-                  ]
+                  "pathName": "CoralStationToK-L"
                 }
               },
               {
@@ -129,22 +116,9 @@
                 }
               },
               {
-                "type": "deadline",
+                "type": "path",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "CoralStationToK-L"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "PrepareScore"
-                      }
-                    }
-                  ]
+                  "pathName": "CoralStationToK-L"
                 }
               },
               {
@@ -165,7 +139,7 @@
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": "TestAutos",
   "choreoAuto": false
 }

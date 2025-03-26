@@ -42,6 +42,17 @@
           "name": "GoToCoralStation"
         }
       }
+    },
+    {
+      "name": "StartIntake",
+      "waypointRelativePos": 0.5000000000000004,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "StartIntake"
+        }
+      }
     }
   ],
   "globalConstraints": {
