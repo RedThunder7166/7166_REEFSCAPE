@@ -163,7 +163,7 @@ public class RobotContainer {
         return getWaitUntilCoralIsGoodCommand()
             .andThen(AutomaticCommands.createInstantGoToPositionCommand(scorePosition.toStage1()))
             .andThen(m_cameraSubsystem.getWaitUntilWithinGoToPositionDistance())
-            .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition.toStage3()));
+            .andThen(AutomaticCommands.createGoToPositionCommand(scorePosition));
     }
     private Command createDynamicPrepareScoreCommand() {
         return new CameraSubsystem.DynamicCommand(() -> createPrepareScoreCommand(AutomaticCommands.getTargetScorePosition()));

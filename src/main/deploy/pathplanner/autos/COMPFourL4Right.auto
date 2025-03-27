@@ -11,7 +11,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "PositionL4_L"
+                  "name": "PositionL4_R"
                 }
               },
               {
@@ -31,7 +31,7 @@
                           {
                             "type": "named",
                             "data": {
-                              "name": "Score"
+                              "name": "PrepareScore"
                             }
                           }
                         ]
@@ -95,7 +95,7 @@
                           {
                             "type": "named",
                             "data": {
-                              "name": "Score"
+                              "name": "PrepareScore"
                             }
                           }
                         ]
@@ -159,7 +159,7 @@
                           {
                             "type": "named",
                             "data": {
-                              "name": "Score"
+                              "name": "PrepareScore"
                             }
                           }
                         ]
@@ -213,7 +213,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "CoralStationToA-B"
+                        "pathName": "RightCoralStationToA-B"
                       }
                     },
                     {
@@ -223,7 +223,7 @@
                           {
                             "type": "named",
                             "data": {
-                              "name": "Score"
+                              "name": "PrepareScore"
                             }
                           }
                         ]

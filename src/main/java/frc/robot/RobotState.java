@@ -110,10 +110,6 @@ public final class RobotState {
                     return this;
             }
         }
-
-        public TargetScorePosition toStage3() {
-            return this;
-        }
     }
 
     private static TargetScorePosition targetScorePosition = TargetScorePosition.NONE;

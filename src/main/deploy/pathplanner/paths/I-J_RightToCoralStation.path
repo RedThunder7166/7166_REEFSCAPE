@@ -1,0 +1,77 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 4.8501275510204085,
+        "y": 5.289764030612244
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 4.317483032110497,
+        "y": 5.691296021885311
+      },
+      "isLocked": false,
+      "linkedName": "ReefIJ_Right"
+    },
+    {
+      "anchor": {
+        "x": 1.6721966911764705,
+        "y": 7.401654411764705
+      },
+      "prevControl": {
+        "x": 2.535913567771864,
+        "y": 6.863268738402359
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "LeftCoralStationClose"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "GoToCoralStation",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "GoToCoralStation"
+        }
+      }
+    },
+    {
+      "name": "StartIntake",
+      "waypointRelativePos": 0.5,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "StartIntake"
+        }
+      }
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -51.98105740682981
+  },
+  "reversed": false,
+  "folder": "ReefToCoralStation",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -119.99999999999999
+  },
+  "useDefaultConstraints": true
+}

@@ -1,6 +1,6 @@
 {
-  "robotWidth": 0.852,
-  "robotLength": 0.852,
+  "robotWidth": 0.8636,
+  "robotLength": 0.8636,
   "holonomicMode": true,
   "pathFolders": [
     "CoralStationToReef",
@@ -24,11 +24,11 @@
   "defaultMaxAngAccel": 720.0,
   "defaultNominalVoltage": 12.0,
   "robotMass": 63.548,
-  "robotMOI": 7.906387968,
+  "robotMOI": 7.906,
   "robotTrackwidth": 0.546,
   "driveWheelRadius": 0.037457079733496185,
   "driveGearing": 4.71,
-  "maxDriveSpeed": 4.65,
+  "maxDriveSpeed": 6.0,
   "driveMotorType": "krakenX60",
   "driveCurrentLimit": 60.0,
   "wheelCOF": 1.2,

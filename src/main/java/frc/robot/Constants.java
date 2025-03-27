@@ -70,7 +70,8 @@ public class Constants {
         public static final int SCORE_EXIT_SENSOR_ID = 1;
 
         public static final double MIN_POSITION_ROTATIONS = 0;
-        public static final double MAX_POSITION_ROTATIONS = 4.500732421875d;
+        // public static final double MAX_POSITION_ROTATIONS = 4.500732421875;
+        public static final double MAX_POSITION_ROTATIONS = 4.467041;
 
         public static final double MIN_POSITION_MM = 3; // 17
         public static final double MAX_POSITION_MM = 430; // 400; 500
@@ -81,11 +82,14 @@ public class Constants {
         public static double encoderUnitsToMeters(double encoderUnits) {
             return encoderUnits * UNIT_TO_METERS;
         }
+        public static double encoderUnitsToMillieters(double encoderUnits) {
+            return (encoderUnits * UNIT_TO_METERS) * 1000d;
+        }
         public static double metersToEncoderUnits(double meters) {
             return meters * METERS_TO_UNIT;
         }
         public static double millimetersToEncoderUnits(double mm) {
-            return metersToEncoderUnits(mm / 1000);
+            return metersToEncoderUnits(mm / 1000d);
         }
 
         // public static final double LEFT_RIGHT_OFFSET = Units.inchesToMeters(2);
@@ -96,12 +100,12 @@ public class Constants {
         public static final double REEF_LEFT_POSITION_ROTATIONS = Units.inchesToMeters(2) * METERS_TO_UNIT;
         public static final double REEF_RIGHT_POSITION_ROTATIONS = Units.inchesToMeters(14) * METERS_TO_UNIT;
 
-        public static final double REEF_LEFT_POSITION_MM = 412; // 40; 482
-        public static final double CORAL_STATION_POSITION_MM = 200; // 195; 200
-        public static final double REEF_RIGHT_POSITION_MM = 35; // 380; 35
+        public static final double REEF_LEFT_POSITION_MM = 372; // 40; 482; 372
+        public static final double CORAL_STATION_POSITION_MM = 190; // 195; 200
+        public static final double REEF_RIGHT_POSITION_MM = 15; // 380; 35; 15
 
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
-        public static final double POSITION_ERROR_THRESHOLD_MM = 10;
+        public static final double POSITION_ERROR_THRESHOLD_MM = 2.5; // 10
 
         public static final double SCORE_OUTPUT = 0.35; // 0.4
     }

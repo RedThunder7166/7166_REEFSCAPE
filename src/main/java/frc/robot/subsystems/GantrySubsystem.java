@@ -209,7 +209,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final TalonFX m_scoreMotor = new TalonFX(GantryConstants.SCORE_MOTOR_ID);
     private final LaserCan m_gantryLaser = new LaserCan(GantryConstants.GANTRY_LASER_ID);
 
-    // private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
+    private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final DutyCycleOut m_scoreDutyCycleOut = new DutyCycleOut(0);
     private final DutyCycleOut m_gantryDutyCycleOut = new DutyCycleOut(0);
     // private final VoltageOut m_voltageOut = new VoltageOut(0);
@@ -257,6 +257,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final StatusSignal<Double> m_PIDPositionReference = m_gantryMotor.getClosedLoopReference();
     // private final StatusSignal<Double> m_PIDPositionError = m_gantryMotor.getClosedLoopError();
 
+    private double m_gantryTargetPositionRotations = 0;
     private Measurement m_gantryLaserMeasurement;
 
     public final DIOInterface m_elevatorClearanceSensor = OurUtils.getDIO(GantryConstants.ELEVATOR_CLEARANCE_SENSOR_ID);
@@ -281,9 +282,12 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     public GantrySubsystem() {
         // FIXME: tune gantry PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
-        motorConfig.Slot0.kP = 20;
+        // motorConfig.Slot0.kP = 20;
+        motorConfig.Slot0.kP = 5.3;
+        motorConfig.Slot0.kS = 0.27;
 
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
         motorConfig.CurrentLimits.StatorCurrentLimit = 20;
         motorConfig.CurrentLimits.SupplyCurrentLimit = 30;
@@ -354,15 +358,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 );
             }
 
-            var measurement = m_gantryLaserMeasurement;
-            if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
-                m_gantryLaserMeasurementPublisher.set(measurement.distance_mm + "mm");
-                // m_gantryLaserAmbientPublisher.set(measurement.ambient + "");
-            } else {
-                m_gantryLaserMeasurementPublisher.set("INVALID");
-                // m_gantryLaserAmbientPublisher.set("INVALID");
-            }
-
             final double mechPositionToUse = Robot.isSimulation() ? PIDPositionReference : gantryMotorPosition;
             final boolean mechPositionIsPositive = mechPositionToUse > 0;
             final double mechPositionSign = mechPositionIsPositive ? 1 : -1;
@@ -372,6 +367,20 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 length = mechPositionSign * 0.05;
             GantryMechanisms.ligament.setLength(length);
         });
+
+        // TODO: mess with rate to determine if constantly setting the position is even viable
+        RobotState.addTelemetry(() -> {
+            var measurement = m_gantryLaserMeasurement;
+            if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
+                final double distance = measurement.distance_mm;
+                m_gantryMotor.setPosition(GantryConstants.millimetersToEncoderUnits(distance));
+                m_gantryLaserMeasurementPublisher.set(distance + "mm");
+                // m_gantryLaserAmbientPublisher.set(measurement.ambient + "");
+            } else {
+                m_gantryLaserMeasurementPublisher.set("INVALID");
+                // m_gantryLaserAmbientPublisher.set("INVALID");
+            }
+        }, 300);
     }
 
     @Override
@@ -435,7 +444,9 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         // double err = Math.abs(m_PIDPositionError.refresh().getValueAsDouble());
         // SmartDashboard.putNumber("GantryPIDError", err);
         // return err <= GantryConstants.POSITION_ERROR_THRESHOLD;
-        double err = Math.abs(m_pidController.getPositionError());
+
+        // double err = Math.abs(m_pidController.getPositionError());
+        final double err = GantryConstants.encoderUnitsToMillieters(Math.abs(m_gantryMotorPosition.getValueAsDouble() - m_gantryTargetPositionRotations));
         SmartDashboard.putNumber("GantryPIDError", err);
         return err <= GantryConstants.POSITION_ERROR_THRESHOLD_MM;
     }
@@ -512,27 +523,30 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_oldIsResettingPosition = m_isResettingPosition;
     }
 
-    private double m_feedForwardLastSpeed = 0;
-    private double m_feedForwardLastTime = Timer.getFPGATimestamp();
+    // private double m_feedForwardLastSpeed = 0;
+    // private double m_feedForwardLastTime = Timer.getFPGATimestamp();
     private boolean trySetPositionMM(double position) {
         var laserMeasurement = m_gantryLaserMeasurement;
         if (laserMeasurement == null)
             return false;
 
         m_automaticPositionRotationsPublisher.set(position); // FIXME: this is not rotations!!!
-        var output = m_pidController.calculate(laserMeasurement.distance_mm, position);
-        var velocity = m_pidController.getSetpoint().velocity;
-        var timeStamp = Timer.getFPGATimestamp();
+        // var output = m_pidController.calculate(laserMeasurement.distance_mm, position);
+        // var velocity = m_pidController.getSetpoint().velocity;
+        // var timeStamp = Timer.getFPGATimestamp();
 
-        double acceleration = (velocity - m_feedForwardLastSpeed) / (timeStamp - m_feedForwardLastTime);
-        output += m_feedForward.calculate(velocity, acceleration);
+        // double acceleration = (velocity - m_feedForwardLastSpeed) / (timeStamp - m_feedForwardLastTime);
+        // output += m_feedForward.calculate(velocity, acceleration);
 
-        output = -output;
-        SmartDashboard.putNumber("GANTRY_PID_OUTPUT", output);
-        m_gantryMotor.setControl(m_gantryDutyCycleOut.withOutput(output));
+        // output = -output;
+        // SmartDashboard.putNumber("GANTRY_PID_OUTPUT", output);
 
-        m_feedForwardLastSpeed = velocity;
-        m_feedForwardLastTime = timeStamp;
+        // m_gantryMotor.setControl(m_gantryDutyCycleOut.withOutput(output));
+        m_gantryTargetPositionRotations = GantryConstants.millimetersToEncoderUnits(position);
+        m_gantryMotor.setControl(m_positionControl.withPosition(m_gantryTargetPositionRotations));
+
+        // m_feedForwardLastSpeed = velocity;
+        // m_feedForwardLastTime = timeStamp;
 
         return true;
     }

@@ -76,6 +76,7 @@ public class AutomaticCommands {
         private final ElevatorState m_elevatorState;
         private final GantryState m_gantryState;
 
+        private boolean m_isTeleop = false;
         private boolean m_hasDoneAction = false;
 
         private boolean m_coralHasBeenGood = false;
@@ -99,8 +100,9 @@ public class AutomaticCommands {
             m_hasDoneAction = false;
             m_targetScorePosition = targetScorePosition;
             m_alreadyTargeting = m_elevatorSubsystem.getIsTargetingAScoreLocation() && RobotState.getTargetScorePosition().getIsOnReef();
-            m_coralHasBeenGood = DriverStation.isTeleop();
-            m_elevatorHasBeenAligned = m_coralHasBeenGood;
+            m_isTeleop = DriverStation.isTeleop();
+            m_coralHasBeenGood = m_isTeleop;
+            m_elevatorHasBeenAligned = m_isTeleop;
             m_timer.restart();
         }
 
@@ -125,6 +127,9 @@ public class AutomaticCommands {
 
         @Override
         public boolean isFinished() {
+            if (m_hasDoneAction && m_isTeleop)
+                return true;
+
             if (!m_coralHasBeenGood)
                 return false;
             if (m_alreadyTargeting) {
