@@ -582,14 +582,17 @@ public class RobotContainer {
             double horizontalDifference = targetCentricTranslation.getY();
             horizontalDifference += RobotState.reefTargetHorizontalDistanceOffset;
             double forwardDifference = targetCentricTranslation.getX();
-            SmartDashboard.putNumber("ReefTargetFowardDistanceInches", Units.metersToInches(forwardDifference));
 
-            if (m_cameraSubsystem.getCanAutoAdjust())
+            if (m_cameraSubsystem.getCanAutoAdjust()) {
                 RobotState.setReefTargetHorizontalDistance(horizontalDifference);
-            else
+                RobotState.setReefTargetForwardDistance(forwardDifference);
+            } else {
                 RobotState.clearReefTargetHorizontalDistance();
+                RobotState.clearReefTargetForwardDistance();
+            }
 
             SmartDashboard.putNumber("ReefTargetHorizontalDistance", horizontalDifference);
+            SmartDashboard.putNumber("ReefTargetFowardDistanceInches", Units.metersToInches(forwardDifference));
         }
     }
 }

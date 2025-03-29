@@ -55,9 +55,24 @@ public class Constants {
         public static final double L4_POSITION = 4.3; // 4.3; mason?: 4.15
 
         public static final double ALGAE_HAND_POSITION_OFFSET = 0.25;
+        public static final double AUTO_ADJUST_OFFSET = MAX_POSITION_ROTATIONS - 4.3; // 4.3 is l4
 
         // FIXME: ELEVATOR POSITION ERROR THRESHOLD
         public static final double POSITION_ERROR_THRESHOLD = 0.03;
+
+        public static final double MIN_FORWARD_DISTANCE = Units.inchesToMeters(17.2);
+        public static final double MAX_FORWARD_DISTANCE = Units.inchesToMeters(22.52);
+        public static final double calculateAutoAdjust(double forwardDistanceInches) {
+            /*
+                linear regression from an x-y table, based on l4
+
+                x represents forward distance in inches
+                y represents elevator position offset
+
+                https://www.desmos.com/calculator/legao7xgjj
+            */
+            return (0.0375937 * forwardDistanceInches) - 0.646611;
+        }
     }
     public static final class GantryConstants {
         public static final boolean REAL = true;

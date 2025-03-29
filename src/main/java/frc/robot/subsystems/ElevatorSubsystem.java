@@ -568,13 +568,29 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 desiredControl = m_brake; // redundant?
                 break;
             default:
-                final double position;
+                double position;
                 if (shouldApplyAlgaeHandPosition) {
                     final boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut();
                     position = algaeHand ? m_position.m_algaeHandPosition : m_position.m_position;
-                } else {
+                } else
                     position = m_position.m_position;
+
+                // auto adjust
+                if (RobotState.getTargetScorePosition().getIsOnReefBranch()) {
+                    var reefTargetForwardDistance = RobotState.getReefTargetForwardDistance();
+                    if (reefTargetForwardDistance.isPresent() && RobotState.getVisionPoseSuccess()) {
+                        double distance = reefTargetForwardDistance.get();
+                        // if (distance >= ElevatorConstants.MIN_FORWARD_DISTANCE && distance <= ElevatorConstants.MAX_FORWARD_DISTANCE)
+                        //     position += OurUtils.map(distance, ElevatorConstants.MIN_FORWARD_DISTANCE, ElevatorConstants.MAX_FORWARD_DISTANCE, 0, ElevatorConstants.AUTO_ADJUST_OFFSET);
+                        if (distance >= ElevatorConstants.MIN_FORWARD_DISTANCE) {
+                            // ensure positive
+                            final double increment = Math.copySign(ElevatorConstants.calculateAutoAdjust(Units.metersToInches(distance)), 1);
+                            // ensure within max
+                            position = Math.min(ElevatorConstants.MAX_POSITION_ROTATIONS, position + increment);
+                        }
+                    }
                 }
+
                 desiredControl = m_positionControl.withPosition(position);
                 break;
         }

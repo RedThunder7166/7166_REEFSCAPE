@@ -83,6 +83,9 @@ public final class RobotState {
         public boolean getIsOnReef() {
             return !(this == NONE || this == CORAL_STATION);
         }
+        public boolean getIsOnReefBranch() {
+            return !(this == NONE || this == CORAL_STATION || this == L1);
+        }
 
         public TargetScorePosition toStage1() {
             switch (this) {
@@ -225,6 +228,17 @@ public final class RobotState {
     }
     public static synchronized void clearReefTargetHorizontalDistance() {
         reefTargetHorizontalDistance = Optional.empty();
+    }
+
+    private static Optional<Double> reefTargetForwardDistance = Optional.empty();
+    public static synchronized Optional<Double> getReefTargetForwardDistance() {
+        return reefTargetForwardDistance;
+    }
+    public static synchronized void setReefTargetForwardDistance(double distance) {
+        reefTargetForwardDistance = Optional.of(distance);
+    }
+    public static synchronized void clearReefTargetForwardDistance() {
+        reefTargetForwardDistance = Optional.empty();
     }
 
     private static boolean visionPoseSuccess = false;
