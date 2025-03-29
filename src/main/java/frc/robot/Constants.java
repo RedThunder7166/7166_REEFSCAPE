@@ -33,7 +33,7 @@ public class Constants {
 
         // FIXME: TUNE THESE
         public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(5, 0, 0);
-        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(10, 0, 0);
+        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(6, 0, 0);
         public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(7, 0, 0);
     }
 
@@ -105,9 +105,17 @@ public class Constants {
         public static final double REEF_RIGHT_POSITION_MM = 15; // 380; 35; 15
 
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
-        public static final double POSITION_ERROR_THRESHOLD_MM = 2.5; // 10
+        public static final double POSITION_ERROR_THRESHOLD_MM = 8; // 10; 2.5; 5
 
-        public static final double SCORE_OUTPUT = 0.35; // 0.4
+        public static final double BACKWARD_OUTPUT = -0.2;
+
+        public static final double CRAWL_FORWARD_OUTPUT = 0.15; // 0.08; 0.12
+        public static final double CRAWL_BACKWARD_OUTPUT = -0.16; // -0.10; -0.14
+
+        public static final double CRAWL_FORWARD_VOLTAGE = 1.5;
+        public static final double CRAWL_BACKWARD_VOLTAGE = -CRAWL_FORWARD_VOLTAGE;
+
+        public static final double SCORE_OUTPUT = 0.35; // 0.4; 0.35
     }
     public static final class IntakeOuttakeConstants {
         public static final boolean REAL = true;
@@ -118,12 +126,6 @@ public class Constants {
         // TODO: use MotionMagicVoltage with velocity
         public static final double FORWARD_OUTPUT = 0.4;
         public static final double BACKWARD_OUTPUT = -0.2;
-
-        public static final double CRAWL_FORWARD_OUTPUT = 0.15; // 0.08; 0.12
-        public static final double CRAWL_BACKWARD_OUTPUT = -0.16; // -0.10; -0.14
-
-        public static final double CRAWL_FORWARD_VOLTAGE = 1.5;
-        public static final double CRAWL_BACKWARD_VOLTAGE = -CRAWL_FORWARD_VOLTAGE;
     }
 
     public static final class ClimbConstants {
@@ -176,7 +178,6 @@ public class Constants {
         // below values are in meters
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
-        public static final double GO_TO_POSITION_DISTANCE = 2.2; // 2.6
 
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;
@@ -192,7 +193,9 @@ public class Constants {
     }
 
     public static final class AutoConstants {
-        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 2;
-        public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.05;
+        public static final double GO_TO_POSITION_DISTANCE_METERS = 2.7; // 2.6; 2.2
+
+        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 1.3;
+        public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.02; // 0.05; 0.35
     }
 }

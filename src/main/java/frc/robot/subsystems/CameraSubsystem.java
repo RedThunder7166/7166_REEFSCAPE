@@ -28,7 +28,6 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.net.PortForwarder;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -39,8 +38,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AprilTagConstants;
-import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.LimelightHelpers;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
@@ -400,7 +398,7 @@ public class CameraSubsystem extends SubsystemBase {
 
         final boolean insideReefZone = distance <= AprilTagConstants.INSIDE_REEF_ZONE_THRESHOLD;
         final boolean canAutoAdjust = distance <= AprilTagConstants.AUTO_ADJUST_THRESHOLD;
-        final boolean withinGoToPositionDistance = distance <= AprilTagConstants.GO_TO_POSITION_DISTANCE;
+        final boolean withinGoToPositionDistance = distance <= AutoConstants.GO_TO_POSITION_DISTANCE_METERS;
 
         if (insideReefZone != m_insideReefZone) {
             SmartDashboard.putBoolean("InsideReefZone", insideReefZone);

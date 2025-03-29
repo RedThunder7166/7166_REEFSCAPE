@@ -31,13 +31,11 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.GantryConstants;
-import frc.robot.Constants.IntakeOuttakeConstants;
 import frc.robot.OurUtils.DIOInterface;
 import frc.robot.OurUtils;
 import frc.robot.Robot;
@@ -279,7 +277,25 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final BooleanPublisher m_scoreEnterSensorPublisher = RobotState.robotStateTable.getBooleanTopic("GantryScoreEnterSensor").publish();
     private final BooleanPublisher m_scoreExitSensorPublisher = RobotState.robotStateTable.getBooleanTopic("GantryScoreExitSensor").publish();
 
-    private double m_lastInfluencedPosition = 0;
+    private double m_lastInfluencedDistance = 0;
+    // private double m_lastInfluencedTimestamp = Timer.getFPGATimestamp();
+
+    private void tryInfluencePosition(double distance) {
+        if (!DriverStation.isEnabled())
+            return;
+        final double distance_difference = Math.abs(m_lastInfluencedDistance - distance);
+        if (distance_difference < 5)
+            return;
+
+        // don't set config multiple times per second
+        // final double timestamp = Timer.getFPGATimestamp();
+        // if (Math.abs(m_lastInfluencedTimestamp - timestamp) < 0.5)
+        //     return;
+
+        m_lastInfluencedDistance = distance;
+        // m_lastInfluencedTimestamp = timestamp;
+        m_gantryMotor.setPosition(GantryConstants.millimetersToEncoderUnits(distance), 0.05);
+    }
 
     public GantrySubsystem() {
         // FIXME: tune gantry PID
@@ -377,12 +393,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             var measurement = m_gantryLaserMeasurement;
             if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
                 final double distance = measurement.distance_mm;
-                final double position = GantryConstants.millimetersToEncoderUnits(distance);
-                final double position_difference = Math.abs(m_lastInfluencedPosition - position);
-                if (position_difference > 0.05) {
-                    m_lastInfluencedPosition = position;
-                    m_gantryMotor.setPosition(position, 0.05);
-                }
+                tryInfluencePosition(distance);
                 m_gantryLaserMeasurementPublisher.set(distance + "mm");
                 // m_gantryLaserAmientPublisher.set(measurement.ambient + "");
             } else {
@@ -641,10 +652,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         //         targetRequest = m_brake; // redundant?
         //         break;
         //     case OUT:
-        //         targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
+        //         targetRequest = m_dutyCycleOut.withOutput(GantryConstants.BACKWARD_OUTPUT);
         //         break;
         //     case IN:
-        //         targetRequest = m_dutyCycleOut.withOutput(IntakeOuttakeConstants.FORWARD_OUTPUT);
+        //         targetRequest = m_dutyCycleOut.withOutput(GantryConstants.FORWARD_OUTPUT);
         //         break;
         // }
 
@@ -652,7 +663,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         RobotState.IntakeState intakeState = RobotState.getIntakeState();
         if (intakeState == IntakeState.OUT) {
-            targetRequest = m_scoreDutyCycleOut.withOutput(IntakeOuttakeConstants.BACKWARD_OUTPUT);
+            targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.BACKWARD_OUTPUT);
         } else {
             final boolean isGoodToMove = !RobotState.getWantsToScore() && (m_desiredControlType == DesiredControlType.MANUAL || m_position != GantryPosition.TROUGH);
             // TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
@@ -661,13 +672,13 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 // if we are in automatic control and we are targeting a non-coral-station position, don't move motor
                 // if (m_desiredControlType == DesiredControlType.MANUAL || (m_position == GantryPosition.CORAL_STATION || m_position == GantryPosition.IDLE))
                 if (isGoodToMove)
-                    targetRequest = m_scoreDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_OUTPUT);
-                    // targetRequest = m_voltageOut.withOutput(IntakeOuttakeConstants.CRAWL_FORWARD_VOLTAGE);
+                    targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.CRAWL_FORWARD_OUTPUT);
+                    // targetRequest = m_voltageOut.withOutput(GantryConstants.CRAWL_FORWARD_VOLTAGE);
                 else
                     targetRequest = m_brake;
             // else if (!m_scoreEnterSensorTripped && (targetScorePosition == TargetScorePosition.NONE || targetScorePosition == TargetScorePosition.CORAL_STATION))
             else if (!m_scoreEnterSensorTripped && isGoodToMove)
-                targetRequest = m_scoreDutyCycleOut.withOutput(IntakeOuttakeConstants.CRAWL_BACKWARD_OUTPUT);
+                targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.CRAWL_BACKWARD_OUTPUT);
             else
                 targetRequest = m_brake;
         }

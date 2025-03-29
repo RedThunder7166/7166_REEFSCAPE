@@ -106,7 +106,8 @@ public class RobotContainer {
             public void end(boolean isInterrupted) {
                 RobotState.setWantsToScore(false);
             }
-        }).andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
+        })
+            .andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
     private class PickupCommand extends Command {
         public void execute() {
@@ -141,7 +142,7 @@ public class RobotContainer {
         );
     }
 
-    private Command TESTcreatePickupCommand() {
+    private Command createAutoPickupCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
             new AutoPickupCommand()
         );
@@ -181,23 +182,22 @@ public class RobotContainer {
     private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
         return createGenericEntireScoreCommand(createLocalizeToReefCommand(reefPosition, true), scorePosition);
     }
-    private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, PathPlannerPath scorePath) {
-        return createGenericEntireScoreCommand(AutoBuilder.followPath(scorePath), scorePosition);
-    }
+    // private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, PathPlannerPath scorePath) {
+    //     return createGenericEntireScoreCommand(AutoBuilder.followPath(scorePath), scorePosition);
+    // }
     private SequentialCommandGroup createGenericEntirePickupCommand(Command driveCommand) {
         return new SequentialCommandGroup(
             AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION),
             driveCommand,
-            // createPickupCommand()
-            TESTcreatePickupCommand()
+            createAutoPickupCommand()
         );
     }
     private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
         return createGenericEntirePickupCommand(createLocalizeToCoralStationCommand(coralStation));
     }
-    private SequentialCommandGroup createEntirePickupCommand(PathPlannerPath coralStationPath) {
-        return createGenericEntirePickupCommand(AutoBuilder.followPath(coralStationPath));
-    }
+    // private SequentialCommandGroup createEntirePickupCommand(PathPlannerPath coralStationPath) {
+    //     return createGenericEntirePickupCommand(AutoBuilder.followPath(coralStationPath));
+    // }
     private class AutoCommandSequence extends SequentialCommandGroup {
         public AutoCommandSequence score(TargetScorePosition scorePosition, RelativeReefLocation reefLocation) {
             addCommands(createEntireScoreCommand(scorePosition, reefLocation));
@@ -225,6 +225,8 @@ public class RobotContainer {
         SmartDashboard.putBoolean("PathPlannerWarmedUp", m_followPathCommandIsDone && m_pathFindingCommandIsDone);
     }
 
+    private static final boolean showAllAutos = false;
+
     public RobotContainer() {
         m_driveSubsystem = TunerConstants.createDrivetrain();
         m_cameraSubsystem = CameraSubsystem.getSingleton();
@@ -247,12 +249,10 @@ public class RobotContainer {
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
 
         NamedCommands.registerCommand("Score", createScoreCommand());
-        // NamedCommands.registerCommand("Pickup", createPickupCommand());
-        NamedCommands.registerCommand("Pickup", TESTcreatePickupCommand());
+        NamedCommands.registerCommand("Pickup", createAutoPickupCommand());
 
         NamedCommands.registerCommand("StartIntake", m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN))));
 
-        // NamedCommands.registerCommand("GoToPositionAndScore", AutomaticCommands.createGoToPositionCommand().andThen(createScoreCommand()));
         NamedCommands.registerCommand("PrepareScore", createDynamicPrepareScoreCommand());
 
         try {
@@ -268,7 +268,8 @@ public class RobotContainer {
         NamedCommands.registerCommand("LocalizeToCoralStationLeft", createLocalizeToCoralStationCommand(CoralStationID.Left));
         NamedCommands.registerCommand("LocalizeToCoralStationRight", createLocalizeToCoralStationCommand(CoralStationID.Right));
 
-        m_autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier((stream) -> stream.filter(auto -> auto.getName().startsWith("COMP")));
+        m_autoChooser = showAllAutos ? AutoBuilder.buildAutoChooser()
+            : AutoBuilder.buildAutoChooserWithOptionsModifier((stream) -> stream.filter(auto -> auto.getName().startsWith("COMP")));
         m_autoChooser.setDefaultOption("thereisnoauto", Commands.none());
         m_autoChooser.addOption("Drive Wheel Radius Characterization", m_driveSubsystem
             .orientModules(CommandSwerveDrivetrain.getCircleOrientations())
@@ -446,16 +447,6 @@ public class RobotContainer {
             m_robotCentricLeft = false;
         }));
 
-        // setTargetReefLocation(m_targetReefLocation);
-        // DRIVER_CONTROLS.incrementTargetReefLocation.onTrue(new InstantCommand(() -> {
-        //     setTargetReefLocation(m_targetReefLocation.getNext());
-        // }));
-        // DRIVER_CONTROLS.decrementTargetReefLocation.onTrue(new InstantCommand(() -> {
-        //     setTargetReefLocation(m_targetReefLocation.getPrevious());
-        // }));
-
-        // DRIVER_CONTROLS.localizeToReef.whileTrue(createLocalizeToReefCommand());
-
         DRIVER_CONTROLS.localizeToReefAB.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.AB, false));
         DRIVER_CONTROLS.localizeToReefCD.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.CD, false));
         DRIVER_CONTROLS.localizeToReefEF.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.EF, false));
@@ -520,21 +511,25 @@ public class RobotContainer {
         // SmartDashboard.putString("TARGET_TAG", OurUtils.formatReefLocation(m_targetReefLocation));
     }
 
-    private Command deployIntakeFlap = Commands.startEnd(
+    private Command m_deployIntakeFlap = Commands.startEnd(
         () -> RobotState.startIntake(IntakeState.IN),
         () -> RobotState.stopIntake()
     ).withTimeout(0.1);
+
+    private boolean m_autoHasSetRotation = false;
 
     public void autonomousInit() {
         m_gantrySubsystem.resetManualPosition();
         m_gantrySubsystem.resetMotorPosition();
 
-        if (RobotState.initialSwerveRotation != null)
+        if (!m_autoHasSetRotation && RobotState.initialSwerveRotation != null) {
+            m_autoHasSetRotation = true;
             m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
+        }
 
-        if (deployIntakeFlap.isScheduled())
-            deployIntakeFlap.cancel();
-        deployIntakeFlap.schedule();
+        if (m_deployIntakeFlap.isScheduled())
+            m_deployIntakeFlap.cancel();
+        m_deployIntakeFlap.schedule();
     }
 
     public void autonomousExit() {

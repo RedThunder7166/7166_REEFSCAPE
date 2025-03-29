@@ -21,7 +21,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "StartE-F"
+                        "pathName": null
                       }
                     },
                     {
@@ -49,7 +49,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "E-FtoCoralStation"
+                  "pathName": null
                 }
               },
               {
@@ -78,7 +78,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "CoralStationToC-D"
+                        "pathName": null
                       }
                     },
                     {
@@ -106,7 +106,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "C-DToCoralStation"
+                  "pathName": null
                 }
               },
               {
@@ -135,7 +135,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "CoralStationToC-D"
+                        "pathName": null
                       }
                     },
                     {

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
@@ -234,6 +235,16 @@ public final class RobotState {
     public static synchronized boolean getVisionPoseSuccess() {
         return visionPoseSuccess;
     }
+
+    private static double driveSpeed = 0;
+    private static final DoublePublisher driveSpeedPublisher = robotStateTable.getDoubleTopic("DriveSpeed").publish();
+    public static synchronized void setDriveSpeed(double speed) {
+        if (driveSpeed != speed)
+            driveSpeedPublisher.set(speed);
+        driveSpeed = speed;
+    }
+    // update NT
+    static { setDriveSpeed(driveSpeed); }
 
     public static Rotation2d initialSwerveRotation = null;
 

@@ -23,21 +23,14 @@
                       "data": {
                         "pathName": "StartE-F"
                       }
-                    },
-                    {
-                      "type": "sequential",
-                      "data": {
-                        "commands": [
-                          {
-                            "type": "named",
-                            "data": {
-                              "name": "PrepareScore"
-                            }
-                          }
-                        ]
-                      }
                     }
                   ]
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "GoToPosition"
                 }
               },
               {
@@ -120,7 +113,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "C-DToCoralStation"
+                  "pathName": "C-DtoCoralStation"
                 }
               },
               {
@@ -184,7 +177,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "C-DToCoralStation"
+                  "pathName": "C-DtoCoralStation"
                 }
               },
               {
@@ -203,7 +196,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "PositionL4_R"
+                  "name": "PositionL2_R"
                 }
               },
               {
@@ -250,7 +243,7 @@
       ]
     }
   },
-  "resetOdom": true,
+  "resetOdom": false,
   "folder": "Working4",
   "choreoAuto": false
 }

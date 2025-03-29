@@ -218,6 +218,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
         registerTelemetry((SwerveDriveState state) -> {
             m_poseEstimator.update(pigeon.getRotation2d(), state.ModulePositions);
+            var speeds = state.Speeds;
+            RobotState.setDriveSpeed(Math.sqrt(Math.pow(speeds.vxMetersPerSecond, 2) + Math.pow(speeds.vyMetersPerSecond, 2)));
         });
     }
     public void configureAutoBuilder(RobotConfig config) {

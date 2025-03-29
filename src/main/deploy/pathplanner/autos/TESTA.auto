@@ -7,13 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "straight1m"
+            "pathName": "TESTA1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "TESTA2"
           }
         }
       ]
     }
   },
-  "resetOdom": true,
-  "folder": "SimpleAutos",
+  "resetOdom": false,
+  "folder": "TestAutos",
   "choreoAuto": false
 }

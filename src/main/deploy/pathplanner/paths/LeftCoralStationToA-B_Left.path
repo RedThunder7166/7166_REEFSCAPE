@@ -8,28 +8,47 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.0743622448934986,
-        "y": 6.580644132659631
+        "x": 2.4026785714285723,
+        "y": 4.864445153061224
       },
       "isLocked": false,
       "linkedName": "LeftCoralStationClose"
     },
     {
       "anchor": {
-        "x": 3.2234693877551024,
-        "y": 4.274968112244897
+        "x": 3.20108418367347,
+        "y": 4.379
       },
       "prevControl": {
-        "x": 2.9846938775510203,
-        "y": 4.640593112244898
+        "x": 2.342984693875713,
+        "y": 4.379131377551238
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "ReefAB_Left"
     }
   ],
-  "rotationTargets": [],
-  "constraintZones": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.5,
+      "maxWaypointRelativePos": 1.0,
+      "constraints": {
+        "maxVelocity": 2.5,
+        "maxAcceleration": 4.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
@@ -45,22 +64,22 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 3.0,
-    "maxAcceleration": 3.0,
+    "maxVelocity": 3.5,
+    "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
+    "velocity": 0.0,
     "rotation": 0.0
   },
   "reversed": false,
   "folder": "CoralStationToReef",
   "idealStartingState": {
-    "velocity": 0,
-    "rotation": -51.98105740682981
+    "velocity": 0.0,
+    "rotation": -55.0
   },
   "useDefaultConstraints": true
 }

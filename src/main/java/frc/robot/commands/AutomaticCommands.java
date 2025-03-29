@@ -7,10 +7,9 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.RobotState;
-import frc.robot.Constants;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.RobotState.DesiredControlType;
 import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.subsystems.ElevatorSubsystem;
@@ -144,8 +143,8 @@ public class AutomaticCommands {
 
 
     private static Command createAutomaticGoToPositionCommand(ElevatorState elevatorState, GantryState gantryState) {
-        return new AutomaticGoToPositionCommand(elevatorState, gantryState);
-            // .withTimeout(Constants.AUTOMATIC_GO_TO_POSITION_TIMEOUT_SECONDS);
+        return new AutomaticGoToPositionCommand(elevatorState, gantryState)
+            .withTimeout(AutoConstants.GO_TO_POSITION_TIMEOUT_SECONDS);
     }
     private static Command createInstantAutomaticGoToPositionCommand(ElevatorState elevatorState, GantryState gantryState) {
         return new InstantAutomaticGoToPositionCommand(elevatorState, gantryState);
