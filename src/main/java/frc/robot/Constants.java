@@ -168,7 +168,7 @@ public class Constants {
     }
 
     public static final class AlgaeHandConstants {
-        public static final boolean REAL = true;
+        public static final boolean REAL = false;
 
         public static final int MOTOR_ID = 56;
 
