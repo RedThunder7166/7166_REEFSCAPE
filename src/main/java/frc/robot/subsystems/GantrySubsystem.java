@@ -606,7 +606,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 // desiredControl = m_positionControl.withPosition(position);
 
                 var reefTargetHorizontalDistance = RobotState.getReefTargetHorizontalDistance();
-                if (reefTargetHorizontalDistance.isPresent() && RobotState.getVisionPoseSuccess() && RobotState.getCoralIsGood()) {
+                if (reefTargetHorizontalDistance.isPresent() && RobotState.getVisionPoseSuccess() && RobotState.getWeHaveCoral()) {
                     double distance = reefTargetHorizontalDistance.get();
                     distance *= 1000; // meters to mm
                     double desiredPosition = position + distance;
@@ -659,8 +659,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         //         break;
         // }
 
-        SmartDashboard.putBoolean("CORALISGOOD", false);
-
         RobotState.IntakeState intakeState = RobotState.getIntakeState();
         if (intakeState == IntakeState.OUT) {
             targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.BACKWARD_OUTPUT);
@@ -683,11 +681,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                 targetRequest = m_brake;
         }
 
-        boolean coralIsGood = m_scoreExitSensorTripped && m_scoreEnterSensorTripped && !m_elevatorClearanceSensorTripped;
-        if (coralIsGood) {
-            SmartDashboard.putBoolean("CORALISGOOD", true);
-        }
+        final boolean weHaveCoral = m_scoreExitSensorTripped && !m_elevatorClearanceSensorTripped;
+        final boolean coralIsGood = weHaveCoral && m_scoreEnterSensorTripped;
         RobotState.setCoralIsGood(coralIsGood);
+        RobotState.setWeHaveCoral(weHaveCoral);
 
         // boolean elevatorHasClearance = !m_elevatorClearanceSensorTripped && (m_scoreEnterSensorTripped == m_scoreExitSensorTripped);
         boolean elevatorHasClearance = !m_elevatorClearanceSensorTripped;

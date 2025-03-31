@@ -15,7 +15,9 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AprilTagConstants;
 import frc.robot.subsystems.CameraSubsystem;
 
@@ -131,7 +133,7 @@ public final class RobotState {
         return true;
     }
     // update nt
-    { setTargetScorePosition(targetScorePosition); }
+    static { setTargetScorePosition(targetScorePosition); }
 
     public static enum DesiredControlType {
         AUTOMATIC,
@@ -163,7 +165,7 @@ public final class RobotState {
         setIntakeState(IntakeState.IDLE);
     }
     // update nt
-    { setIntakeState(intakeState); }
+    static { setIntakeState(intakeState); }
 
     public static enum ClimbActuatorState {
         MANUAL,
@@ -197,15 +199,35 @@ public final class RobotState {
         elevatorHasClearance = elevatorHasClearanceIn;
     }
     // update nt
-    { setElevatorHasClearance(elevatorHasClearance); }
+    static { setElevatorHasClearance(elevatorHasClearance); }
 
     private static boolean coralIsGood = false;
+    private static BooleanPublisher coralIsGoodPublisher = robotStateTable.getBooleanTopic("CoralIsGood").publish();
     public static synchronized boolean getCoralIsGood() {
         return coralIsGood;
     }
     public static synchronized void setCoralIsGood(boolean coralIsGoodIn) {
+        if (coralIsGood != coralIsGoodIn)
+            coralIsGoodPublisher.set(coralIsGoodIn);
         coralIsGood = coralIsGoodIn;
     }
+    // update nt
+    static { setCoralIsGood(coralIsGood); }
+
+    private static boolean weHaveCoral = false;
+    private static BooleanPublisher weHaveCoralPublisher = robotStateTable.getBooleanTopic("WeHaveCoral").publish();
+    public static synchronized boolean getWeHaveCoral() {
+        return weHaveCoral;
+    }
+    public static synchronized void setWeHaveCoral(boolean weHaveCoralIn) {
+        if (weHaveCoral != weHaveCoralIn) {
+            SmartDashboard.putNumber("LOLOOLOLOL", Timer.getFPGATimestamp());
+            weHaveCoralPublisher.set(weHaveCoralIn);
+        }
+        weHaveCoral = weHaveCoralIn;
+    }
+    // update nt
+    static { setWeHaveCoral(weHaveCoral); }
 
     private static boolean wantsToScore = false;
 
