@@ -578,7 +578,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 // auto adjust
                 if (RobotState.getTargetScorePosition().getIsOnReefBranch()) {
                     var reefTargetForwardDistance = RobotState.getReefTargetForwardDistance();
-                    if (reefTargetForwardDistance.isPresent() && RobotState.getVisionPoseSuccess()) {
+                    if (reefTargetForwardDistance.isPresent() && RobotState.getVisionPoseSuccess() && RobotState.getCoralIsGood()) {
                         double distance = reefTargetForwardDistance.get();
                         // if (distance >= ElevatorConstants.MIN_FORWARD_DISTANCE && distance <= ElevatorConstants.MAX_FORWARD_DISTANCE)
                         //     position += OurUtils.map(distance, ElevatorConstants.MIN_FORWARD_DISTANCE, ElevatorConstants.MAX_FORWARD_DISTANCE, 0, ElevatorConstants.AUTO_ADJUST_OFFSET);

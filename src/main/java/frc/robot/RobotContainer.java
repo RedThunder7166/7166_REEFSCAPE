@@ -128,7 +128,8 @@ public class RobotContainer {
     private final class AutoPickupCommand extends PickupCommand {
         @Override
         public boolean isFinished() {
-            return m_gantrySubsystem.getScoreEnterSensorTripped();
+            // return m_gantrySubsystem.getScoreEnterSensorTripped();
+            return true;
         }
 
         @Override
@@ -143,9 +144,10 @@ public class RobotContainer {
     }
 
     private Command createAutoPickupCommand() {
-        return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new AutoPickupCommand()
-        );
+        // return m_intakeOuttakeSubsystem.addToCommandRequirements(
+        //     new AutoPickupCommand()
+        // );
+        return new AutoPickupCommand();
     }
 
     private Command createSetClimbStateCommand(ClimbActuatorState climbState) {
