@@ -17,13 +17,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": null
+                  "pathName": "StartE-F"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Score"
+                  "name": "ScoreCoral"
                 }
               }
             ]
@@ -36,13 +36,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": null
+                  "pathName": "E-FtoCoralStation"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Pickup"
+                  "name": "PickupCoral"
                 }
               }
             ]
@@ -61,13 +61,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": null
+                  "pathName": "CoralStationToC-D"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Score"
+                  "name": "ScoreCoral"
                 }
               }
             ]
@@ -80,13 +80,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": null
+                  "pathName": "C-DtoCoralStation"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Pickup"
+                  "name": "PickupCoral"
                 }
               }
             ]
@@ -105,13 +105,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": null
+                  "pathName": "CoralStationToC-D"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Score"
+                  "name": "ScoreCoral"
                 }
               },
               {

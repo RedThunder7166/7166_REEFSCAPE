@@ -23,7 +23,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Score"
+                  "name": "ScoreCoral"
                 }
               }
             ]
@@ -42,7 +42,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Pickup"
+                  "name": "PickupCoral"
                 }
               }
             ]
@@ -67,7 +67,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Score"
+                  "name": "ScoreCoral"
                 }
               }
             ]
@@ -86,7 +86,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Pickup"
+                  "name": "PickupCoral"
                 }
               }
             ]
@@ -111,7 +111,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Score"
+                  "name": "ScoreCoral"
                 }
               }
             ]

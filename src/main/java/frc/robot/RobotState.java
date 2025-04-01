@@ -118,6 +118,24 @@ public final class RobotState {
         }
     }
 
+    public static enum GamePieceType {
+        CORAL,
+        ALGAE
+    }
+    private static GamePieceType targetGamePieceType = GamePieceType.CORAL;
+    private static final StringPublisher targetGamePieceTypePublisher = robotStateTable.getStringTopic("TargetGamePieceType").publish();
+
+    public static synchronized GamePieceType getTargetGamePieceType() {
+        return targetGamePieceType;
+    }
+    public static synchronized void setTargetGamePieceType(GamePieceType targetGamePieceTypeIn) {
+        if (targetGamePieceType != targetGamePieceTypeIn)
+            targetGamePieceTypePublisher.set(targetGamePieceTypeIn.toString());
+        targetGamePieceType = targetGamePieceTypeIn;
+    }
+    // update nt
+    static { setTargetGamePieceType(targetGamePieceType); }
+
     private static TargetScorePosition targetScorePosition = TargetScorePosition.NONE;
     private static final StringPublisher targetScorePositionPublisher = robotStateTable.getStringTopic("TargetScorePosition").publish();
 
@@ -221,25 +239,34 @@ public final class RobotState {
     }
     public static synchronized void setWeHaveCoral(boolean weHaveCoralIn) {
         if (weHaveCoral != weHaveCoralIn) {
-            SmartDashboard.putNumber("LOLOOLOLOL", Timer.getFPGATimestamp());
             weHaveCoralPublisher.set(weHaveCoralIn);
+            if (weHaveCoral) // if we no longer have coral (weHaveCoral is old)
+                setTargetScorePosition(TargetScorePosition.CORAL_STATION);
+            else
+                setTargetScorePosition(TargetScorePosition.L2_L);
         }
         weHaveCoral = weHaveCoralIn;
     }
     // update nt
     static { setWeHaveCoral(weHaveCoral); }
 
-    private static boolean wantsToScore = false;
+    private static boolean wantsToScoreCoral = false;
 
-    public static synchronized boolean getWantsToScore() {
-        return wantsToScore;
+    public static synchronized boolean getWantsToScoreCoral() {
+        return wantsToScoreCoral;
     }
-    public static synchronized void setWantsToScore(boolean wantsToScoreIn) {
-        wantsToScore = wantsToScoreIn;
+    public static synchronized void setWantsToScoreCoral(boolean wantsToScoreCoralIn) {
+        wantsToScoreCoral = wantsToScoreCoralIn;
     }
 
-    // public static final double reefTargetHorizontalDistanceOffset = Units.inchesToMeters(2) - 0.011; // 0.056
-    public static final double reefTargetHorizontalDistanceOffset = 0; // 0.056
+    private static boolean wantsToScoreAlgae = false;
+
+    public static synchronized boolean getWantsToScoreAlgae() {
+        return wantsToScoreAlgae;
+    }
+    public static synchronized void setWantsToScoreAlgae(boolean wantsToScoreAlgaeIn) {
+        wantsToScoreAlgae = wantsToScoreAlgaeIn;
+    }
 
     private static Optional<Double> reefTargetHorizontalDistance = Optional.empty();
     public static synchronized Optional<Double> getReefTargetHorizontalDistance() {

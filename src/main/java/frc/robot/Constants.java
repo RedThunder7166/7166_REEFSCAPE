@@ -85,8 +85,7 @@ public class Constants {
         public static final int SCORE_EXIT_SENSOR_ID = 1;
 
         public static final double MIN_POSITION_ROTATIONS = 0;
-        // public static final double MAX_POSITION_ROTATIONS = 4.500732421875;
-        public static final double MAX_POSITION_ROTATIONS = 4.467041;
+        public static final double MAX_POSITION_ROTATIONS = 4.469482; // 4.500732421875; 4.467041
 
         public static final double MIN_POSITION_MM = 3; // 17
         public static final double MAX_POSITION_MM = 430; // 400; 500
@@ -168,7 +167,7 @@ public class Constants {
     }
 
     public static final class AlgaeHandConstants {
-        public static final boolean REAL = false;
+        public static final boolean REAL = true;
 
         public static final int MOTOR_ID = 56;
 
@@ -177,6 +176,22 @@ public class Constants {
         // public static final double MIDDLE_POSITION_ROTATIONS = 0.5;
 
         public static final double MAX_DUTY_CYCLE = 0.15;
+    }
+
+    public static final class AlgaeMouthConstants {
+        public static final boolean REAL = true;
+        // TODO: algae mouth constants
+
+        public static final int ARM_MOTOR_ID = 56;
+        public static final int SCORE_MOTOR_ID = 57;
+
+        public static final double MIN_ARM_POSITION_ROTATIONS = 0;
+        public static final double MAX_ARM_POSITION_ROTATIONS = 1;
+
+        public static final double SCORE_MAX_DUTY_CYCLE = 1;
+
+        public static final double MANUAL_ARM_DUTY_CYCLE_OUT = 0.1;
+        public static final double MANUAL_ARM_DUTY_CYCLE_IN = -MANUAL_ARM_DUTY_CYCLE_OUT;
     }
 
     public static final class AprilTagConstants {

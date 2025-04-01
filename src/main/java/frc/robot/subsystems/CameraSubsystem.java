@@ -447,10 +447,16 @@ public class CameraSubsystem extends SubsystemBase {
         final AprilTag targetTag = aprilTagMap.get(tagID);
         final Pose2d targetTagPose = targetTag.pose.toPose2d();
 
-        // FIXME: anglemodulus robot pose
-        double result = targetRotatePIDController.calculate(robotPose.getRotation().getRadians(), targetTagPose.getRotation().rotateBy(Rotation2d.k180deg).getRadians());
-        SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
-        return result;
+        // final double robotRotationRadiansMagnitude = Math.abs(robotPose.getRotation().getRadians());
+        // final double targetRadians = targetTagPose.getRotation().rotateBy(Rotation2d.k180deg).getRadians();
+        // // FIXME: anglemodulus robot pose
+        // double result = targetRotatePIDController.calculate(robotRotationRadiansMagnitude, targetRadians);
+        // SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
+        // SmartDashboard.putNumber("ROTATEFROMTAG_ERROR", targetRotatePIDController.getError());
+
+        final double a = -robotPose.getRotation().minus(targetTagPose.getRotation().rotateBy(Rotation2d.k180deg)).getRadians();
+        SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", a);
+        return a;
     }
 
     private Command createFaceTagCommand(int tagID) {
@@ -459,6 +465,7 @@ public class CameraSubsystem extends SubsystemBase {
             .withVelocityY(0)
             .withRotationalRate(calculateRotateFromTag(tagID))
         );
+        // return m_driveSubsystem.run(() -> calculateRotateFromTag(tagID)); // just print
     }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
@@ -498,6 +505,8 @@ public class CameraSubsystem extends SubsystemBase {
 
         // if (!forAuto)
         //     result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
+
+        result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
 
         return result;
     }

@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.RobotState.ClimbActuatorState;
+import frc.robot.RobotState.GamePieceType;
 import frc.robot.RobotState.IntakeState;
 import frc.robot.RobotState.TargetScorePosition;
 import frc.robot.commands.AutomaticCommands;
@@ -39,6 +40,7 @@ import frc.robot.controls.DRIVER_CONTROLS;
 import frc.robot.controls.OPERATOR_CONTROLS;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AlgaeHandSubsystem;
+import frc.robot.subsystems.AlgaeMouthSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.CameraSubsystem.CoralStationID;
 import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
@@ -50,6 +52,7 @@ import frc.robot.subsystems.IntakeOuttakeSubsystem;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.AlgaeHandSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.AlgaeMouthSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ClimbSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
 
@@ -71,7 +74,10 @@ public class RobotContainer {
     private final GantrySubsystemInterface m_gantrySubsystem;
     private final IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
     private final ClimbSubsystemInterface m_climbSubsystem;
-    private final AlgaeHandSubsystemInterface m_algaeHandSubsystem;
+
+    private static final boolean useAlgaeMouth = true;
+    private AlgaeHandSubsystemInterface m_algaeHandSubsystem;
+    private AlgaeMouthSubsystemInterface m_algaeMouthSubsystem;
 
     // private RelativeReefLocation m_targetReefLocation;
     private RelativeReefLocation m_closestReefLocation;
@@ -88,13 +94,13 @@ public class RobotContainer {
         return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromCoralStationTag(targetCoralStation));
     }
 
-    private Command createScoreCommand() {
+    private Command createScoreCoralCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
             @Override
             public void execute() {
                 // if (DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
                 //     RobotState.setWantsToScore(true);
-                RobotState.setWantsToScore(true);
+                RobotState.setWantsToScoreCoral(true);
             }
 
             @Override
@@ -104,12 +110,19 @@ public class RobotContainer {
 
             @Override
             public void end(boolean isInterrupted) {
-                RobotState.setWantsToScore(false);
+                RobotState.setWantsToScoreCoral(false);
             }
         })
             .andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
-    private class PickupCommand extends Command {
+    private Command createScoreAlgaeCommand() {
+        return Commands.startEnd(
+            () -> RobotState.setWantsToScoreAlgae(true),
+            () -> RobotState.setWantsToScoreAlgae(false)
+        );
+    }
+
+    private class PickupCoralCommand extends Command {
         public void execute() {
             if (DriverStation.isAutonomous() || m_gantrySubsystem.getIsAtTargetPosition())
                 RobotState.startIntake(IntakeState.IN);
@@ -125,11 +138,11 @@ public class RobotContainer {
             RobotState.stopIntake();
         }
     }
-    private final class AutoPickupCommand extends PickupCommand {
+    private final class AutoPickupCoralCommand extends PickupCoralCommand {
         @Override
         public boolean isFinished() {
             // return m_gantrySubsystem.getScoreEnterSensorTripped();
-            return true;
+            return true; // vroom
         }
 
         @Override
@@ -137,17 +150,18 @@ public class RobotContainer {
             // do nothing: we don't want the intake to stop here; it will be stopped from auto
         }
     }
-    private Command createPickupCommand() {
+    private Command createPickupCoralCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new PickupCommand()
+            new PickupCoralCommand()
         );
     }
 
-    private Command createAutoPickupCommand() {
+    private Command createAutoPickupCoralCommand() {
+        // FIXME: this is broken?; path planner doesn't let us have a parallel group with a path plan command and this
         // return m_intakeOuttakeSubsystem.addToCommandRequirements(
         //     new AutoPickupCommand()
         // );
-        return new AutoPickupCommand();
+        return new AutoPickupCoralCommand();
     }
 
     private Command createSetClimbStateCommand(ClimbActuatorState climbState) {
@@ -178,7 +192,7 @@ public class RobotContainer {
             driveCommand
                 .deadlineFor(createPrepareScoreCommand(scorePosition)),
             AutomaticCommands.createGoToPositionCommand(scorePosition),
-            createScoreCommand()
+            createScoreCoralCommand()
         );
     }
     private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
@@ -191,7 +205,7 @@ public class RobotContainer {
         return new SequentialCommandGroup(
             AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION),
             driveCommand,
-            createAutoPickupCommand()
+            createAutoPickupCoralCommand()
         );
     }
     private SequentialCommandGroup createEntirePickupCommand(CoralStationID coralStation) {
@@ -238,7 +252,10 @@ public class RobotContainer {
         m_gantrySubsystem = GantrySubsystem.getSingleton();
         m_intakeOuttakeSubsystem = IntakeOuttakeSubsystem.getSingleton();
         m_climbSubsystem = ClimbSubsystem.getSingleton();
-        m_algaeHandSubsystem = AlgaeHandSubsystem.getSingleton();
+        if (useAlgaeMouth)
+            m_algaeMouthSubsystem = AlgaeMouthSubsystem.getSingleton();
+        else
+            m_algaeHandSubsystem = AlgaeHandSubsystem.getSingleton();
 
         m_driveSubsystem.ensureThisFileHasBeenModified();
 
@@ -250,8 +267,8 @@ public class RobotContainer {
 
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
 
-        NamedCommands.registerCommand("Score", createScoreCommand());
-        NamedCommands.registerCommand("Pickup", createAutoPickupCommand());
+        NamedCommands.registerCommand("ScoreCoral", createScoreCoralCommand());
+        NamedCommands.registerCommand("PickupCoral", createAutoPickupCoralCommand());
 
         NamedCommands.registerCommand("StartIntake", m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN))));
 
@@ -466,7 +483,7 @@ public class RobotContainer {
         }, () -> {
             RobotState.stopIntake();
         })));
-        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCommand());
+        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCoralCommand());
 
         OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
 
@@ -478,13 +495,26 @@ public class RobotContainer {
         OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_L));
         OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_R));
 
-        OPERATOR_CONTROLS.SCORE_PIECE.whileTrue(createScoreCommand());
+        OPERATOR_CONTROLS.CORAL_SCORE.whileTrue(createScoreCoralCommand());
+        if (useAlgaeMouth)
+            OPERATOR_CONTROLS.ALGAE_SCORE.whileTrue(createScoreAlgaeCommand());
+
+        OPERATOR_CONTROLS.MODE_ALGAE.whileTrue(Commands.runOnce(() -> RobotState.setTargetGamePieceType(GamePieceType.ALGAE)));
+        OPERATOR_CONTROLS.MODE_CORAL.whileTrue(Commands.runOnce(() -> RobotState.setTargetGamePieceType(GamePieceType.CORAL)));
 
         OPERATOR_CONTROLS.ELEVATOR_MANUAL_UP.whileTrue(m_elevatorSubsystem.getManualUpCommand());
         OPERATOR_CONTROLS.ELEVATOR_MANUAL_DOWN.whileTrue(m_elevatorSubsystem.getManualDownCommand());
 
         OPERATOR_CONTROLS.GANTRY_MANUAL_LEFT.whileTrue(m_gantrySubsystem.getManualLeftCommand());
         OPERATOR_CONTROLS.GANTRY_MANUAL_RIGHT.whileTrue(m_gantrySubsystem.getManualRightCommand());
+
+        if (useAlgaeMouth) {
+            OPERATOR_CONTROLS.ALGAE_MANUAL_OUT.whileTrue(m_algaeMouthSubsystem.getManualArmOutCommand());
+            OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeMouthSubsystem.getManualArmInCommand());
+        } else {
+            OPERATOR_CONTROLS.ALGAE_MANUAL_OUT.whileTrue(m_algaeHandSubsystem.getManualOutCommand());
+            OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeHandSubsystem.getManualInCommand());
+        }
 
         OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(m_climbSubsystem.getManualActuatorOutCommand());
         OPERATOR_CONTROLS.CLIMBER_IN.whileTrue(m_climbSubsystem.getManualActuatorInCommand());
@@ -495,13 +525,9 @@ public class RobotContainer {
         OPERATOR_CONTROLS.CAGE_OUT.whileTrue(m_climbSubsystem.getCageOutCommand());
         OPERATOR_CONTROLS.CAGE_IN.whileTrue(m_climbSubsystem.getCageInCommand());
 
-        OPERATOR_CONTROLS.CLIMB_OUT_AND_CAGE_OUT.whileTrue(createSetClimbStateCommand(ClimbActuatorState.CLIMB)
+        OPERATOR_CONTROLS.CLIMB_COMBO.whileTrue(createSetClimbStateCommand(ClimbActuatorState.CLIMB)
             .andThen(m_climbSubsystem.getAutomaticCageOutCommand())
         );
-
-        OPERATOR_CONTROLS.ALGAE_HAND_OUT.whileTrue(m_algaeHandSubsystem.getManualOutCommand());
-        // OPERATOR_CONTROLS.ALGAE_HAND_OUT.whileTrue(m_algaeHandSubsystem.getMiddleCommand());
-        OPERATOR_CONTROLS.ALGAE_HAND_IN.whileTrue(m_algaeHandSubsystem.getManualInCommand());
     }
 
     public Command getAutonomousCommand() {
@@ -581,9 +607,8 @@ public class RobotContainer {
             SmartDashboard.putString("CLOSEST_REEF_LOCATION", closestLocation.toString());
             final Translation2d targetCentricTranslation = robotPose.getTranslation().minus(targetPose.getTranslation())
                 .rotateBy(targetPose.getRotation().unaryMinus());
-            double horizontalDifference = targetCentricTranslation.getY();
-            horizontalDifference += RobotState.reefTargetHorizontalDistanceOffset;
-            double forwardDifference = targetCentricTranslation.getX();
+            final double horizontalDifference = targetCentricTranslation.getY();
+            final double forwardDifference = targetCentricTranslation.getX();
 
             if (m_cameraSubsystem.getCanAutoAdjust()) {
                 RobotState.setReefTargetHorizontalDistance(horizontalDifference);

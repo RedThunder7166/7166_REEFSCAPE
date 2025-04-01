@@ -1,8 +1,5 @@
 ordered by priority:
     * go to coral station at the end of 3 piece auto
-    * elevator height account for X distance from reef
     * account for yaw from reef
     * lower gantry position threshold? auto shoots before gantry is in position
     * in auto, start the correct orientation for the reef section (we would need to ensure drive team turns on the robot facing the alliance wall and then remove the code in autonomousInit)
-    * ignore gantry auto adjust when an april tag isn't visible (code exists (UNTESTED), just uncomment)
-    * measure and add back in timeout for automaticcommands.createAutomaticGoToPositionCommand

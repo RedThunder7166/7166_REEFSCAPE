@@ -23,7 +23,7 @@ public class SubsystemInterfaces {
         public static enum ElevatorState {
             HOME,
             IDLE,
-            TARGET,
+            TARGET
         }
 
         public void setAutomaticState(ElevatorState desiredState);
@@ -58,7 +58,7 @@ public class SubsystemInterfaces {
     public static interface GantrySubsystemInterface extends GenericInterface {
         public static enum GantryState {
             IDLE,
-            TARGET,
+            TARGET
         }
         public void setAutomaticState(GantryState desiredState);
 
@@ -114,5 +114,10 @@ public class SubsystemInterfaces {
         public Command getManualInCommand();
 
         public Command getMiddleCommand();
+    }
+
+    public static interface AlgaeMouthSubsystemInterface extends GenericInterface {
+        public Command getManualArmOutCommand();
+        public Command getManualArmInCommand();
     }
 }
