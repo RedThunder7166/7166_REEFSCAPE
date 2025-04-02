@@ -240,10 +240,11 @@ public final class RobotState {
     public static synchronized void setWeHaveCoral(boolean weHaveCoralIn) {
         if (weHaveCoral != weHaveCoralIn) {
             weHaveCoralPublisher.set(weHaveCoralIn);
-            if (weHaveCoral) // if we no longer have coral (weHaveCoral is old)
-                setTargetScorePosition(TargetScorePosition.CORAL_STATION);
-            else
-                setTargetScorePosition(TargetScorePosition.L2_L);
+            if (DriverStation.isTeleop())
+                if (weHaveCoral) // if we no longer have coral (weHaveCoral is old)
+                    setTargetScorePosition(TargetScorePosition.CORAL_STATION);
+                else
+                    setTargetScorePosition(TargetScorePosition.L2_L);
         }
         weHaveCoral = weHaveCoralIn;
     }
