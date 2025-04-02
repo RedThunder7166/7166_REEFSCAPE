@@ -102,6 +102,8 @@ public class AlgaeMouthSubsystem extends SubsystemBase implements AlgaeMouthSubs
 
         // scoreMotorConfig.CurrentLimits.StatorCurrentLimit = 60;
         // scoreMotorConfig.CurrentLimits.SupplyCurrentLimit = 80;
+        scoreMotorConfig.CurrentLimits.StatorCurrentLimitEnable = false;
+        scoreMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = false;
 
         OurUtils.tryApplyConfig(m_scoreMotor, scoreMotorConfig);
 

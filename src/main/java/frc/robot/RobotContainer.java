@@ -75,7 +75,7 @@ public class RobotContainer {
     private final IntakeOuttakeSubsystemInterface m_intakeOuttakeSubsystem;
     private final ClimbSubsystemInterface m_climbSubsystem;
 
-    private static final boolean useAlgaeMouth = true;
+    private static final boolean useAlgaeMouth = false;
     private AlgaeHandSubsystemInterface m_algaeHandSubsystem;
     private AlgaeMouthSubsystemInterface m_algaeMouthSubsystem;
 
