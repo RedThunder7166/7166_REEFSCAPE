@@ -15,22 +15,15 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.AprilTagConstants;
+import frc.robot.Constants.GantryConstants;
+import frc.robot.subsystems.AlgaeHandSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem;
 
 public final class RobotState {
-    // private static RobotState singleton = null;
-
-    // public static RobotState getSingleton() {
-    //     if (singleton == null)
-    //         singleton = new RobotState();
-    //     return singleton;
-    // }
-
-
     public static Alliance ALLIANCE = null;
 
     public static final boolean ENABLE_AUTOMATIC_ELEVATOR_CONTROL = true;
@@ -87,6 +80,22 @@ public final class RobotState {
         }
         public boolean getIsOnReefBranch() {
             return !(this == NONE || this == CORAL_STATION || this == L1);
+        }
+        public boolean getIsL4() {
+            return (this == L4_L || this == L4_R);
+        }
+
+        public double getScoreOutput() {
+            switch (this) {
+                case L1:
+                case L2_L:
+                case L2_R:
+                case L3_L:
+                case L3_R:
+                    return GantryConstants.SLOW_SCORE_OUTPUT;
+                default:
+                    return GantryConstants.SCORE_OUTPUT;
+            }
         }
 
         public TargetScorePosition toStage1() {
@@ -147,6 +156,10 @@ public final class RobotState {
             targetScorePositionPublisher.set(desiredPosition.toString());
         // FIXME: ask subsystems if we can switch to this position; if we can't, don't set target position (or set it to NONE) and return false
         // ^ e.g: we are trying to score a piece, we are intaking a piece
+        if (desiredPosition.getIsL4())
+            Commands.waitUntil(() -> ElevatorSubsystem.getSingleton().getIsAtTargetPosition())
+            .andThen(AlgaeHandSubsystem.getSingleton().getHomeCommand())
+            .schedule();
         targetScorePosition = desiredPosition;
         return true;
     }
@@ -240,7 +253,7 @@ public final class RobotState {
     public static synchronized void setWeHaveCoral(boolean weHaveCoralIn) {
         if (weHaveCoral != weHaveCoralIn) {
             weHaveCoralPublisher.set(weHaveCoralIn);
-            if (DriverStation.isTeleop())
+            if (DriverStation.isTeleopEnabled())
                 if (weHaveCoral) // if we no longer have coral (weHaveCoral is old)
                     setTargetScorePosition(TargetScorePosition.CORAL_STATION);
                 else
@@ -298,6 +311,17 @@ public final class RobotState {
     }
     public static synchronized boolean getVisionPoseSuccess() {
         return visionPoseSuccess;
+    }
+
+    private static Optional<Double> driveRotationOverride = Optional.empty();
+    public static synchronized void setDriveRotationOverride(double value) {
+        driveRotationOverride = Optional.of(value);
+    }
+    public static synchronized void clearDriveRotationOverride() {
+        driveRotationOverride = Optional.empty();
+    }
+    public static synchronized Optional<Double> getDriveRotationOverride() {
+        return driveRotationOverride;
     }
 
     private static double driveSpeed = 0;

@@ -22,6 +22,7 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -576,7 +577,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                     position = m_position.m_position;
 
                 // auto adjust
-                if (RobotState.getTargetScorePosition().getIsOnReefBranch()) {
+                if (DriverStation.isTeleop() && RobotState.getTargetScorePosition().getIsOnReefBranch()) {
                     var reefTargetForwardDistance = RobotState.getReefTargetForwardDistance();
                     if (reefTargetForwardDistance.isPresent() && RobotState.getVisionPoseSuccess() && RobotState.getWeHaveCoral()) {
                         double distance = reefTargetForwardDistance.get();

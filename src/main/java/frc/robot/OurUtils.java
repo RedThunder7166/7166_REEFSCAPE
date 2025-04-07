@@ -11,8 +11,10 @@ import com.ctre.phoenix.led.CANdle;
 import com.ctre.phoenix.led.CANdleConfiguration;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -40,6 +42,15 @@ public final class OurUtils {
         }
         if (!status.isOK())
             DriverStation.reportWarning("Could not apply configs to device " + encoder.getDeviceID() + "; error code: " + status.toString(), false);
+    }
+    public static void tryApplyConfig(CANrange sensor, CANrangeConfiguration config) {
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = sensor.getConfigurator().apply(config, 100);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK())
+            DriverStation.reportWarning("Could not apply configs to device " + sensor.getDeviceID() + "; error code: " + status.toString(), false);
     }
 
     // Phoenix 5 methods:

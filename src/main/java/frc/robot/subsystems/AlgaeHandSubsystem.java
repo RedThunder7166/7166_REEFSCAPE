@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -14,7 +15,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AlgaeHandConstants;
 import frc.robot.OurUtils;
@@ -45,7 +45,12 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         }
 
         @Override
-        public Command getMiddleCommand() {
+        public Command getHomeCommand() {
+            return Commands.none();
+        }
+
+        @Override
+        public Command getExtendedCommand() {
             return Commands.none();
         }
     }
@@ -66,23 +71,42 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
 
     private GenericDirection m_manualDirection = GenericDirection.NONE;
 
+    private static enum AlgaeHandPosition {
+        HOME(AlgaeHandConstants.MIN_POSITION_ROTATIONS),
+        EXTENDED(AlgaeHandConstants.MAX_POSITION_ROTATIONS)
+
+        ;
+        private final double m_position;
+
+        AlgaeHandPosition(double position) {
+            m_position = position;
+        }
+    }
+    private AlgaeHandPosition m_position = AlgaeHandPosition.HOME;
+
     private DesiredControlType m_desiredControlType = DesiredControlType.AUTOMATIC;
 
     private final TalonFX m_motor = new TalonFX(AlgaeHandConstants.MOTOR_ID);
 
+    private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0);
     private final DutyCycleOut m_dutyCycleOut = new DutyCycleOut(0);
     private final NeutralOut m_brake = new NeutralOut();
 
     public AlgaeHandSubsystem() {
         TalonFXConfiguration motorConfigs = new TalonFXConfiguration();
+        motorConfigs.Slot0.kP = 50;
 
         motorConfigs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         motorConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfigs.MotorOutput.PeakForwardDutyCycle = AlgaeHandConstants.MAX_DUTY_CYCLE;
         motorConfigs.MotorOutput.PeakReverseDutyCycle = -AlgaeHandConstants.MAX_DUTY_CYCLE;
 
-        motorConfigs.CurrentLimits.StatorCurrentLimit = 25;
-        motorConfigs.CurrentLimits.SupplyCurrentLimit = 2.5;
+        var motionMagicConfigs = motorConfigs.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 40;
+        motionMagicConfigs.MotionMagicAcceleration = 120;
+
+        motorConfigs.CurrentLimits.StatorCurrentLimit = 15;
+        motorConfigs.CurrentLimits.SupplyCurrentLimit = 10;
 
         motorConfigs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         motorConfigs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = AlgaeHandConstants.MAX_POSITION_ROTATIONS;
@@ -101,9 +125,10 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         switch (m_desiredControlType) {
             case MANUAL: {
                 final double amount = AlgaeHandConstants.MAX_DUTY_CYCLE;
-                double output = 0;
+                final double output;
                 switch (m_manualDirection) {
-                    case NONE:
+                    default: // NONE
+                        output = 0;
                         break;
                     case OUT:
                         output = amount;
@@ -116,7 +141,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
                 break;
             }
             case AUTOMATIC: {
-                targetRequest = m_brake;
+                targetRequest = m_positionControl.withPosition(m_position.m_position);
                 break;
             }
         }
@@ -130,12 +155,14 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
     }
 
     private Command makeManualCommand(GenericDirection desiredDirection) {
-        return Commands.startEnd(() -> {
+        return Commands.startEnd(
+            () -> {
                 m_desiredControlType = DesiredControlType.MANUAL;
                 m_manualDirection = desiredDirection;
             }, () -> {
                 m_manualDirection = GenericDirection.NONE;
-            }, this
+            },
+            this
         );
     }
     private final Command m_manualOutCommand = makeManualCommand(GenericDirection.OUT);
@@ -150,17 +177,19 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         return m_manualInCommand;
     }
 
-    // private final Command m_middleCommand = Commands.startEnd(() -> {
-    //     m_desiredControlType = DesiredControlType.AUTOMATIC;
-    // }, () -> {
-        
-    // }, this);
-    private final Command m_middleCommand = new InstantCommand(() -> {
-        m_desiredControlType = DesiredControlType.AUTOMATIC;
-    }, this);
+    @Override
+    public synchronized Command getHomeCommand() {
+        return Commands.runOnce(() -> {
+            m_position = AlgaeHandPosition.HOME;
+            m_desiredControlType = DesiredControlType.AUTOMATIC;
+        }, this);
+    }
 
     @Override
-    public synchronized Command getMiddleCommand() {
-        return m_middleCommand;
+    public synchronized Command getExtendedCommand() {
+        return Commands.runOnce(() -> {
+            m_position = AlgaeHandPosition.EXTENDED;
+            m_desiredControlType = DesiredControlType.AUTOMATIC;
+        }, this);
     }
 }

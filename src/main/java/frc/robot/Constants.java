@@ -79,6 +79,7 @@ public class Constants {
         public static final int GANTRY_MOTOR_ID = 51;
         public static final int SCORE_MOTOR_ID = 53;
         public static final int GANTRY_LASER_ID = 57;
+        public static final int GANTRY_CANRANGE_ID = 58;
 
         public static final int ELEVATOR_CLEARANCE_SENSOR_ID = 2;
         public static final int SCORE_ENTER_SENSOR_ID = 0;
@@ -87,8 +88,8 @@ public class Constants {
         public static final double MIN_POSITION_ROTATIONS = 0;
         public static final double MAX_POSITION_ROTATIONS = 4.469482; // 4.500732421875; 4.467041
 
-        public static final double MIN_POSITION_MM = 3; // 17
-        public static final double MAX_POSITION_MM = 430; // 400; 500
+        public static final double MIN_POSITION_MM = 40; // 17
+        public static final double MAX_POSITION_MM = 440; // 400; 500; 430;500
 
         public static final double UNIT_TO_METERS = (0.4064d / MAX_POSITION_ROTATIONS);
         public static final double METERS_TO_UNIT = 1d / UNIT_TO_METERS;
@@ -114,22 +115,23 @@ public class Constants {
         public static final double REEF_LEFT_POSITION_ROTATIONS = Units.inchesToMeters(2) * METERS_TO_UNIT;
         public static final double REEF_RIGHT_POSITION_ROTATIONS = Units.inchesToMeters(14) * METERS_TO_UNIT;
 
-        public static final double REEF_LEFT_POSITION_MM = 372; // 40; 482; 372
-        public static final double CORAL_STATION_POSITION_MM = 190; // 195; 200
-        public static final double REEF_RIGHT_POSITION_MM = 15; // 380; 35; 15
+        public static final double REEF_LEFT_POSITION_MM = 370; // 40; 482; 372; 450;420
+        public static final double CORAL_STATION_POSITION_MM = 235; // 195; 200; 190; 210; 190
+        public static final double REEF_RIGHT_POSITION_MM = 70; // 380; 35; 15; 28;50
 
         public static final double POSITION_ERROR_THRESHOLD = 0.07;
-        public static final double POSITION_ERROR_THRESHOLD_MM = 8; // 10; 2.5; 5
+        public static final double POSITION_ERROR_THRESHOLD_MM = 15; // 10; 2.5; 5; 8
 
         public static final double BACKWARD_OUTPUT = -0.2;
 
-        public static final double CRAWL_FORWARD_OUTPUT = 0.15; // 0.08; 0.12
+        public static final double CRAWL_FORWARD_OUTPUT = 0.13; // 0.08; 0.12; 0.15
         public static final double CRAWL_BACKWARD_OUTPUT = -0.16; // -0.10; -0.14
 
         public static final double CRAWL_FORWARD_VOLTAGE = 1.5;
         public static final double CRAWL_BACKWARD_VOLTAGE = -CRAWL_FORWARD_VOLTAGE;
 
         public static final double SCORE_OUTPUT = 0.35; // 0.4; 0.35
+        public static final double SLOW_SCORE_OUTPUT = 0.25;
     }
     public static final class IntakeOuttakeConstants {
         public static final boolean REAL = true;
@@ -175,7 +177,7 @@ public class Constants {
         public static final double MAX_POSITION_ROTATIONS = 0.495;
         // public static final double MIDDLE_POSITION_ROTATIONS = 0.5;
 
-        public static final double MAX_DUTY_CYCLE = 0.15;
+        public static final double MAX_DUTY_CYCLE = 1;
     }
 
     public static final class AlgaeMouthConstants {

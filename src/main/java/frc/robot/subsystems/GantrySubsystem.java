@@ -7,14 +7,17 @@ package frc.robot.subsystems;
 import java.util.Optional;
 
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MeasurementHealthValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import au.grapplerobotics.ConfigurationFailedException;
@@ -30,6 +33,7 @@ import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -206,7 +210,72 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     private final TalonFX m_gantryMotor = new TalonFX(GantryConstants.GANTRY_MOTOR_ID);
     private final TalonFX m_scoreMotor = new TalonFX(GantryConstants.SCORE_MOTOR_ID);
-    private final LaserCan m_gantryLaser = new LaserCan(GantryConstants.GANTRY_LASER_ID);
+
+    // private static class GenericDistanceSensor {
+    //     public static enum SensorType {
+    //         LASERCAN,
+    //         CANRANGE
+    //     };
+    //     public final SensorType m_type;
+
+    //     private LaserCan m_laserCan = null;
+    //     private Measurement m_laserCanMeasurement = null;
+
+    //     private CANrange m_canRange = null;
+    //     private StatusSignal<Distance> m_canRangeDistance = null;
+    //     private StatusSignal<MeasurementHealthValue> m_canRangeHealth = null;
+
+    //     public GenericDistanceSensor(SensorType type) {
+    //         m_type = type;
+    //         switch (type) {
+    //             case LASERCAN:
+    //                 m_laserCan = new LaserCan(GantryConstants.GANTRY_LASER_ID);
+    //                 try {
+    //                     m_laserCan.setRangingMode(LaserCan.RangingMode.SHORT);
+    //                     m_laserCan.setRegionOfInterest(new LaserCan.RegionOfInterest(8, 8, 4, 4));
+    //                     m_laserCan.setTimingBudget(LaserCan.TimingBudget.TIMING_BUDGET_50MS);
+    //                 } catch (ConfigurationFailedException e) {
+    //                     DriverStation.reportWarning("Could not apply configs to LaserCAN " + GantryConstants.GANTRY_LASER_ID + "; error code: " + e.toString(), false);
+    //                 }
+    //                 m_laserCanMeasurement = m_laserCan.getMeasurement();
+    //                 break;
+    //             case CANRANGE:
+    //                 m_canRange = new CANrange(canID);
+    //                 m_canRangeDistance = m_canRange.getDistance();
+    //                 m_canRangeHealth = m_canRange.getMeasurementHealth();
+    //                 break;
+    //         }
+    //     }
+
+    //     public void update() {
+    //         switch (m_type) {
+    //             case LASERCAN:
+    //                 m_laserCanMeasurement = m_laserCan.getMeasurement();
+    //                 break;
+    //             case CANRANGE:
+    //                 m_canRangeDistance.refresh();
+    //                 m_canRangeHealth.refresh();
+    //                 break;
+    //         }
+    //     }
+
+    //     Optional<Double> getDistance() {
+    //         switch (m_type) {
+    //             case LASERCAN:
+    //                 final Measurement measurement = m_laserCanMeasurement;
+    //                 if (measurement.status != LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT)
+    //                     return Optional.empty();
+    //                 return Optional.of((double) measurement.distance_mm);
+    //             case CANRANGE:
+                    
+    //                 break;
+    //         }
+    //     }
+    // }
+
+    // private static final GenericDistanceSensor m_distanceSensor = new GenericDistanceSensor(GenericDistanceSensor.SensorType.CANRANGE);
+    // private final LaserCan m_gantryLaser = new LaserCan(GantryConstants.GANTRY_LASER_ID);
+    private final CANrange m_canRange = new CANrange(GantryConstants.GANTRY_CANRANGE_ID);
 
     private final MotionMagicVoltage m_positionControl = new MotionMagicVoltage(0).withSlot(0);
     private final DutyCycleOut m_scoreDutyCycleOut = new DutyCycleOut(0);
@@ -214,14 +283,14 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     // private final VoltageOut m_voltageOut = new VoltageOut(0);
     private final NeutralOut m_brake = new NeutralOut();
 
-    private static final boolean influenceMotorPositionFromLaserCan = true;
+    private static final boolean influenceMotorPositionFromLaserCan = false;
     private static final boolean tuneWithNetworkTables = true;
 
-    private static final double m_pidControllerP = 0.0016; // 0.002; 0.00149; 0.00225; 0.0016; 0.0015; 0.0019
-    private static final double m_pidControllerI = 0;
-    private static final double m_pidControllerD = 0;
+    private static final double m_pidControllerP = 0.0025; // 0.002; 0.00149; 0.00225; 0.0016; 0.0015; 0.0019; 0.00165; 0.0011
+    private static final double m_pidControllerI = 0; // 0; 0.0004
+    private static final double m_pidControllerD = 0; // 0.00001; 0.000125
 
-    private static final double m_feedForwardS = 0.0253; // 0.03
+    private static final double m_feedForwardS = 0.029; // 0.03; 0.0253
     private static final double m_feedForwardV = 0; // 0.0001
     { 
         if (tuneWithNetworkTables) {
@@ -257,8 +326,11 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final StatusSignal<Double> m_PIDPositionReference = m_gantryMotor.getClosedLoopReference();
     // private final StatusSignal<Double> m_PIDPositionError = m_gantryMotor.getClosedLoopError();
 
+    private final StatusSignal<Distance> m_gantryDistance = m_canRange.getDistance();
+    private final StatusSignal<MeasurementHealthValue> m_gantryMeasurementHealth = m_canRange.getMeasurementHealth();
+
     private double m_gantryTargetPositionRotations = 0;
-    private Measurement m_gantryLaserMeasurement;
+    // private Measurement m_gantryLaserMeasurement;
 
     public final DIOInterface m_elevatorClearanceSensor = OurUtils.getDIO(GantryConstants.ELEVATOR_CLEARANCE_SENSOR_ID);
     public final DIOInterface m_scoreEnterSensor = OurUtils.getDIO(GantryConstants.SCORE_ENTER_SENSOR_ID);
@@ -272,7 +344,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private final DoublePublisher m_gantryPositionMetersPublisher = RobotState.robotStateTable.getDoubleTopic("GantryPositionMeters").publish();
     private final DoublePublisher m_PIDPositionReferencePublisher = RobotState.robotStateTable.getDoubleTopic("GantryPIDPositionReferencePosition").publish();
 
-    private final StringPublisher m_gantryLaserMeasurementPublisher = RobotState.robotStateTable.getStringTopic("GantryLaserMeasurement").publish();
+    private final StringPublisher m_gantryDistanceMeasurementPublisher = RobotState.robotStateTable.getStringTopic("GantryDistanceMeasurement").publish();
     // private final StringPublisher m_gantryLaserAmbientPublisher = RobotState.robotStateTable.getStringTopic("GantryLaserAmbient").publish();
 
     private final BooleanPublisher m_elevatorClearanceSensorPublisher = RobotState.robotStateTable.getBooleanTopic("GantryElevatorClearanceSensor").publish();
@@ -302,8 +374,9 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     public GantrySubsystem() {
         // FIXME: tune gantry PID
         TalonFXConfiguration motorConfig = new TalonFXConfiguration();
-        motorConfig.Slot0.kP = 4.75; // 20; 5.3
-        motorConfig.Slot0.kS = 0.025; // 0.27
+        motorConfig.Slot0.kP = 3.2; // 20; 5.3; 4.75
+        motorConfig.Slot0.kS = 0.029; // 0.27; 0.025
+        motorConfig.Slot0.kD = 0.2;
 
         motorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
@@ -329,13 +402,17 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         OurUtils.tryApplyConfig(m_scoreMotor, scoreMotorConfig);
 
-        try {
-            m_gantryLaser.setRangingMode(LaserCan.RangingMode.SHORT);
-            m_gantryLaser.setRegionOfInterest(new LaserCan.RegionOfInterest(8, 8, 4, 4));
-            m_gantryLaser.setTimingBudget(LaserCan.TimingBudget.TIMING_BUDGET_20MS);
-        } catch (ConfigurationFailedException e) {
-            DriverStation.reportWarning("Could not apply configs to LaserCAN " + GantryConstants.GANTRY_LASER_ID + "; error code: " + e.toString(), false);
-        }
+        // try {
+        //     m_gantryLaser.setRangingMode(LaserCan.RangingMode.SHORT);
+        //     m_gantryLaser.setRegionOfInterest(new LaserCan.RegionOfInterest(8, 8, 4, 4));
+        //     m_gantryLaser.setTimingBudget(LaserCan.TimingBudget.TIMING_BUDGET_50MS);
+        // } catch (ConfigurationFailedException e) {
+        //     DriverStation.reportWarning("Could not apply configs to LaserCAN " + GantryConstants.GANTRY_LASER_ID + "; error code: " + e.toString(), false);
+        // }
+
+        CANrangeConfiguration canRangeConfig = new CANrangeConfiguration();
+
+        OurUtils.tryApplyConfig(m_canRange, canRangeConfig);
 
         resetPositionStuff();
 
@@ -346,7 +423,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             m_PIDPositionReference.refresh();
             // BaseStatusSignal.waitForAll(0.020, m_gantryMotorPosition, m_gantryMotorVelocity, m_gantryMotorAcceleration, m_PIDPositionReference);
 
-            m_gantryLaserMeasurement = m_gantryLaser.getMeasurement();
+            // m_gantryLaserMeasurement = m_gantryLaser.getMeasurement();
+            m_gantryDistance.refresh();
+            m_gantryMeasurementHealth.refresh();
+            m_gantryDistanceMeasurementPublisher.set("" + (m_gantryDistance.getValueAsDouble() * 1000));
 
             final double gantryMotorPosition = m_gantryMotorPosition.getValueAsDouble();
             final double gantryPositionMeters = GantryConstants.encoderUnitsToMeters(gantryMotorPosition);
@@ -391,25 +471,29 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         if (influenceMotorPositionFromLaserCan)
             RobotState.addTelemetry(() -> {
-                var measurement = m_gantryLaserMeasurement;
-                if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
-                    final double distance = measurement.distance_mm;
+                // var measurement = m_gantryLaserMeasurement;
+                // if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
+                //     final double distance = measurement.distance_mm;
+                final double distance = m_gantryDistance.getValueAsDouble() * 1000;
+                if (m_gantryMeasurementHealth.getValue() == MeasurementHealthValue.Good) {
                     tryInfluencePosition(distance);
-                    m_gantryLaserMeasurementPublisher.set(distance + "mm");
+                    m_gantryDistanceMeasurementPublisher.set(distance + "mm");
                     // m_gantryLaserAmientPublisher.set(measurement.ambient + "");
                 } else {
-                    m_gantryLaserMeasurementPublisher.set("INVALID");
+                    m_gantryDistanceMeasurementPublisher.set("INVALID");
                     // m_gantryLaserAmbientPublisher.set("INVALID");
                 }
             }, 20);
         else
             RobotState.addTelemetry(() -> {
-                var measurement = m_gantryLaserMeasurement;
-                if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
-                    final double distance = measurement.distance_mm;
-                    m_gantryLaserMeasurementPublisher.set(distance + "mm");
+                // var measurement = m_gantryLaserMeasurement;
+                // if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
+                //     final double distance = measurement.distance_mm;
+                final double distance = m_gantryDistance.getValueAsDouble() * 1000;
+                if (m_gantryMeasurementHealth.getValue() == MeasurementHealthValue.Good) {
+                    m_gantryDistanceMeasurementPublisher.set(distance + "mm");
                 } else
-                    m_gantryLaserMeasurementPublisher.set("INVALID");
+                    m_gantryDistanceMeasurementPublisher.set("INVALID");
             }, 20);
     }
 
@@ -458,11 +542,17 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         if (skipIsAtPositionCheck())
             return true;
 
-        var measurement = m_gantryLaserMeasurement;
-        if (measurement.status != LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT)
+        // var measurement = m_gantryLaserMeasurement;
+        // if (measurement.status != LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT)
+        //     return false;
+
+        // final double err = Math.abs(measurement.distance_mm - getGantryPositionFromTargetScorePosition(position).m_position);
+        // return err <= GantryConstants.POSITION_ERROR_THRESHOLD_MM;
+
+        if (m_gantryMeasurementHealth.getValue() != MeasurementHealthValue.Good)
             return false;
 
-        double err = Math.abs(measurement.distance_mm - getGantryPositionFromTargetScorePosition(position).m_position);
+        final double err = Math.abs((m_gantryDistance.getValueAsDouble() * 1000) - getGantryPositionFromTargetScorePosition(position).m_position);
         return err <= GantryConstants.POSITION_ERROR_THRESHOLD_MM;
     }
 
@@ -554,8 +644,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     private double m_feedForwardLastSpeed = 0;
     private double m_feedForwardLastTime = Timer.getFPGATimestamp();
     private boolean trySetPositionMM(double position) {
-        var laserMeasurement = m_gantryLaserMeasurement;
-        if (laserMeasurement == null)
+        // var laserMeasurement = m_gantryLaserMeasurement;
+        // if (laserMeasurement == null)
+        //     return false;
+        if (m_gantryMeasurementHealth.getValue() != MeasurementHealthValue.Good)
             return false;
 
         m_automaticPositionRotationsPublisher.set(position); // FIXME: this is not rotations!!!
@@ -563,7 +655,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             m_gantryTargetPositionRotations = GantryConstants.millimetersToEncoderUnits(position);
             m_gantryMotor.setControl(m_positionControl.withPosition(m_gantryTargetPositionRotations));
         } else {
-            var output = m_pidController.calculate(laserMeasurement.distance_mm, position);
+            var output = m_pidController.calculate(m_gantryDistance.getValueAsDouble() * 1000, position);
             var velocity = m_pidController.getSetpoint().velocity;
             var timeStamp = Timer.getFPGATimestamp();
 
@@ -674,6 +766,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         RobotState.IntakeState intakeState = RobotState.getIntakeState();
         if (intakeState == IntakeState.OUT) {
             targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.BACKWARD_OUTPUT);
+        // } else if (intakeState == IntakeState.NONE) {
         } else {
             final boolean isGoodToMove = !RobotState.getWantsToScoreCoral() && (m_desiredControlType == DesiredControlType.MANUAL || m_position != GantryPosition.TROUGH);
             // TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
@@ -704,7 +797,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
         // FIXME: below has a removed check (was elevatorHasClearance WHICH WAS DUMB it should be just [exit and enter])
         if (m_scoreExitSensorTripped && RobotState.getWantsToScoreCoral())
-            targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.SCORE_OUTPUT);
+            targetRequest = m_scoreDutyCycleOut.withOutput(RobotState.getTargetScorePosition().getScoreOutput());
 
         m_scoreMotor.setControl(targetRequest);
     }

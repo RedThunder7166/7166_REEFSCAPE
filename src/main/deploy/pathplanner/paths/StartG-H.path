@@ -3,43 +3,52 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.6076746323529412,
-        "y": 0.6429687499999989
+        "x": 7.163,
+        "y": 4.029
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.1737464118097107,
-        "y": 0.9697904442500151
+        "x": 5.797765621562629,
+        "y": 4.029
       },
       "isLocked": false,
-      "linkedName": "RightCoralStationClose"
+      "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.858,
-        "y": 2.932
+        "x": 5.75,
+        "y": 4.03
       },
       "prevControl": {
-        "x": 3.545887260512824,
-        "y": 2.67010631541058
+        "x": 6.058990631840084,
+        "y": 4.03
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "ReefCD"
+      "linkedName": null
     }
   ],
-  "rotationTargets": [
+  "rotationTargets": [],
+  "constraintZones": [
     {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": 59.99999999999999
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.9215938303341912,
+      "maxWaypointRelativePos": 1.0,
+      "constraints": {
+        "maxVelocity": 0.6,
+        "maxAcceleration": 4.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
     }
   ],
-  "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
       "name": "GoToPosition",
-      "waypointRelativePos": 0.75,
+      "waypointRelativePos": 0.35,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
@@ -58,14 +67,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": 59.99999999999999
+    "velocity": 0.0,
+    "rotation": 180.0
   },
   "reversed": false,
-  "folder": "CoralStationToReef",
+  "folder": "Start",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 55.0
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }

@@ -113,7 +113,8 @@ public class SubsystemInterfaces {
         public Command getManualOutCommand();
         public Command getManualInCommand();
 
-        public Command getMiddleCommand();
+        public Command getHomeCommand();
+        public Command getExtendedCommand();
     }
 
     public static interface AlgaeMouthSubsystemInterface extends GenericInterface {

@@ -7,7 +7,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotState;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.RobotState.DesiredControlType;
@@ -151,7 +151,7 @@ public class AutomaticCommands {
     }
 
     public static Command createSetTargetScorePositionCommand(TargetScorePosition targetScorePositionIn) {
-        return new InstantCommand(() -> targetScorePosition = targetScorePositionIn);
+        return Commands.runOnce(() -> targetScorePosition = targetScorePositionIn);
     }
 
     public static Command createGoToPositionCommand() {

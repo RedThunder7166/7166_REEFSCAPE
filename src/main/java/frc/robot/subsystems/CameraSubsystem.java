@@ -5,8 +5,6 @@
 package frc.robot.subsystems;
 
 import java.util.HashMap;
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
@@ -35,7 +33,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.AutoConstants;
@@ -187,7 +184,6 @@ public class CameraSubsystem extends SubsystemBase {
             m_rotation = pose.getRotation();
             m_offset = new Translation2d((bumperOffset + coralStationOffsetX), (bumperOffset + coralStationOffsetY) * multiplier)
                 .rotateBy(m_rotation);
-            // m_offset = getScaledDirectionVector(m_translation, -DriveConstants.TRACK_WIDTH_X, DriveConstants.TRACK_WIDTH_Y * multiplier);
         }
     }
 
@@ -447,25 +443,22 @@ public class CameraSubsystem extends SubsystemBase {
         final AprilTag targetTag = aprilTagMap.get(tagID);
         final Pose2d targetTagPose = targetTag.pose.toPose2d();
 
-        // final double robotRotationRadiansMagnitude = Math.abs(robotPose.getRotation().getRadians());
-        // final double targetRadians = targetTagPose.getRotation().rotateBy(Rotation2d.k180deg).getRadians();
-        // // FIXME: anglemodulus robot pose
-        // double result = targetRotatePIDController.calculate(robotRotationRadiansMagnitude, targetRadians);
-        // SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
-        // SmartDashboard.putNumber("ROTATEFROMTAG_ERROR", targetRotatePIDController.getError());
-
-        final double a = -robotPose.getRotation().minus(targetTagPose.getRotation().rotateBy(Rotation2d.k180deg)).getRadians();
-        SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", a);
-        return a;
+        final double err = robotPose.getRotation().minus(targetTagPose.getRotation().rotateBy(Rotation2d.k180deg)).getRadians();
+        final double result = targetRotatePIDController.calculate(err);
+        SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
+        return result;
     }
 
     private Command createFaceTagCommand(int tagID) {
-        return m_driveSubsystem.applyRequest(() -> new RobotCentric()
-            .withVelocityX(0)
-            .withVelocityY(0)
-            .withRotationalRate(calculateRotateFromTag(tagID))
+        // return m_driveSubsystem.applyRequest(() -> new RobotCentric()
+        //     .withVelocityX(0)
+        //     .withVelocityY(0)
+        //     .withRotationalRate(calculateRotateFromTag(tagID))
+        // );
+        return Commands.runEnd(
+            () -> RobotState.setDriveRotationOverride(calculateRotateFromTag(tagID)),
+            () -> RobotState.clearDriveRotationOverride()
         );
-        // return m_driveSubsystem.run(() -> calculateRotateFromTag(tagID)); // just print
     }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
@@ -475,7 +468,7 @@ public class CameraSubsystem extends SubsystemBase {
 
     public Command getPathCommandFromReefTag(RelativeReefLocation reefLocation, boolean forAuto) {
         if (!aprilTagFieldLayoutSuccess || reefLocation.m_translation == null)
-            return Commands.none();
+            return Commands.print("failed to create reef pathfind: field layout success (" + aprilTagFieldLayoutSuccess + "); location translation (" + reefLocation.m_translation.toString() + ')');
 
         final Translation2d targetTagTranslation = reefLocation.m_translation;
         final Translation2d scaledDirectionVector = getReefTagDirectionVector(targetTagTranslation);
@@ -498,15 +491,13 @@ public class CameraSubsystem extends SubsystemBase {
         // }
 
         result.addRequirements(m_driveSubsystem);
-        result = new InstantCommand(() -> {
+        result = Commands.runOnce(() -> {
             m_targetPosePublisher.set(targetPose);
             m_targetReefLocationPublisher.set(OurUtils.formatReefLocation(reefLocation));
         }).andThen(result);
 
         // if (!forAuto)
         //     result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
-
-        result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
 
         return result;
     }
@@ -541,6 +532,6 @@ public class CameraSubsystem extends SubsystemBase {
         // }
 
         result.addRequirements(m_driveSubsystem);
-        return new InstantCommand(() -> m_targetPosePublisher.set(targetPose)).andThen(result);
+        return Commands.runOnce(() -> m_targetPosePublisher.set(targetPose)).andThen(result);
     }
 }

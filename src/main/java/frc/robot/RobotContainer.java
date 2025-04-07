@@ -13,7 +13,6 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -24,8 +23,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
@@ -65,8 +62,6 @@ public class RobotContainer {
     private final SwerveRequest.RobotCentric m_robotCentricRequest = new SwerveRequest.RobotCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-    // private static final boolean shouldRunWheelRadiusCharacterization = true;
-
     private final CommandSwerveDrivetrain m_driveSubsystem;
     private final CameraSubsystem m_cameraSubsystem;
 
@@ -79,7 +74,6 @@ public class RobotContainer {
     private AlgaeHandSubsystemInterface m_algaeHandSubsystem;
     private AlgaeMouthSubsystemInterface m_algaeMouthSubsystem;
 
-    // private RelativeReefLocation m_targetReefLocation;
     private RelativeReefLocation m_closestReefLocation;
 
     // NOTE: we use dynamic command to account for alliancestation changing
@@ -87,7 +81,6 @@ public class RobotContainer {
         return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(m_closestReefLocation, false));
     }
     private Command createLocalizeToReefCommand(RelativeReefLocation targetReefLocation, boolean forAuto) {
-        // m_targetReefLocation = targetReefLocation;
         return new CameraSubsystem.DynamicCommand(() -> m_cameraSubsystem.getPathCommandFromReefTag(targetReefLocation, forAuto));
     }
     private Command createLocalizeToCoralStationCommand(CoralStationID targetCoralStation) {
@@ -95,25 +88,17 @@ public class RobotContainer {
     }
 
     private Command createScoreCoralCommand() {
-        return m_intakeOuttakeSubsystem.addToCommandRequirements(new Command() {
-            @Override
-            public void execute() {
-                // if (DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
-                //     RobotState.setWantsToScore(true);
-                RobotState.setWantsToScoreCoral(true);
-            }
-
-            @Override
-            public boolean isFinished() {
-                return !m_gantrySubsystem.getScoreExitSensorTripped();
-            }
-
-            @Override
-            public void end(boolean isInterrupted) {
-                RobotState.setWantsToScoreCoral(false);
-            }
-        })
-            .andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
+        return m_intakeOuttakeSubsystem.addToCommandRequirements(
+            Commands.waitUntil(() -> DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
+            .withTimeout(0.5)
+            .andThen(
+                Commands.startEnd(
+                    () -> RobotState.setWantsToScoreCoral(true),
+                    () -> RobotState.setWantsToScoreCoral(false)
+                )
+                .until(() -> !m_gantrySubsystem.getScoreExitSensorTripped())
+            )
+        ).andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
     }
     private Command createScoreAlgaeCommand() {
         return Commands.startEnd(
@@ -122,37 +107,13 @@ public class RobotContainer {
         );
     }
 
-    private class PickupCoralCommand extends Command {
-        public void execute() {
-            if (DriverStation.isAutonomous() || m_gantrySubsystem.getIsAtTargetPosition())
-                RobotState.startIntake(IntakeState.IN);
-        }
-
-        @Override
-        public boolean isFinished() {
-            return RobotState.getCoralIsGood();
-        }
-
-        @Override
-        public void end(boolean isInterrupted) {
-            RobotState.stopIntake();
-        }
-    }
-    private final class AutoPickupCoralCommand extends PickupCoralCommand {
-        @Override
-        public boolean isFinished() {
-            // return m_gantrySubsystem.getScoreEnterSensorTripped();
-            return true; // vroom
-        }
-
-        @Override
-        public void end(boolean isInterrupted) { 
-            // do nothing: we don't want the intake to stop here; it will be stopped from auto
-        }
-    }
     private Command createPickupCoralCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            new PickupCoralCommand()
+            Commands.startEnd(
+                () -> RobotState.startIntake(IntakeState.IN),
+                () -> RobotState.stopIntake()
+            )
+            // .until(() -> RobotState.getCoralIsGood())
         );
     }
 
@@ -161,11 +122,15 @@ public class RobotContainer {
         // return m_intakeOuttakeSubsystem.addToCommandRequirements(
         //     new AutoPickupCommand()
         // );
-        return new AutoPickupCoralCommand();
+        // return Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN));
+        return Commands.startEnd(
+            () -> RobotState.startIntake(IntakeState.IN),
+            () -> RobotState.stopIntake()
+        ).until(() -> m_gantrySubsystem.getScoreEnterSensorTripped());
     }
 
     private Command createSetClimbStateCommand(ClimbActuatorState climbState) {
-        return m_climbSubsystem.addToCommandRequirements(new InstantCommand(() -> {
+        return m_climbSubsystem.addToCommandRequirements(Commands.runOnce(() -> {
             RobotState.setClimbActuatorState(climbState);
         }));
     }
@@ -292,7 +257,7 @@ public class RobotContainer {
         m_autoChooser.setDefaultOption("thereisnoauto", Commands.none());
         m_autoChooser.addOption("Drive Wheel Radius Characterization", m_driveSubsystem
             .orientModules(CommandSwerveDrivetrain.getCircleOrientations())
-            .andThen(new PrintCommand("modules oriented."))
+            .andThen(Commands.print("modules oriented."))
             .andThen(new WheelRadiusCharacterization(m_driveSubsystem, Direction.COUNTER_CLOCKWISE)));
 
         // simple autos
@@ -400,11 +365,6 @@ public class RobotContainer {
         initialize();
     }
 
-    // private void setTargetReefLocation(RelativeReefLocation targetReefLocation) {
-    //     m_targetReefLocation = targetReefLocation;
-    //     SmartDashboard.putNumber("TARGET_TAGID", m_targetReefLocation.getTagID());
-    // }
-
     private boolean m_robotCentricForward = false;
     private boolean m_robotCentricRight = false;
     private boolean m_robotCentricBackward = false;
@@ -413,12 +373,11 @@ public class RobotContainer {
 
     private void initialize() {
         DriverStation.silenceJoystickConnectionWarning(true);
-        // m_targetReefLocation = RelativeReefLocation.AB;
         RobotState.updateState(this);
 
         m_driveSubsystem.setDefaultCommand(
             m_driveSubsystem.applyRequest(() -> {
-                    final double rotation = -DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE;
+                    final double rotation = RobotState.getDriveRotationOverride().orElseGet(() -> -DRIVER_CONTROLS.getRightX() * DriveConstants.MAX_ANGULAR_RATE);
                     if (m_robotCentricForward || m_robotCentricRight || m_robotCentricBackward || m_robotCentricLeft) {
                         double x = 0;
                         double y = 0;
@@ -512,8 +471,8 @@ public class RobotContainer {
             OPERATOR_CONTROLS.ALGAE_MANUAL_OUT.whileTrue(m_algaeMouthSubsystem.getManualArmOutCommand());
             OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeMouthSubsystem.getManualArmInCommand());
         } else {
-            OPERATOR_CONTROLS.ALGAE_MANUAL_OUT.whileTrue(m_algaeHandSubsystem.getManualOutCommand());
-            OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeHandSubsystem.getManualInCommand());
+            OPERATOR_CONTROLS.ALGAE_MANUAL_OUT.whileTrue(m_algaeHandSubsystem.getExtendedCommand());
+            OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeHandSubsystem.getHomeCommand());
         }
 
         OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(m_climbSubsystem.getManualActuatorOutCommand());
@@ -536,7 +495,6 @@ public class RobotContainer {
 
     public void update(Rotation2d rotation) {
         m_driveSubsystem.resetCustomEstimatedRotation(rotation);
-        // SmartDashboard.putString("TARGET_TAG", OurUtils.formatReefLocation(m_targetReefLocation));
     }
 
     private Command m_deployIntakeFlap = Commands.startEnd(
@@ -544,16 +502,16 @@ public class RobotContainer {
         () -> RobotState.stopIntake()
     ).withTimeout(0.1);
 
-    private boolean m_autoHasSetRotation = false;
+    // private boolean m_autoHasSetRotation = false;
 
     public void autonomousInit() {
         m_gantrySubsystem.resetManualPosition();
         m_gantrySubsystem.resetMotorPosition();
 
-        if (!m_autoHasSetRotation && RobotState.initialSwerveRotation != null) {
-            m_autoHasSetRotation = true;
-            m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
-        }
+        // if (!m_autoHasSetRotation && RobotState.initialSwerveRotation != null) {
+        //     m_autoHasSetRotation = true;
+        //     m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
+        // }
 
         if (m_deployIntakeFlap.isScheduled())
             m_deployIntakeFlap.cancel();
@@ -580,9 +538,6 @@ public class RobotContainer {
     }
 
     public void robotPeriodic() {
-        // SmartDashboard.putNumber("WHEEL_POSITION_0", m_driveSubsystem.getWheelRadiusCharacterizationPosition()[0]);
-        // System.out.println("what?");
-
         final Pose2d robotPose = m_driveSubsystem.getCustomEstimatedPose();
         Pose2d targetPose = null;
         RelativeReefLocation closestLocation = null;
