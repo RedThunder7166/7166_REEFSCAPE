@@ -7,7 +7,6 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -70,7 +69,7 @@ public class AlgaeMouthSubsystem extends SubsystemBase implements AlgaeMouthSubs
 
     private final DutyCycleOut m_armDutyCycleOut = new DutyCycleOut(0);
     private final DutyCycleOut m_scoreDutyCycleOut = new DutyCycleOut(0);
-    private final MotionMagicVoltage m_armPositionControl = new MotionMagicVoltage(0);
+    // private final MotionMagicVoltage m_armPositionControl = new MotionMagicVoltage(0);
     private final NeutralOut m_brake = new NeutralOut();
 
     public AlgaeMouthSubsystem() {

@@ -22,6 +22,17 @@ public class Constants {
         public static final int OPERATOR_PORT = 1;
     }
 
+    public static final class LEDConstants {
+        public static final boolean REAL = true;
+
+        public static final int CANDLE_ID = 59;
+
+        public static final int LED_COUNT = 36;
+        public static final int LED_COUNT_HALVED = LED_COUNT / 2;
+        public static final int GROUP_SIZE = LED_COUNT_HALVED / 2;
+    }
+    public static final int REEF_YAW_LINEUP_THRESHOLD_DEGREES = 2;
+
     public static final class DriveConstants {
         public static final double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
         public static final double MAX_ANGULAR_RATE = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -49,10 +60,10 @@ public class Constants {
         public static final double CORAL_STATION_POSITION = HOME_POSITION;
 
         // TODO: ensure within max and min
-        public static final double L1_POSITION = HOME_POSITION;
-        public static final double L2_POSITION = 0.9; // mason?: 0.75
-        public static final double L3_POSITION = 2.21; // mason?: 2.06
-        public static final double L4_POSITION = 4.3; // 4.3; mason?: 4.15
+        public static final double L2_POSITION = 0.9;
+        public static final double L1_POSITION = L2_POSITION;
+        public static final double L3_POSITION = 2.21;
+        public static final double L4_POSITION = 4.3;
 
         public static final double ALGAE_HAND_POSITION_OFFSET = 0.25;
         public static final double AUTO_ADJUST_OFFSET = MAX_POSITION_ROTATIONS - 4.3; // 4.3 is l4
@@ -71,7 +82,7 @@ public class Constants {
 
                 https://www.desmos.com/calculator/legao7xgjj
             */
-            return (0.0375937 * forwardDistanceInches) - 0.646611;
+            return (0.0375937d * forwardDistanceInches) - 0.646611d;
         }
     }
     public static final class GantryConstants {

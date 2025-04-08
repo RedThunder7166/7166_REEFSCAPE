@@ -46,17 +46,19 @@ import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.GantrySubsystem;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.IntakeOuttakeSubsystem;
+import frc.robot.subsystems.LEDSubsystem;
 import frc.robot.subsystems.SubsystemInterfaces.ElevatorSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GantrySubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.AlgaeHandSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.AlgaeMouthSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.ClimbSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.IntakeOuttakeSubsystemInterface;
+import frc.robot.subsystems.SubsystemInterfaces.LEDSubsystemInterface;
 
 public class RobotContainer {
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric m_fieldCentricRequest = new SwerveRequest.FieldCentric()
-            .withDeadband(DriveConstants.MAX_SPEED * 0.1).withRotationalDeadband(DriveConstants.MAX_ANGULAR_RATE * 0.1) // Add a 10% deadband
+            .withDeadband(DriveConstants.MAX_SPEED * 0.1d).withRotationalDeadband(DriveConstants.MAX_ANGULAR_RATE * 0.1d) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
     // private final SwerveRequest.SwerveDriveBrake m_brakeRequest = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.RobotCentric m_robotCentricRequest = new SwerveRequest.RobotCentric()
@@ -64,6 +66,7 @@ public class RobotContainer {
 
     private final CommandSwerveDrivetrain m_driveSubsystem;
     private final CameraSubsystem m_cameraSubsystem;
+    private final LEDSubsystemInterface m_ledSubsystem;
 
     private final ElevatorSubsystemInterface m_elevatorSubsystem;
     private final GantrySubsystemInterface m_gantrySubsystem;
@@ -212,6 +215,7 @@ public class RobotContainer {
         m_driveSubsystem = TunerConstants.createDrivetrain();
         m_cameraSubsystem = CameraSubsystem.getSingleton();
         m_cameraSubsystem.setDriveSubsystem(m_driveSubsystem, DriveConstants.MAX_SPEED, DriveConstants.MAX_ANGULAR_RATE);
+        m_ledSubsystem = LEDSubsystem.getSingleton();
 
         m_elevatorSubsystem = ElevatorSubsystem.getSingleton();
         m_gantrySubsystem = GantrySubsystem.getSingleton();
@@ -239,6 +243,11 @@ public class RobotContainer {
 
         NamedCommands.registerCommand("PrepareScore", createDynamicPrepareScoreCommand());
 
+        NamedCommands.registerCommand("BackupSlow", m_driveSubsystem.applyRequest(() -> m_robotCentricRequest.withVelocityX(-0.2).withVelocityY(0)));
+
+        NamedCommands.registerCommand("ExtendAlgaeHand", m_algaeHandSubsystem.getExtendedCommand());
+        NamedCommands.registerCommand("RetractAlgaeHand", m_algaeHandSubsystem.getRetractCommand());
+
         try {
             var config = RobotConfig.fromGUISettings();
             m_driveSubsystem.configureAutoBuilder(config);
@@ -262,7 +271,7 @@ public class RobotContainer {
 
         // simple autos
         m_autoChooser.addOption("JustLeave", Commands.startEnd(() ->
-            m_driveSubsystem.setControl(m_robotCentricRequest.withVelocityX(DriveConstants.MAX_SPEED * 0.25).withVelocityY(0))
+            m_driveSubsystem.setControl(m_robotCentricRequest.withVelocityX(DriveConstants.MAX_SPEED * 0.25d).withVelocityY(0))
         , () ->
             m_driveSubsystem.setControl(m_robotCentricRequest.withVelocityX(0).withVelocityY(0))
         , m_driveSubsystem).withTimeout(0.5));
@@ -472,7 +481,7 @@ public class RobotContainer {
             OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeMouthSubsystem.getManualArmInCommand());
         } else {
             OPERATOR_CONTROLS.ALGAE_MANUAL_OUT.whileTrue(m_algaeHandSubsystem.getExtendedCommand());
-            OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeHandSubsystem.getHomeCommand());
+            OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeHandSubsystem.getRetractCommand());
         }
 
         OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(m_climbSubsystem.getManualActuatorOutCommand());
@@ -557,6 +566,10 @@ public class RobotContainer {
         if (targetPose == null) {
             m_closestReefLocation = closestLocation;
             SmartDashboard.putString("CLOSEST_REEF_LOCATION", "null");
+
+            RobotState.clearReefTargetHorizontalDistance();
+            RobotState.clearReefTargetForwardDistance();
+            RobotState.setIsLinedUpWithReefYaw(false);
         } else {
             m_closestReefLocation = closestLocation;
             SmartDashboard.putString("CLOSEST_REEF_LOCATION", closestLocation.toString());
@@ -572,6 +585,8 @@ public class RobotContainer {
                 RobotState.clearReefTargetHorizontalDistance();
                 RobotState.clearReefTargetForwardDistance();
             }
+
+            RobotState.setIsLinedUpWithReefYaw(Math.abs(m_cameraSubsystem.calculateYawErrorFromReefTag(m_closestReefLocation.getTagID()).getDegrees()) <= Constants.REEF_YAW_LINEUP_THRESHOLD_DEGREES);
 
             SmartDashboard.putNumber("ReefTargetHorizontalDistance", horizontalDifference);
             SmartDashboard.putNumber("ReefTargetFowardDistanceInches", Units.metersToInches(forwardDifference));

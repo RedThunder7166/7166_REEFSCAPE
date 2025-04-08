@@ -23,4 +23,7 @@ public class Mechanisms {
         public static final double widthInches = 23.472;
         public static MechanismLigament2d ligament = ElevatorMechanisms.ligament.append(new MechanismLigament2d("gantry", 0, 90));
     }
+    public static final class AlgaeHandMechanisms {
+        public static MechanismLigament2d ligament = ElevatorMechanisms.ligament.append(new MechanismLigament2d("algaehand", 0, 45));
+    }
 }

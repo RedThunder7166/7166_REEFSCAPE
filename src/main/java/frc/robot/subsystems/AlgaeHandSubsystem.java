@@ -18,7 +18,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AlgaeHandConstants;
 import frc.robot.OurUtils;
+import frc.robot.RobotState;
 import frc.robot.RobotState.DesiredControlType;
+import frc.robot.subsystems.Mechanisms.AlgaeHandMechanisms;
 import frc.robot.subsystems.SubsystemInterfaces.AlgaeHandSubsystemInterface;
 import frc.robot.subsystems.SubsystemInterfaces.GenericDirection;
 
@@ -45,7 +47,7 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         }
 
         @Override
-        public Command getHomeCommand() {
+        public Command getRetractCommand() {
             return Commands.none();
         }
 
@@ -116,6 +118,10 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         OurUtils.tryApplyConfig(m_motor, motorConfigs);
 
         m_motor.setPosition(0);
+
+        RobotState.addTelemetry(() -> {
+            AlgaeHandMechanisms.ligament.setLength(m_motor.getPosition().getValueAsDouble() / 10);
+        });
     }
 
     @Override
@@ -177,19 +183,20 @@ public class AlgaeHandSubsystem extends SubsystemBase implements AlgaeHandSubsys
         return m_manualInCommand;
     }
 
-    @Override
-    public synchronized Command getHomeCommand() {
+    private Command createGoToPositionCommand(AlgaeHandPosition position) {
         return Commands.runOnce(() -> {
-            m_position = AlgaeHandPosition.HOME;
+            m_position = position;
             m_desiredControlType = DesiredControlType.AUTOMATIC;
         }, this);
     }
 
     @Override
-    public synchronized Command getExtendedCommand() {
-        return Commands.runOnce(() -> {
-            m_position = AlgaeHandPosition.EXTENDED;
-            m_desiredControlType = DesiredControlType.AUTOMATIC;
-        }, this);
+    public Command getRetractCommand() {
+        return createGoToPositionCommand(AlgaeHandPosition.HOME);
+    }
+
+    @Override
+    public Command getExtendedCommand() {
+        return createGoToPositionCommand(AlgaeHandPosition.EXTENDED);
     }
 }

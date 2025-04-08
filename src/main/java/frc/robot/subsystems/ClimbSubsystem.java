@@ -254,7 +254,7 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
                 // final boolean canGoOut = actuatorMotorPosition <= ClimbConstants.MAX_SAFE_ACTUATOR_POSITION_ROTATIONS;
                 final boolean canGoIn = true;
                 final boolean canGoOut = true;
-        
+
                 switch (m_cageClimbDirection) {
                     case NONE:
                         targetRequest = m_brake;
@@ -275,18 +275,13 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     }
 
     private Command makeManualActuatorCommand(GenericDirection desiredDirection) {
-        return new Command() {
-            @Override
-            public void initialize() {
+        return Commands.startEnd(
+            () -> {
                 setManualActuatorDirection(desiredDirection);
                 RobotState.setClimbActuatorState(ClimbActuatorState.MANUAL);
-            }
-
-            @Override
-            public void end(boolean isInterrupted) {
-                setManualActuatorDirection(GenericDirection.NONE);
-            }
-        };
+            },
+            () -> setManualActuatorDirection(GenericDirection.NONE)
+        );
     }
     private final Command m_manualActuatorOutCommand = makeManualActuatorCommand(GenericDirection.OUT);
     private final Command m_manualActuatorInCommand = makeManualActuatorCommand(GenericDirection.IN);
@@ -301,19 +296,14 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     }
 
     private Command makeManualCageCommand(GenericDirection direction) {
-        return new Command() {
-            @Override
-            public void initialize() {
+        return Commands.startEnd(
+            () -> {
                 m_cageClimbDirection = direction;
                 setCageClimbAutomaticPosition(CageClimbPosition.IDLE);
                 setCageClimbDesiredControlType(DesiredControlType.MANUAL);
-            }
-
-            @Override
-            public void end(boolean isInterrupted) {
-                m_cageClimbDirection = GenericDirection.NONE;
-            }
-        };
+            },
+            () -> m_cageClimbDirection = GenericDirection.NONE
+        );
     }
     private final Command m_cageManualOutCommand = makeManualCageCommand(GenericDirection.OUT);
     private final Command m_cageManualInCommand = makeManualCageCommand(GenericDirection.IN);
@@ -328,13 +318,10 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
     }
 
     private Command makeAutomaticCageCommand(CageClimbPosition position) {
-        return new Command() {
-            @Override
-            public void initialize() {
-                setCageClimbAutomaticPosition(position);
-                setCageClimbDesiredControlType(DesiredControlType.AUTOMATIC);
-            }
-        };
+        return Commands.runOnce(() -> {
+            setCageClimbAutomaticPosition(position);
+            setCageClimbDesiredControlType(DesiredControlType.AUTOMATIC);
+        }, this);
     }
 
     private final Command m_automaticCageHomeCommand = makeAutomaticCageCommand(CageClimbPosition.HOME);

@@ -133,32 +133,25 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         m_position = ElevatorPosition.IDLE;
     }
 
-    private static final boolean shouldApplyAlgaeHandPosition = false;
-
     private static enum ElevatorPosition {
         HOME(ElevatorConstants.HOME_POSITION),
         IDLE(ElevatorConstants.HOME_POSITION), // this position should never be used, so we have it home to be safe
         CORAL_STATION(ElevatorConstants.CORAL_STATION_POSITION),
 
         L1(ElevatorConstants.L1_POSITION),
-        L2(ElevatorConstants.L2_POSITION, ElevatorConstants.L2_POSITION + ElevatorConstants.ALGAE_HAND_POSITION_OFFSET, true),
-        L3(ElevatorConstants.L3_POSITION, ElevatorConstants.L3_POSITION + ElevatorConstants.ALGAE_HAND_POSITION_OFFSET, true),
+        L2(ElevatorConstants.L2_POSITION, true),
+        L3(ElevatorConstants.L3_POSITION, true),
         L4(ElevatorConstants.L4_POSITION, true)
 
         ;
         private final double m_position;
-        private final double m_algaeHandPosition;
         private final boolean m_needsElevatorClearance;
 
         ElevatorPosition(double position) {
             this(position, false);
         }
         ElevatorPosition(double position, boolean needsElevatorClearance) {
-            this(position, position, needsElevatorClearance);
-        }
-        ElevatorPosition(double position, double algaeHandPosition, boolean needsElevatorClearance) {
             m_position = position;
-            m_algaeHandPosition = algaeHandPosition;
             m_needsElevatorClearance = needsElevatorClearance;
         }
     }
@@ -569,20 +562,13 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 desiredControl = m_brake; // redundant?
                 break;
             default:
-                double position;
-                if (shouldApplyAlgaeHandPosition) {
-                    final boolean algaeHand = AlgaeHandSubsystem.getSingleton().isTargetingManualOut();
-                    position = algaeHand ? m_position.m_algaeHandPosition : m_position.m_position;
-                } else
-                    position = m_position.m_position;
+                double position = m_position.m_position;
 
                 // auto adjust
-                if (DriverStation.isTeleop() && RobotState.getTargetScorePosition().getIsOnReefBranch()) {
+                if (DriverStation.isTeleopEnabled() && RobotState.getTargetScorePosition().getIsOnReefBranch() && RobotState.getVisionPoseSuccess() && RobotState.getWeHaveCoral()) {
                     var reefTargetForwardDistance = RobotState.getReefTargetForwardDistance();
-                    if (reefTargetForwardDistance.isPresent() && RobotState.getVisionPoseSuccess() && RobotState.getWeHaveCoral()) {
+                    if (reefTargetForwardDistance.isPresent()) {
                         double distance = reefTargetForwardDistance.get();
-                        // if (distance >= ElevatorConstants.MIN_FORWARD_DISTANCE && distance <= ElevatorConstants.MAX_FORWARD_DISTANCE)
-                        //     position += OurUtils.map(distance, ElevatorConstants.MIN_FORWARD_DISTANCE, ElevatorConstants.MAX_FORWARD_DISTANCE, 0, ElevatorConstants.AUTO_ADJUST_OFFSET);
                         if (distance >= ElevatorConstants.MIN_FORWARD_DISTANCE) {
                             // ensure positive
                             final double increment = Math.copySign(ElevatorConstants.calculateAutoAdjust(Units.metersToInches(distance)), 1);
@@ -617,7 +603,6 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         }
 
         m_leaderMotor.setControl(m_positionControl.withPosition(m_manualPosition));
-        // m_leaderMotor.setControl(m_brake);
     }
 
     public class TempGoUntilTargetIncreaseCommand extends Command {

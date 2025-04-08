@@ -158,7 +158,7 @@ public final class RobotState {
         // ^ e.g: we are trying to score a piece, we are intaking a piece
         if (desiredPosition.getIsL4())
             Commands.waitUntil(() -> ElevatorSubsystem.getSingleton().getIsAtTargetPosition())
-            .andThen(AlgaeHandSubsystem.getSingleton().getHomeCommand())
+            .andThen(AlgaeHandSubsystem.getSingleton().getRetractCommand())
             .schedule();
         targetScorePosition = desiredPosition;
         return true;
@@ -257,7 +257,7 @@ public final class RobotState {
                 if (weHaveCoral) // if we no longer have coral (weHaveCoral is old)
                     setTargetScorePosition(TargetScorePosition.CORAL_STATION);
                 else
-                    setTargetScorePosition(TargetScorePosition.L2_L);
+                    setTargetScorePosition(TargetScorePosition.L1);
         }
         weHaveCoral = weHaveCoralIn;
     }
@@ -311,6 +311,15 @@ public final class RobotState {
     }
     public static synchronized boolean getVisionPoseSuccess() {
         return visionPoseSuccess;
+    }
+
+    private static boolean isLinedUpWithReefYaw = false;
+
+    public static synchronized void setIsLinedUpWithReefYaw(boolean newValue) {
+        isLinedUpWithReefYaw = newValue;
+    }
+    public static synchronized boolean getIsLinedUpWithReefYaw() {
+        return isLinedUpWithReefYaw;
     }
 
     private static Optional<Double> driveRotationOverride = Optional.empty();

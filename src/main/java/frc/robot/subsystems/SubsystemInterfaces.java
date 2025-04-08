@@ -9,7 +9,7 @@ import frc.robot.RobotState.DesiredControlType;
 import frc.robot.RobotState.TargetScorePosition;
 
 public class SubsystemInterfaces {
-    private static interface GenericInterface {
+    private static interface GenericSubsystemInterface {
         public Command addToCommandRequirements(Command command);
     }
 
@@ -19,7 +19,11 @@ public class SubsystemInterfaces {
         IN
     }
 
-    public static interface ElevatorSubsystemInterface extends GenericInterface {
+    public static interface LEDSubsystemInterface extends GenericSubsystemInterface {
+
+    }
+
+    public static interface ElevatorSubsystemInterface extends GenericSubsystemInterface {
         public static enum ElevatorState {
             HOME,
             IDLE,
@@ -55,7 +59,7 @@ public class SubsystemInterfaces {
         public Command getTimeTravelCommand(double targetPosition);
     }
 
-    public static interface GantrySubsystemInterface extends GenericInterface {
+    public static interface GantrySubsystemInterface extends GenericSubsystemInterface {
         public static enum GantryState {
             IDLE,
             TARGET
@@ -91,9 +95,9 @@ public class SubsystemInterfaces {
         public Command getGantryResetPositionCommand();
     }
 
-    public static interface IntakeOuttakeSubsystemInterface extends GenericInterface {
+    public static interface IntakeOuttakeSubsystemInterface extends GenericSubsystemInterface {
     }
-    public static interface ClimbSubsystemInterface extends GenericInterface {
+    public static interface ClimbSubsystemInterface extends GenericSubsystemInterface {
         public void incrementManualPosition(double value);
         public void resetManualPosition();
 
@@ -107,17 +111,17 @@ public class SubsystemInterfaces {
         public Command getAutomaticCageOutCommand();
     }
 
-    public static interface AlgaeHandSubsystemInterface extends GenericInterface {
+    public static interface AlgaeHandSubsystemInterface extends GenericSubsystemInterface {
         public boolean isTargetingManualOut();
 
         public Command getManualOutCommand();
         public Command getManualInCommand();
 
-        public Command getHomeCommand();
+        public Command getRetractCommand();
         public Command getExtendedCommand();
     }
 
-    public static interface AlgaeMouthSubsystemInterface extends GenericInterface {
+    public static interface AlgaeMouthSubsystemInterface extends GenericSubsystemInterface {
         public Command getManualArmOutCommand();
         public Command getManualArmInCommand();
     }

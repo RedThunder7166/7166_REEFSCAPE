@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
-import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -150,9 +149,9 @@ public class CameraSubsystem extends SubsystemBase {
         directionVector = new Translation2d(directionVector.getX() / directionVectorMagnitude, directionVector.getY() / directionVectorMagnitude); // normalize
         return new Translation2d(directionVector.getX() * scalarX, directionVector.getY() * scalarY);
     }
-    private static Translation2d getDirectionVector(Translation2d directionVector) {
-        return getScaledDirectionVector(directionVector, 1, 1);
-    }
+    // private static Translation2d getDirectionVector(Translation2d directionVector) {
+    //     return getScaledDirectionVector(directionVector, 1, 1);
+    // }
 
     private static Translation2d getReefTagDirectionVector(Translation2d targetTagTranslation) {
         Translation2d directionVector = targetTagTranslation.minus(reefCenterTranslation); // get vector from center of reef to tag
@@ -436,30 +435,29 @@ public class CameraSubsystem extends SubsystemBase {
         updateDistanceBooleans(robotTranslation);
     }
 
-    private final PIDController targetRotatePIDController = new PIDController(5, 0, 0);
-    public double calculateRotateFromTag(int tagID) {
+    public Rotation2d calculateYawErrorFromReefTag(int tagID) {
         final Pose2d robotPose = m_cachedPoseEstimate;
 
         final AprilTag targetTag = aprilTagMap.get(tagID);
         final Pose2d targetTagPose = targetTag.pose.toPose2d();
 
-        final double err = robotPose.getRotation().minus(targetTagPose.getRotation().rotateBy(Rotation2d.k180deg)).getRadians();
-        final double result = targetRotatePIDController.calculate(err);
-        SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
-        return result;
+        return robotPose.getRotation().minus(targetTagPose.getRotation().rotateBy(Rotation2d.k180deg)).unaryMinus();
     }
 
-    private Command createFaceTagCommand(int tagID) {
-        // return m_driveSubsystem.applyRequest(() -> new RobotCentric()
-        //     .withVelocityX(0)
-        //     .withVelocityY(0)
-        //     .withRotationalRate(calculateRotateFromTag(tagID))
-        // );
-        return Commands.runEnd(
-            () -> RobotState.setDriveRotationOverride(calculateRotateFromTag(tagID)),
-            () -> RobotState.clearDriveRotationOverride()
-        );
-    }
+    // private final PIDController targetRotatePIDController = new PIDController(5, 0, 0);
+    // private double calculateRotateFromTag(int tagID) {
+    //     final double err = -calculateYawErrorFromReefTag(tagID).getRadians();
+    //     final double result = targetRotatePIDController.calculate(err);
+    //     SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
+    //     return result;
+    // }
+
+    // private Command createFaceTagCommand(int tagID) {
+    //     return Commands.runEnd(
+    //         () -> RobotState.setDriveRotationOverride(calculateRotateFromTag(tagID)),
+    //         () -> RobotState.clearDriveRotationOverride()
+    //     );
+    // }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
         3, 4,
