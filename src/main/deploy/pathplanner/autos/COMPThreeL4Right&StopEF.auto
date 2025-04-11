@@ -11,13 +11,19 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "PositionL4_L"
+                  "name": "PositionL4_R"
                 }
               },
               {
                 "type": "path",
                 "data": {
-                  "pathName": "StartI-J"
+                  "pathName": "StartE-F"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "GoToPosition"
                 }
               },
               {
@@ -30,13 +36,13 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "I-JtoCoralStation"
+                  "pathName": "E-FtoCoralStation"
                 }
               },
               {
@@ -59,9 +65,22 @@
                 }
               },
               {
-                "type": "path",
+                "type": "deadline",
                 "data": {
-                  "pathName": "CoralStationToK-L"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "CoralStationToC-D"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PrepareScore"
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -74,13 +93,13 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "K-LtoCoralStation"
+                  "pathName": "C-DtoCoralStation"
                 }
               },
               {
@@ -103,9 +122,22 @@
                 }
               },
               {
-                "type": "path",
+                "type": "deadline",
                 "data": {
-                  "pathName": "CoralStationToK-L"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "CoralStationToC-D"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PrepareScore"
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -121,6 +153,43 @@
           "type": "named",
           "data": {
             "name": "GoToCoralStation"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "C-DtoCoralStation"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "PickupCoral"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "PositionL2_R"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CoralStationToE-F"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ScoreCoral"
           }
         }
       ]

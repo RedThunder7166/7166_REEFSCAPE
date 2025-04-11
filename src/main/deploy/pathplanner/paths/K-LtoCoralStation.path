@@ -61,21 +61,10 @@
           "name": "GoToCoralStation"
         }
       }
-    },
-    {
-      "name": "StartIntake",
-      "waypointRelativePos": 0.5,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "StartIntake"
-        }
-      }
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 4.1,
+    "maxVelocity": 4.0,
     "maxAcceleration": 3.5,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,

@@ -334,13 +334,33 @@ public final class RobotState {
         return canSeeClosestReefTag;
     }
 
-    private static boolean isLinedUpWithReefYaw = false;
-
-    public static synchronized void setIsLinedUpWithReefYaw(boolean newValue) {
-        isLinedUpWithReefYaw = newValue;
+    private static Optional<Double> reefSectionDegreeError = Optional.empty();
+    public static synchronized void setReefSectionDegreeError(double value) {
+        reefSectionDegreeError = Optional.of(value);
     }
-    public static synchronized boolean getIsLinedUpWithReefYaw() {
-        return isLinedUpWithReefYaw;
+    public static synchronized void clearReefSectionDegreeError() {
+        reefSectionDegreeError = Optional.empty();
+    }
+    public static synchronized Optional<Double> getReefSectionDegreeError() {
+        return reefSectionDegreeError;
+    }
+
+    // private static boolean isLinedUpWithReefYaw = false;
+
+    // public static synchronized void setIsLinedUpWithReefYaw(boolean newValue) {
+    //     isLinedUpWithReefYaw = newValue;
+    // }
+    // public static synchronized boolean getIsLinedUpWithReefYaw() {
+    //     return isLinedUpWithReefYaw;
+    // }
+
+    private static boolean isGantryAutoAdjustOutOfBounds = false;
+
+    public static synchronized void setIsGantryAutoAdjustOutOfBounds(boolean newValue) {
+        isGantryAutoAdjustOutOfBounds = newValue;
+    }
+    public static synchronized boolean getIsGantryAutoAdjustOutOfBounds() {
+        return isGantryAutoAdjustOutOfBounds;
     }
 
     private static Optional<Double> driveRotationOverride = Optional.empty();

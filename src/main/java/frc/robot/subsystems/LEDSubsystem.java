@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import com.ctre.phoenix.led.CANdle;
 import com.ctre.phoenix.led.CANdle.LEDStripType;
@@ -160,20 +161,29 @@ public class LEDSubsystem extends SubsystemBase implements LEDSubsystemInterface
         if (DriverStation.isEnabled()) {
             // TODO: make sure it can see closest section id
             final boolean visionSuccess = RobotState.getVisionPoseSuccess();
-            final boolean yawLinedUp = RobotState.getIsLinedUpWithReefYaw();
+            // final double reefSectionError = RobotState.getReefSectionDegreeError().orElse(0d);
 
             boolean topSubsetChanged = false;
             if (visionSuccess && RobotState.getCanSeeClosestReefTag()) {
-                if (yawLinedUp && RobotState.getReefTargetForwardDistance().orElse(1000d) <= AprilTagConstants.REEF_FORWARD_LED_THRESHOLD) {
+                if (RobotState.getReefTargetForwardDistance().orElse(1000d) <= AprilTagConstants.REEF_FORWARD_LED_THRESHOLD) {
                     LEDGroup.TOP.m_color.green();
                     final double distance = RobotState.getReefTargetHorizontalDistance().orElse(1000d).doubleValue();
-                    if (distance < -AprilTagConstants.REEF_HORIZONTAL_LED_THRESHOLD) {
-                        topSubsetChanged = true;
-                        LEDGroup.TOP_SUBSET.m_color.right();
-                    } else if (distance > AprilTagConstants.REEF_HORIZONTAL_LED_THRESHOLD) {
-                        topSubsetChanged = true;
-                        LEDGroup.TOP_SUBSET.m_color.left();
-                    }
+                    // if (reefSectionError < -Constants.REEF_YAW_LINEUP_THRESHOLD_DEGREES) {
+                    //     topSubsetChanged = true;
+                    //     LEDGroup.TOP_SUBSET.m_color.right();
+                    // } else if (reefSectionError > Constants.REEF_YAW_LINEUP_THRESHOLD_DEGREES) {
+                    //     topSubsetChanged = true;
+                    //     LEDGroup.TOP_SUBSET.m_color.left();
+                    // }
+
+                    // if (!topSubsetChanged)
+                        if (distance < -AprilTagConstants.REEF_HORIZONTAL_LED_THRESHOLD) {
+                            topSubsetChanged = true;
+                            LEDGroup.TOP_SUBSET.m_color.right();
+                        } else if (distance > AprilTagConstants.REEF_HORIZONTAL_LED_THRESHOLD) {
+                            topSubsetChanged = true;
+                            LEDGroup.TOP_SUBSET.m_color.left();
+                        }
                 } else
                     LEDGroup.TOP.m_color.yellow();
             } else
@@ -183,7 +193,7 @@ public class LEDSubsystem extends SubsystemBase implements LEDSubsystemInterface
                 LEDGroup.TOP_SUBSET.m_color.steal(LEDGroup.TOP.m_color);
 
             final boolean elevatorInPosition = ElevatorSubsystem.getSingleton().getIsAtTargetPosition();
-            final boolean gantryInPosition = GantrySubsystem.getSingleton().getIsAtTargetPosition();
+            final boolean gantryInPosition = GantrySubsystem.getSingleton().getIsAtTargetPosition() && !RobotState.getIsGantryAutoAdjustOutOfBounds();
 
             if (elevatorInPosition == gantryInPosition)
                 if (elevatorInPosition)

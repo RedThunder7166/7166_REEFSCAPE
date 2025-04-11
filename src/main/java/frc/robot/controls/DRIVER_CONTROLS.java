@@ -36,5 +36,7 @@ public final class DRIVER_CONTROLS {
     public static final Trigger localizeToReefIJ = driverController.leftTrigger();
     public static final Trigger localizeToReefKL = driverController.leftBumper();
 
-    public static final Trigger localizeToReefClosest = driverController.b().or(driverController.x());
+    // public static final Trigger localizeToReefClosest = driverController.b().or(driverController.x());
+    public static final Trigger localizeToLeftCoralStation = driverController.x();
+    public static final Trigger localizeToRightCoralStation = driverController.b();
 }

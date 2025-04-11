@@ -36,6 +36,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.LimelightHelpers;
 import frc.robot.OurUtils;
 import frc.robot.RobotState;
@@ -456,20 +457,25 @@ public class CameraSubsystem extends SubsystemBase {
         return robotPose.getRotation().minus(targetTagPose.getRotation().rotateBy(Rotation2d.k180deg)).unaryMinus();
     }
 
-    // private final PIDController targetRotatePIDController = new PIDController(5, 0, 0);
-    // private double calculateRotateFromTag(int tagID) {
-    //     final double err = -calculateYawErrorFromReefTag(tagID).getRadians();
-    //     final double result = targetRotatePIDController.calculate(err);
-    //     SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
-    //     return result;
-    // }
+    private final PIDController targetRotationPIDController = new PIDController(
+        // DriveConstants.PATH_PLANNER_ROTATION_PID.kP,
+        8,
+        DriveConstants.PATH_PLANNER_ROTATION_PID.kI,
+        DriveConstants.PATH_PLANNER_ROTATION_PID.kD
+    );
+    private double calculateRotateFromTag(int tagID) {
+        final double err = -calculateYawErrorFromReefTag(tagID).getRadians();
+        final double result = targetRotationPIDController.calculate(err);
+        SmartDashboard.putNumber("ROTATEFROMTAG_RESULT", result);
+        return result;
+    }
 
-    // private Command createFaceTagCommand(int tagID) {
-    //     return Commands.runEnd(
-    //         () -> RobotState.setDriveRotationOverride(calculateRotateFromTag(tagID)),
-    //         () -> RobotState.clearDriveRotationOverride()
-    //     );
-    // }
+    private Command createFaceTagCommand(int tagID) {
+        return Commands.runEnd(
+            () -> RobotState.setDriveRotationOverride(calculateRotateFromTag(tagID)),
+            () -> RobotState.clearDriveRotationOverride()
+        );
+    }
 
     private static final PathConstraints m_pathConstraints = new PathConstraints(
         3, 4,
@@ -506,8 +512,8 @@ public class CameraSubsystem extends SubsystemBase {
             m_targetReefLocationPublisher.set(OurUtils.formatReefLocation(reefLocation));
         }).andThen(result);
 
-        // if (!forAuto)
-        //     result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
+        if (!forAuto)
+            result = result.andThen(createFaceTagCommand(reefLocation.m_tagID));
 
         return result;
     }

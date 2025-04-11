@@ -599,6 +599,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     @Override
     public void periodic() {
+        RobotState.setIsGantryAutoAdjustOutOfBounds(false);
         m_elevatorClearanceSensorTripped = m_elevatorClearanceSensor.get();
         m_scoreEnterSensorTripped = m_scoreEnterSensor.get();
         m_scoreExitSensorTripped = m_scoreExitSensor.get();
@@ -623,13 +624,14 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     }
 
     private boolean trySetPositionMM(double position) {
+        m_gantryTargetPositionRotations = GantryConstants.millimetersToEncoderUnits(position);
+
         final Optional<Double> distance = m_distanceSensor.getDistance();
         if (distance.isEmpty())
             return false;
 
         m_automaticPositionRotationsPublisher.set(position); // FIXME: change name; this is not rotations!!!
         if (influenceMotorPositionFromDistanceSensor) {
-            m_gantryTargetPositionRotations = GantryConstants.millimetersToEncoderUnits(position);
             m_gantryMotor.setControl(m_positionControl.withPosition(m_gantryTargetPositionRotations));
         } else {
             double output = m_pidController.calculate(distance.get(), position);
@@ -680,6 +682,8 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                     double desiredPosition = position + distance;
                     if (desiredPosition >= GantryConstants.MIN_POSITION_MM && desiredPosition <= GantryConstants.MAX_POSITION_MM)
                         position = desiredPosition;
+                    else
+                        RobotState.setIsGantryAutoAdjustOutOfBounds(true);
                 }
 
                 targetPositionMillimeters  = Optional.of(position);
@@ -714,19 +718,16 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.BACKWARD_OUTPUT);
         // } else if (intakeState == IntakeState.NONE) {
         } else {
-            final boolean isGoodToMove = !RobotState.getWantsToScoreCoral() && (m_desiredControlType == DesiredControlType.MANUAL || m_position != GantryPosition.TROUGH);
+            // final boolean isGoodToMove = !RobotState.getWantsToScoreCoral() && (m_desiredControlType == DesiredControlType.MANUAL || m_position != GantryPosition.TROUGH);
+            final boolean isGoodToMove = !RobotState.getWantsToScoreCoral();
             // TargetScorePosition targetScorePosition = RobotState.getTargetScorePosition();
 
             if (m_elevatorClearanceSensorTripped)
-                // if we are in automatic control and we are targeting a non-coral-station position, don't move motor
-                // if (m_desiredControlType == DesiredControlType.MANUAL || (m_position == GantryPosition.CORAL_STATION || m_position == GantryPosition.IDLE))
                 if (isGoodToMove)
                     targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.CRAWL_FORWARD_OUTPUT);
-                    // targetRequest = m_voltageOut.withOutput(GantryConstants.CRAWL_FORWARD_VOLTAGE);
                 else
                     targetRequest = m_brake;
-            // else if (!m_scoreEnterSensorTripped && (targetScorePosition == TargetScorePosition.NONE || targetScorePosition == TargetScorePosition.CORAL_STATION))
-            else if (!m_scoreEnterSensorTripped && isGoodToMove)
+            else if (!m_scoreEnterSensorTripped && (m_scoreExitSensorTripped || RobotState.getIntakeState() == IntakeState.IN) && isGoodToMove)
                 targetRequest = m_scoreDutyCycleOut.withOutput(GantryConstants.CRAWL_BACKWARD_OUTPUT);
             else
                 targetRequest = m_brake;

@@ -93,7 +93,7 @@ public class RobotContainer {
 
     private Command createScoreCoralCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            Commands.waitUntil(() -> DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
+            Commands.waitUntil(() -> DriverStation.isTeleop() || (m_gantrySubsystem.getIsAtTargetPosition() && m_elevatorSubsystem.getIsAtTargetPosition()))
             .withTimeout(1) // 0.5
             .andThen(
                 Commands.startEnd(
@@ -111,26 +111,27 @@ public class RobotContainer {
         );
     }
 
-    private Command createPickupCoralCommand() {
-        return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            Commands.startEnd(
-                () -> RobotState.startIntake(IntakeState.IN),
-                () -> RobotState.stopIntake()
-            )
-            // .until(() -> RobotState.getCoralIsGood())
-        );
-    }
+    // private Command createPickupCoralCommand() {
+    //     return m_intakeOuttakeSubsystem.addToCommandRequirements(
+    //         Commands.startEnd(
+    //             () -> RobotState.startIntake(IntakeState.IN),
+    //             () -> RobotState.stopIntake()
+    //         )
+    //         // .until(() -> RobotState.getCoralIsGood())
+    //     );
+    // }
 
     private Command createAutoPickupCoralCommand() {
         // FIXME: this is broken?; path planner doesn't let us have a parallel group with a path plan command and this
         // return m_intakeOuttakeSubsystem.addToCommandRequirements(
         //     new AutoPickupCommand()
         // );
-        // return Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN));
+
         // return Commands.startEnd(
         //     () -> RobotState.startIntake(IntakeState.IN),
         //     () -> RobotState.stopIntake()
-        return Commands.runOnce(
+        // return Commands.runOnce(
+        return Commands.run(
             () -> RobotState.startIntake(IntakeState.IN)
         ).until(() -> m_gantrySubsystem.getScoreEnterSensorTripped());
     }
@@ -502,8 +503,9 @@ public class RobotContainer {
         DRIVER_CONTROLS.localizeToReefIJ.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.IJ, false));
         DRIVER_CONTROLS.localizeToReefKL.whileTrue(createLocalizeToReefCommand(RelativeReefLocation.KL, false));
 
-        DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToReefCommand());
-        // DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToCoralStationCommand(CoralStationID.Left));
+        // DRIVER_CONTROLS.localizeToReefClosest.whileTrue(createLocalizeToReefCommand());
+        DRIVER_CONTROLS.localizeToLeftCoralStation.whileTrue(createLocalizeToCoralStationCommand(CoralStationID.Left));
+        DRIVER_CONTROLS.localizeToRightCoralStation.whileTrue(createLocalizeToCoralStationCommand(CoralStationID.Right));
 
         // OPERATOR CONTROLS
 
@@ -607,7 +609,8 @@ public class RobotContainer {
         m_elevatorSubsystem.manualHoldThisPosition();
         m_gantrySubsystem.manualSeedThisPosition();
 
-        m_manualIntakeCommand.cancel(); // if you remove this, then call RobotState.stopIntake()
+        m_manualIntakeCommand.cancel();
+        RobotState.stopIntake();
     }
 
     public void robotPeriodic() {
@@ -635,7 +638,8 @@ public class RobotContainer {
             RobotState.clearClosestReefSection();
             RobotState.clearReefTargetHorizontalDistance();
             RobotState.clearReefTargetForwardDistance();
-            RobotState.setIsLinedUpWithReefYaw(false);
+            RobotState.clearReefSectionDegreeError();
+            // RobotState.setIsLinedUpWithReefYaw(false);
         } else {
             m_closestReefLocation = closestLocation;
             RobotState.setClosestReefSection(closestLocation);
@@ -654,7 +658,9 @@ public class RobotContainer {
                 RobotState.clearReefTargetForwardDistance();
             }
 
-            RobotState.setIsLinedUpWithReefYaw(Math.abs(m_cameraSubsystem.calculateYawErrorFromReefTag(m_closestReefLocation.getTagID()).getDegrees()) <= Constants.REEF_YAW_LINEUP_THRESHOLD_DEGREES);
+            final double reefSectionError = m_cameraSubsystem.calculateYawErrorFromReefTag(m_closestReefLocation.getTagID()).getDegrees();
+            RobotState.setReefSectionDegreeError(reefSectionError);
+            // RobotState.setIsLinedUpWithReefYaw(Math.abs(reefSectionError) <= Constants.REEF_YAW_LINEUP_THRESHOLD_DEGREES);
 
             SmartDashboard.putNumber("ReefTargetHorizontalDistance", horizontalDifference);
             SmartDashboard.putNumber("ReefTargetFowardDistanceInches", Units.metersToInches(forwardDifference));

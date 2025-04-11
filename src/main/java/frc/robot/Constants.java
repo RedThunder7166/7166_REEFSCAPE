@@ -42,7 +42,7 @@ public class Constants {
 
         public static final int TERTIARY_HUE = 170;
     }
-    public static final int REEF_YAW_LINEUP_THRESHOLD_DEGREES = 2;
+    public static final int REEF_YAW_LINEUP_THRESHOLD_DEGREES = 3;
 
     public static final class DriveConstants {
         public static final double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -55,7 +55,7 @@ public class Constants {
 
         // FIXME: TUNE THESE
         public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(3, 0, 0);
-        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(5, 0, 0);
+        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(3, 0, 0);
         public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(7, 0, 0);
     }
 
@@ -252,7 +252,7 @@ public class Constants {
     public static final class AutoConstants {
         public static final double GO_TO_POSITION_DISTANCE_METERS = 2.4; // 2.6; 2.2; 2.7
 
-        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 1.5; // 1.3
+        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 3.5; // 1.3; 1.5
         public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.013; // 0.05; 0.35; 0.02
     }
 }

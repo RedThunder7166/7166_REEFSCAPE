@@ -11,26 +11,19 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "PositionL4_L"
+                  "name": "PositionL4_R"
                 }
               },
               {
-                "type": "deadline",
+                "type": "path",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "StartE-F"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "PrepareScore"
-                      }
-                    }
-                  ]
+                  "pathName": "StartE-F"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "GoToPosition"
                 }
               },
               {
@@ -43,7 +36,7 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "parallel",
           "data": {
             "commands": [
               {
@@ -100,7 +93,7 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "parallel",
           "data": {
             "commands": [
               {
@@ -163,7 +156,7 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "parallel",
           "data": {
             "commands": [
               {

@@ -219,6 +219,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
     private final StatusSignal<Double> m_PIDPositionSlope = m_leaderMotor.getClosedLoopReferenceSlope();
     // private final StatusSignal<Double> m_PIDPositionError = m_leaderMotor.getClosedLoopError();
 
+    private double m_targetPositionRotations = 0;
+
     private final DoublePublisher m_leaderMotorPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorLeaderMotorPosition").publish();
     private final DoublePublisher m_followerMotorPositionPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorFollowerMotorPosition").publish();
     private final DoublePublisher m_leaderMotorVelocityPublisher = RobotState.robotStateTable.getDoubleTopic("ElevatorLeaderMotorVelocity").publish();
@@ -331,7 +333,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         if (skipIsAtPositionCheck())
             return true;
 
-        final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_position.m_position);
+        final double err = Math.abs(m_leaderMotorPosition.getValueAsDouble() - m_targetPositionRotations);
         SmartDashboard.putNumber("ElevatorPIDError", err);
         return err <= ElevatorConstants.POSITION_ERROR_THRESHOLD;
     }
@@ -385,7 +387,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         SmartDashboard.putData("ElevatorMech2d", ElevatorMechanisms.mechanism2d);
 
         RobotState.addTelemetry(() -> {
-            BaseStatusSignal.waitForAll(0.020, m_leaderMotorPosition, m_followerMotorPosition, m_leaderMotorVelocity, m_PIDPositionReference, m_PIDPositionSlope);
+            BaseStatusSignal.waitForAll(0, m_leaderMotorPosition, m_followerMotorPosition, m_leaderMotorVelocity, m_PIDPositionReference, m_PIDPositionSlope);
 
             m_manualPositionPublisher.set(m_manualPosition);
             m_desiredControlTypePublisher.set(m_desiredControlType.toString());
@@ -587,6 +589,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                     }
                 }
 
+                m_targetPositionRotations = position;
                 desiredControl = m_positionControl.withPosition(position);
                 break;
         }
@@ -611,6 +614,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 break;
         }
 
+        m_targetPositionRotations = m_manualPosition;
         m_leaderMotor.setControl(m_positionControl.withPosition(m_manualPosition));
     }
 
