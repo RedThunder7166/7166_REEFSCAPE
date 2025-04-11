@@ -74,6 +74,7 @@ public final class OurUtils {
 
     public static interface DIOInterface {
         public boolean get();
+        public boolean getClean();
     }
     public static final class FakeDIO implements DIOInterface {
         private final int m_channel;
@@ -95,16 +96,50 @@ public final class OurUtils {
                     return m_value;
             }
         }
+
+        public boolean getClean() {
+            return get();
+        }
     }
 
     public static final class WrappedDIO implements DIOInterface {
+        private static final int TARGET_CYCLES = 10;
         private final DigitalInput m_digitalInput;
+
+        private boolean m_last = false;
+        private boolean m_lastClean = false;
+        private int m_count = -1;
+
         public WrappedDIO(DigitalInput digitalInput) {
             m_digitalInput = digitalInput;
         }
 
         public boolean get() {
             return m_digitalInput.get();
+        }
+
+        public boolean getClean() {
+            final boolean raw = get();
+
+            // initial cycle
+            if (m_count == -1) {
+                m_last = raw;
+                m_lastClean = raw;
+                m_count = 1;
+                return raw;
+            }
+
+            if (raw == m_last) {
+                m_count++;
+            } else {
+                m_count = 0;
+                m_last = raw;
+            }
+
+            if (m_count >= TARGET_CYCLES)
+                m_lastClean = raw;
+
+            return m_lastClean;
         }
     }
 

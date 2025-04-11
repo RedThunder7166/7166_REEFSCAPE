@@ -22,6 +22,7 @@ import frc.robot.Constants.GantryConstants;
 import frc.robot.subsystems.AlgaeHandSubsystem;
 import frc.robot.subsystems.CameraSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.CameraSubsystem.RelativeReefLocation;
 
 public final class RobotState {
     public static Alliance ALLIANCE = null;
@@ -304,6 +305,17 @@ public final class RobotState {
         reefTargetForwardDistance = Optional.empty();
     }
 
+    private static Optional<RelativeReefLocation> closestReefSection = Optional.empty();
+    public static synchronized Optional<RelativeReefLocation> getClosestReefSection() {
+        return closestReefSection;
+    }
+    public static synchronized void setClosestReefSection(RelativeReefLocation distance) {
+        closestReefSection = Optional.of(distance);
+    }
+    public static synchronized void clearClosestReefSection() {
+        closestReefSection = Optional.empty();
+    }
+
     private static boolean visionPoseSuccess = false;
 
     public static synchronized void setVisionPoseSuccess(boolean newValue) {
@@ -311,6 +323,15 @@ public final class RobotState {
     }
     public static synchronized boolean getVisionPoseSuccess() {
         return visionPoseSuccess;
+    }
+
+    private static boolean canSeeClosestReefTag = false;
+
+    public static synchronized void setCanSeeClosestReefTag(boolean newValue) {
+        canSeeClosestReefTag = newValue;
+    }
+    public static synchronized boolean getCanSeeClosestReefTag() {
+        return canSeeClosestReefTag;
     }
 
     private static boolean isLinedUpWithReefYaw = false;

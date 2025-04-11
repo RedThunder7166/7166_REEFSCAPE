@@ -27,9 +27,20 @@ public class Constants {
 
         public static final int CANDLE_ID = 59;
 
+        public static final int LED_START_OFFSET = 8;
         public static final int LED_COUNT = 36;
+        public static final int LED_END = LED_START_OFFSET + LED_COUNT;
+
         public static final int LED_COUNT_HALVED = LED_COUNT / 2;
         public static final int GROUP_SIZE = LED_COUNT_HALVED / 2;
+
+        public static final double BRIGHTNESS = 1;
+        public static final double ANIMATION_SPEED = 0.22;
+
+        public static final int PRIMARY_HUE = 255;
+        public static final int SECONDARY_HUE = 0;
+
+        public static final int TERTIARY_HUE = 170;
     }
     public static final int REEF_YAW_LINEUP_THRESHOLD_DEGREES = 2;
 
@@ -43,8 +54,8 @@ public class Constants {
         public static final double DRIVE_RADIUS = Math.hypot(TRACK_WIDTH_X / 2d, TRACK_WIDTH_Y / 2d);
 
         // FIXME: TUNE THESE
-        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(5, 0, 0);
-        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(6, 0, 0);
+        public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(3, 0, 0);
+        // public static final PIDConstants PATH_PLANNER_TRANSLATION_PID = new PIDConstants(5, 0, 0);
         public static final PIDConstants PATH_PLANNER_ROTATION_PID = new PIDConstants(7, 0, 0);
     }
 
@@ -69,7 +80,7 @@ public class Constants {
         public static final double AUTO_ADJUST_OFFSET = MAX_POSITION_ROTATIONS - 4.3; // 4.3 is l4
 
         // FIXME: ELEVATOR POSITION ERROR THRESHOLD
-        public static final double POSITION_ERROR_THRESHOLD = 0.03;
+        public static final double POSITION_ERROR_THRESHOLD = 0.05;
 
         public static final double MIN_FORWARD_DISTANCE = Units.inchesToMeters(17.2);
         public static final double MAX_FORWARD_DISTANCE = Units.inchesToMeters(22.52);
@@ -130,13 +141,13 @@ public class Constants {
         public static final double CORAL_STATION_POSITION_MM = 235; // 195; 200; 190; 210; 190
         public static final double REEF_RIGHT_POSITION_MM = 70; // 380; 35; 15; 28;50
 
-        public static final double POSITION_ERROR_THRESHOLD = 0.07;
-        public static final double POSITION_ERROR_THRESHOLD_MM = 15; // 10; 2.5; 5; 8
+        // public static final double POSITION_ERROR_THRESHOLD = 0.07;
+        public static final double POSITION_ERROR_THRESHOLD_MM = 11; // 10; 2.5; 5; 8
 
         public static final double BACKWARD_OUTPUT = -0.2;
 
         public static final double CRAWL_FORWARD_OUTPUT = 0.13; // 0.08; 0.12; 0.15
-        public static final double CRAWL_BACKWARD_OUTPUT = -0.16; // -0.10; -0.14
+        public static final double CRAWL_BACKWARD_OUTPUT = -0.18; // -0.10; -0.14; -0.16
 
         public static final double CRAWL_FORWARD_VOLTAGE = 1.5;
         public static final double CRAWL_BACKWARD_VOLTAGE = -CRAWL_FORWARD_VOLTAGE;
@@ -222,6 +233,9 @@ public class Constants {
         public static final double INSIDE_REEF_ZONE_THRESHOLD = 1.6;
         public static final double AUTO_ADJUST_THRESHOLD = 1.8;
 
+        public static final double REEF_FORWARD_LED_THRESHOLD = 0.5;
+        public static final double REEF_HORIZONTAL_LED_THRESHOLD = 0.01;
+
         public static void update(Alliance alliance) {
             REEF_AB_TAGID = alliance == Alliance.Blue ? 18 : 7;
             REEF_CD_TAGID = alliance == Alliance.Blue ? 17 : 8;
@@ -236,9 +250,9 @@ public class Constants {
     }
 
     public static final class AutoConstants {
-        public static final double GO_TO_POSITION_DISTANCE_METERS = 2.7; // 2.6; 2.2
+        public static final double GO_TO_POSITION_DISTANCE_METERS = 2.4; // 2.6; 2.2; 2.7
 
-        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 1.3;
-        public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.02; // 0.05; 0.35
+        public static final double GO_TO_POSITION_TIMEOUT_SECONDS = 1.5; // 1.3
+        public static final double TIME_UNTIL_CORAL_IS_SCORED_SECONDS = 0.013; // 0.05; 0.35; 0.02
     }
 }

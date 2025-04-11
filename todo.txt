@@ -1,5 +1,3 @@
 ordered by priority:
-    * go to coral station at the end of 3 piece auto
     * account for yaw from reef
-    * lower gantry position threshold? auto shoots before gantry is in position
     * in auto, start the correct orientation for the reef section (we would need to ensure drive team turns on the robot facing the alliance wall and then remove the code in autonomousInit)

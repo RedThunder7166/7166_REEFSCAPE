@@ -4,17 +4,21 @@
 
 package frc.robot.subsystems;
 
+import java.util.ArrayList;
+
 import com.ctre.phoenix.led.CANdle;
-import com.ctre.phoenix.led.CANdleConfiguration;
-import com.ctre.phoenix.led.StrobeAnimation;
 import com.ctre.phoenix.led.CANdle.LEDStripType;
 
+import edu.wpi.first.math.Pair;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.OurUtils;
-import frc.robot.RobotState;
+import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.LEDConstants;
+import frc.robot.RobotState;
 import frc.robot.subsystems.SubsystemInterfaces.LEDSubsystemInterface;
 
 public class LEDSubsystem extends SubsystemBase implements LEDSubsystemInterface {
@@ -42,37 +46,30 @@ public class LEDSubsystem extends SubsystemBase implements LEDSubsystemInterface
     private final CANdle m_candle = new CANdle(LEDConstants.CANDLE_ID, Constants.CANIVORE_NAME);
 
     private static enum LEDGroup {
-        TOP(LEDConstants.LED_COUNT * (1 / 4), LEDConstants.LED_COUNT * (2 / 4)),
-        BOTTOM(0, LEDConstants.LED_COUNT * (3 / 4))
+        // TOP_SUBSET(LEDConstants.LED_START_OFFSET, 4, 12 + (LEDConstants.GROUP_SIZE * 3), 4),
+        // TOP(12, LEDConstants.GROUP_SIZE, 16 + (LEDConstants.GROUP_SIZE * 3), LEDConstants.GROUP_SIZE),
+        // BOTTOM(12 + LEDConstants.GROUP_SIZE, LEDConstants.GROUP_SIZE, 16 + (LEDConstants.GROUP_SIZE * 2), LEDConstants.GROUP_SIZE)
+
+        TOP_SUBSET(LEDConstants.LED_START_OFFSET, 3, 41, 3),
+        TOP(11, 5, 36, 5),
+        // BOTTOM(16, 10, 26, 10)
+        BOTTOM(16, 20)
 
         ;
-        private final StrobeAnimation m_animationStrobe1 = new StrobeAnimation(255, 0, 0);
-        private final StrobeAnimation m_animationStrobe2 = new StrobeAnimation(255, 0, 0);
+        private final ArrayList<Pair<Integer, Integer>> m_list = new ArrayList<>();
 
-        private int m_start1;
-        private int m_start2;
+        public final LEDColor m_color = new LEDColor(0, 0, 0);
 
-        LEDGroup(int start1, int start2) {
-            m_start1 = start1;
-            m_start2 = start2;
-
-            m_animationStrobe1.setLedOffset(m_start1);
-            m_animationStrobe1.setNumLed(LEDConstants.GROUP_SIZE);
-            m_animationStrobe2.setLedOffset(m_start2);
-            m_animationStrobe2.setNumLed(LEDConstants.GROUP_SIZE);
+        LEDGroup(int... numbers) {
+            for (int i = 0; i < numbers.length; i += 2)
+                m_list.add(new Pair<>(numbers[i], numbers[i + 1]));
         }
 
-        public void setStatus(LEDColorStatus colorStatus) {
-            // System.out.println("RED " + colorStatus.m_red);
-            // System.out.println("GREEN " + colorStatus.m_green);
-            // System.out.println("BLUE " + colorStatus.m_blue);
-            m_animationStrobe1.setR(colorStatus.m_red);
-            m_animationStrobe1.setG(colorStatus.m_green);
-            m_animationStrobe1.setB(colorStatus.m_blue);
-
-            m_animationStrobe2.setR(colorStatus.m_red);
-            m_animationStrobe2.setG(colorStatus.m_green);
-            m_animationStrobe2.setB(colorStatus.m_blue);
+        public void apply(CANdle candle) {
+            for (int i = 0; i < m_list.size(); i++) {
+                final Pair<Integer, Integer> pair = m_list.get(i);
+                candle.setLEDs(m_color.m_red, m_color.m_green, m_color.m_blue, m_color.m_white, pair.getFirst().intValue(), pair.getSecond().intValue());
+            }
         }
     }
 
@@ -80,109 +77,157 @@ public class LEDSubsystem extends SubsystemBase implements LEDSubsystemInterface
         public int m_red;
         public int m_green;
         public int m_blue;
+        public int m_white;
 
         LEDColor(int red, int green, int blue) {
+            this(red, green, blue, 0);
+        }
+        LEDColor(int red, int green, int blue, int white) {
             m_red = red;
             m_green = green;
             m_blue = blue;
-        }
-    }
-    // private final LEDColor COLOR_RED = new LEDColor(255, 0, 0);
-    // private final LEDColor COLOR_YELLOW = new LEDColor(255, 255, 0);
-    // private final LEDColor COLOR_GREEN = new LEDColor(0, 255, 0);
-
-    private static class LEDColorStatus extends LEDColor {
-        private int level = 0;
-        LEDColorStatus() {
-            super(255, 0, 0);
+            m_white = white;
         }
 
-        private void update() {
-            switch (level) {
-                case 0:
-                    m_red = 255;
-                    m_green = 0;
-                    m_blue = 0;
-                    break;
-                case 1:
-                    m_red = 255;
-                    m_green = 255;
-                    m_blue = 0;
-                    break;
-                case 2:
-                    m_red = 0;
-                    m_green = 255;
-                    m_blue = 0;
-                    break;
-                default:
-                    break;
-            }
+        public void setRGBW(int red, int green, int blue, int white) {
+            m_red = red;
+            m_green = green;
+            m_blue = blue;
+            m_white = white;
+        }
+        public void setRGB(int red, int green, int blue) {
+            setRGBW(red, green, blue, 0);
         }
 
-        public LEDColorStatus up() {
-            if (level == 2)
-                // throw new Exception("led color status level too high");
-                return this;
+        public LEDColor steal(LEDColor otherColor) {
+            setRGBW(otherColor.m_red, otherColor.m_green, otherColor.m_blue, otherColor.m_white);
+            return this;
+        }
 
-            level++;
-            update();
+        public LEDColor red() {
+            setRGB(LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE, LEDConstants.SECONDARY_HUE);
 
             return this;
         }
-        // public LEDColorStatus down() {
-        //     if (level == 0)
-        //         // throw new Exception("led color status level too low");
-        //         return this;
+        public LEDColor green() {
+            setRGB(LEDConstants.SECONDARY_HUE, LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE);
 
-        //     level--;
-        //     update();
+            return this;
+        }
+        public LEDColor blue() {
+            setRGB(LEDConstants.SECONDARY_HUE, LEDConstants.SECONDARY_HUE, LEDConstants.PRIMARY_HUE);
 
-        //     return this;
-        // }
+            return this;
+        }
+        public LEDColor yellow() {
+            setRGB(LEDConstants.PRIMARY_HUE, LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE);
+
+            return this;
+        }
+
+        public LEDColor left() {
+            // setRGB(198, 175, 141);
+            setRGB(LEDConstants.SECONDARY_HUE, LEDConstants.SECONDARY_HUE, LEDConstants.PRIMARY_HUE);
+
+            return this;
+        }
+
+        public LEDColor right() {
+            // setRGB(181, 206, 112);
+            setRGB(LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE, LEDConstants.PRIMARY_HUE);
+
+            return this;
+        }
     }
+    // private final LEDColor COLOR_RED = new LEDColor(LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE, LEDConstants.SECONDARY_HUE);
+    // private final LEDColor COLOR_YELLOW = new LEDColor(LEDConstants.PRIMARY_HUE, LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE);
+    // private final LEDColor COLOR_GREEN = new LEDColor(LEDConstants.SECONDARY_HUE, LEDConstants.PRIMARY_HUE, LEDConstants.SECONDARY_HUE);
 
     public LEDSubsystem() {
-        final CANdleConfiguration config = new CANdleConfiguration();
+        m_candle.configFactoryDefault();
 
-        config.stripType = LEDStripType.RGB;
-        config.brightnessScalar = 1;
+        m_candle.configLEDType(LEDStripType.GRB);
+        m_candle.configBrightnessScalar(LEDConstants.BRIGHTNESS);
 
-        OurUtils.tryApplyConfig(m_candle, LEDConstants.CANDLE_ID, config);
+        for (int i = 0; i < m_candle.getMaxSimultaneousAnimationCount(); i++)
+            m_candle.clearAnimation(i);
+
+        // RobotState.addTelemetry(this::updateAnimation, 20);
     }
 
     @Override
     public void periodic() {
-        final LEDColorStatus topStatus = new LEDColorStatus();
-        if (RobotState.getVisionPoseSuccess()) {
-            // System.out.println("topStatus up 1");
-            topStatus.up();
-        }
-        if (RobotState.getIsLinedUpWithReefYaw()) {
-            // System.out.println("topStatus up 2");
-            topStatus.up();
-        }
-        LEDGroup.TOP.setStatus(topStatus);
+        if (DriverStation.isEnabled()) {
+            // TODO: make sure it can see closest section id
+            final boolean visionSuccess = RobotState.getVisionPoseSuccess();
+            final boolean yawLinedUp = RobotState.getIsLinedUpWithReefYaw();
 
-        final LEDColorStatus bottomStatus = new LEDColorStatus();
-        if (ElevatorSubsystem.getSingleton().getIsAtTargetPosition()) {
-            // System.out.println("bottomStatus up 1");
-            bottomStatus.up();
-        }
-        if (GantrySubsystem.getSingleton().getIsAtTargetPosition()) {
-            // System.out.println("bottomStatus up 2");
-            bottomStatus.up();
-        }
-        LEDGroup.BOTTOM.setStatus(bottomStatus);
+            boolean topSubsetChanged = false;
+            if (visionSuccess && RobotState.getCanSeeClosestReefTag()) {
+                if (yawLinedUp && RobotState.getReefTargetForwardDistance().orElse(1000d) <= AprilTagConstants.REEF_FORWARD_LED_THRESHOLD) {
+                    LEDGroup.TOP.m_color.green();
+                    final double distance = RobotState.getReefTargetHorizontalDistance().orElse(1000d).doubleValue();
+                    if (distance < -AprilTagConstants.REEF_HORIZONTAL_LED_THRESHOLD) {
+                        topSubsetChanged = true;
+                        LEDGroup.TOP_SUBSET.m_color.right();
+                    } else if (distance > AprilTagConstants.REEF_HORIZONTAL_LED_THRESHOLD) {
+                        topSubsetChanged = true;
+                        LEDGroup.TOP_SUBSET.m_color.left();
+                    }
+                } else
+                    LEDGroup.TOP.m_color.yellow();
+            } else
+                LEDGroup.TOP.m_color.red();
 
-        // m_candle.animate(LEDGroup.TOP.m_animationStrobe, 0);
-        // m_candle.animate(LEDGroup.BOTTOM.m_animationStrobe, 2);
+            if (!topSubsetChanged)
+                LEDGroup.TOP_SUBSET.m_color.steal(LEDGroup.TOP.m_color);
 
-        final int w = 255;
-        m_candle.animate(null, 0);
-        m_candle.animate(null, 2);
-        m_candle.setLEDs(topStatus.m_red, topStatus.m_green, topStatus.m_blue, w, 8, LEDConstants.GROUP_SIZE);
-        m_candle.setLEDs(bottomStatus.m_red, bottomStatus.m_green, bottomStatus.m_blue, w, 8 + LEDConstants.GROUP_SIZE, LEDConstants.GROUP_SIZE);
-        m_candle.setLEDs(bottomStatus.m_red, bottomStatus.m_green, bottomStatus.m_blue, w, 8 + (LEDConstants.GROUP_SIZE * 2), LEDConstants.GROUP_SIZE);
-        m_candle.setLEDs(topStatus.m_red, topStatus.m_green, topStatus.m_blue, w, 8 + (LEDConstants.GROUP_SIZE * 3), LEDConstants.GROUP_SIZE);
+            final boolean elevatorInPosition = ElevatorSubsystem.getSingleton().getIsAtTargetPosition();
+            final boolean gantryInPosition = GantrySubsystem.getSingleton().getIsAtTargetPosition();
+
+            if (elevatorInPosition == gantryInPosition)
+                if (elevatorInPosition)
+                    LEDGroup.BOTTOM.m_color.green();
+                else
+                    LEDGroup.BOTTOM.m_color.red();
+            else
+                LEDGroup.BOTTOM.m_color.yellow();
+
+        //     for (LEDGroup value : LEDGroup.values())
+        //         value.apply(m_candle);
+        // } else {
+        //     for (int i = LEDConstants.LED_START_OFFSET; i < LEDConstants.LED_END; i++) {
+        //         final boolean isChosenOne = i == animationTargetIndex;
+        //         final int secondary = isChosenOne ? 0 : 255 - (int) OurUtils.map(i, LEDConstants.LED_START_OFFSET, animationTargetIndex, 0, 255);
+        //         m_candle.setLEDs(255, secondary, secondary, 255, i, 1);
+        //     }
+        } else {
+            LEDGroup.TOP.m_color.setRGB(255, 0, 0);
+            LEDGroup.TOP_SUBSET.m_color.steal(LEDGroup.TOP.m_color);
+            LEDGroup.BOTTOM.m_color.setRGBW(255 / 2, 255 / 2, 255 / 2, 255 / 2);
+        }
+
+        for (LEDGroup value : LEDGroup.values())
+            value.apply(m_candle);
+    }
+
+    private int animationTargetIndex = LEDConstants.LED_START_OFFSET;
+    private boolean animationTargetForward = false;
+
+    private void updateAnimation() {
+        if (animationTargetForward)
+            animationTargetIndex++;
+        else
+            animationTargetIndex--;
+
+        if (animationTargetIndex < LEDConstants.LED_START_OFFSET) {
+            animationTargetIndex = LEDConstants.LED_START_OFFSET;
+            animationTargetForward = true;
+        } else if (animationTargetIndex > LEDConstants.LED_END) {
+            animationTargetIndex = LEDConstants.LED_END;
+            animationTargetForward = false;
+        }
+
+        SmartDashboard.putNumber("helloo", animationTargetIndex);
     }
 }

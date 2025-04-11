@@ -11,19 +11,26 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "PositionL4_R"
+                  "name": "PositionL4_L"
                 }
               },
               {
-                "type": "path",
+                "type": "deadline",
                 "data": {
-                  "pathName": "StartI-J"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "GoToPosition"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "StartI-J"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PrepareScore"
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -150,6 +157,12 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "GoToCoralStation"
+          }
+        },
+        {
           "type": "sequential",
           "data": {
             "commands": [
@@ -169,46 +182,15 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "PositionL4_R"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "LeftCoralStationToA-B"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "GoToPosition"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ScoreCoral"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "GoToCoralStation"
+            "pathName": "CoralStationToI-J"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": "Working4",
+  "folder": "Working3",
   "choreoAuto": false
 }

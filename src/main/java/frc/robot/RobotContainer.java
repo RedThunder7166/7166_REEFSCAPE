@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.Constants.AutoConstants;
@@ -93,7 +94,7 @@ public class RobotContainer {
     private Command createScoreCoralCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
             Commands.waitUntil(() -> DriverStation.isTeleop() || m_gantrySubsystem.getIsAtTargetPosition())
-            .withTimeout(0.5)
+            .withTimeout(1) // 0.5
             .andThen(
                 Commands.startEnd(
                     () -> RobotState.setWantsToScoreCoral(true),
@@ -126,9 +127,11 @@ public class RobotContainer {
         //     new AutoPickupCommand()
         // );
         // return Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN));
-        return Commands.startEnd(
-            () -> RobotState.startIntake(IntakeState.IN),
-            () -> RobotState.stopIntake()
+        // return Commands.startEnd(
+        //     () -> RobotState.startIntake(IntakeState.IN),
+        //     () -> RobotState.stopIntake()
+        return Commands.runOnce(
+            () -> RobotState.startIntake(IntakeState.IN)
         ).until(() -> m_gantrySubsystem.getScoreEnterSensorTripped());
     }
 
@@ -380,6 +383,64 @@ public class RobotContainer {
     private boolean m_robotCentricLeft = false;
     private static final double robotCentricSpeed = 0.6;
 
+    private static final class ManualIntakeCommand extends Command {
+        private boolean m_dontIntake = true;
+
+        private final ElevatorSubsystemInterface m_elevator;
+        private final GantrySubsystemInterface m_gantry;
+
+        private void setDontIntake() {
+            m_dontIntake = true;
+            if (!m_elevator.getIsTargetingAScoreLocation() || !m_gantry.getIsTargetingAScoreLocation()) {
+                m_dontIntake = false;
+                return;
+            }
+
+            if (RobotState.getTargetScorePosition() != TargetScorePosition.CORAL_STATION)
+                return;
+            if (!(m_elevator.getIsAtTargetPosition() && m_gantry.getIsAtTargetPosition()))
+                return;
+
+            m_dontIntake = false;
+        }
+        public ManualIntakeCommand(ElevatorSubsystemInterface elevator, GantrySubsystemInterface gantry) {
+            m_elevator = elevator;
+            m_gantry = gantry;
+        }
+
+        @Override
+        public void initialize() {
+            setDontIntake();
+
+            if (!m_dontIntake)
+                RobotState.startIntake(IntakeState.IN);
+        }
+
+        @Override
+        public boolean isFinished() {
+            return m_dontIntake || RobotState.getWeHaveCoral();
+        }
+
+        @Override
+        public void end(boolean isInterrupted) {
+            if (m_dontIntake)
+                return;
+            RobotState.stopIntake();
+        }
+    }
+    // private Command m_manualIntakeCommand = Commands.startEnd(
+    //     () -> RobotState.startIntake(IntakeState.IN),
+    //     () -> RobotState.stopIntake()
+    // ).until(() -> RobotState.getWeHaveCoral());
+    private ManualIntakeCommand m_manualIntakeCommand;
+
+    private Command stopManualIntakeCommand() {
+        return Commands.runOnce(() -> {
+            m_manualIntakeCommand.cancel();
+            RobotState.stopIntake();
+        });
+    }
+
     private void initialize() {
         DriverStation.silenceJoystickConnectionWarning(true);
         RobotState.updateState(this);
@@ -446,22 +507,25 @@ public class RobotContainer {
 
         // OPERATOR CONTROLS
 
-        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runEnd(() -> {
-            RobotState.startIntake(IntakeState.OUT);
-        }, () -> {
-            RobotState.stopIntake();
-        })));
-        OPERATOR_CONTROLS.INTAKE_IN.whileTrue(createPickupCoralCommand());
+        m_manualIntakeCommand = new ManualIntakeCommand(m_elevatorSubsystem, m_gantrySubsystem);
 
-        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION));
+        OPERATOR_CONTROLS.INTAKE_OUT.whileTrue(stopManualIntakeCommand().andThen(m_intakeOuttakeSubsystem.addToCommandRequirements(
+            Commands.startEnd(
+                () -> RobotState.startIntake(IntakeState.OUT),
+                () -> RobotState.stopIntake()
+            )
+        )));
+        OPERATOR_CONTROLS.INTAKE_IN.onTrue(m_manualIntakeCommand);
 
-        OPERATOR_CONTROLS.SCORE_L1.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L1));
-        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_L));
-        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_R));
-        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L3_L));
-        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L3_R));
-        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_L));
-        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_R));
+        OPERATOR_CONTROLS.POSITION_CORAL_STATION.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createInstantGoToPositionCommand(TargetScorePosition.CORAL_STATION)));
+
+        OPERATOR_CONTROLS.SCORE_L1.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L1)));
+        OPERATOR_CONTROLS.SCORE_L2_L.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_L)));
+        OPERATOR_CONTROLS.SCORE_L2_R.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L2_R)));
+        OPERATOR_CONTROLS.SCORE_L3_L.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L3_L)));
+        OPERATOR_CONTROLS.SCORE_L3_R.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L3_R)));
+        OPERATOR_CONTROLS.SCORE_L4_L.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_L)));
+        OPERATOR_CONTROLS.SCORE_L4_R.onTrue(stopManualIntakeCommand().andThen(AutomaticCommands.createGoToPositionCommand(TargetScorePosition.L4_R)));
 
         OPERATOR_CONTROLS.CORAL_SCORE.whileTrue(createScoreCoralCommand());
         if (useAlgaeMouth)
@@ -484,17 +548,17 @@ public class RobotContainer {
             OPERATOR_CONTROLS.ALGAE_MANUAL_IN.whileTrue(m_algaeHandSubsystem.getRetractCommand());
         }
 
-        OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(m_climbSubsystem.getManualActuatorOutCommand());
-        OPERATOR_CONTROLS.CLIMBER_IN.whileTrue(m_climbSubsystem.getManualActuatorInCommand());
+        OPERATOR_CONTROLS.CLIMBER_OUT.whileTrue(stopManualIntakeCommand().andThen(m_climbSubsystem.getManualActuatorOutCommand()));
+        OPERATOR_CONTROLS.CLIMBER_IN.whileTrue(stopManualIntakeCommand().andThen(m_climbSubsystem.getManualActuatorInCommand()));
 
-        OPERATOR_CONTROLS.CLIMBER_CLIMB.whileTrue(createSetClimbStateCommand(ClimbActuatorState.CLIMB));
-        OPERATOR_CONTROLS.CLIMBER_HOME.whileTrue(createSetClimbStateCommand(ClimbActuatorState.HOME));
+        OPERATOR_CONTROLS.CLIMBER_CLIMB.whileTrue(stopManualIntakeCommand().andThen(createSetClimbStateCommand(ClimbActuatorState.CLIMB)));
+        OPERATOR_CONTROLS.CLIMBER_HOME.whileTrue(stopManualIntakeCommand().andThen(createSetClimbStateCommand(ClimbActuatorState.HOME)));
 
-        OPERATOR_CONTROLS.CAGE_OUT.whileTrue(m_climbSubsystem.getCageOutCommand());
-        OPERATOR_CONTROLS.CAGE_IN.whileTrue(m_climbSubsystem.getCageInCommand());
+        OPERATOR_CONTROLS.CAGE_OUT.whileTrue(stopManualIntakeCommand().andThen(m_climbSubsystem.getCageOutCommand()));
+        OPERATOR_CONTROLS.CAGE_IN.whileTrue(stopManualIntakeCommand().andThen(m_climbSubsystem.getCageInCommand()));
 
-        OPERATOR_CONTROLS.CLIMB_COMBO.whileTrue(createSetClimbStateCommand(ClimbActuatorState.CLIMB)
-            .andThen(m_climbSubsystem.getAutomaticCageOutCommand())
+        OPERATOR_CONTROLS.CLIMB_COMBO.whileTrue(stopManualIntakeCommand().andThen(createSetClimbStateCommand(ClimbActuatorState.CLIMB)
+            .andThen(m_climbSubsystem.getAutomaticCageOutCommand()))
         );
     }
 
@@ -531,6 +595,7 @@ public class RobotContainer {
         RobotState.setTargetScorePosition(TargetScorePosition.NONE);
         m_elevatorSubsystem.setIdle();
         m_gantrySubsystem.setIdle();
+        CommandScheduler.getInstance().cancelAll();
     }
 
     public void teleopInit() {
@@ -539,11 +604,10 @@ public class RobotContainer {
         m_elevatorSubsystem.setIdle();
         m_gantrySubsystem.setIdle();
 
-        RobotState.stopIntake();
+        m_elevatorSubsystem.manualHoldThisPosition();
+        m_gantrySubsystem.manualSeedThisPosition();
 
-        // FIXME: better solutions for these
-        m_elevatorSubsystem.resetManualPosition();
-        m_gantrySubsystem.resetManualPosition();
+        m_manualIntakeCommand.cancel(); // if you remove this, then call RobotState.stopIntake()
     }
 
     public void robotPeriodic() {
@@ -565,13 +629,17 @@ public class RobotContainer {
 
         if (targetPose == null) {
             m_closestReefLocation = closestLocation;
+
             SmartDashboard.putString("CLOSEST_REEF_LOCATION", "null");
 
+            RobotState.clearClosestReefSection();
             RobotState.clearReefTargetHorizontalDistance();
             RobotState.clearReefTargetForwardDistance();
             RobotState.setIsLinedUpWithReefYaw(false);
         } else {
             m_closestReefLocation = closestLocation;
+            RobotState.setClosestReefSection(closestLocation);
+
             SmartDashboard.putString("CLOSEST_REEF_LOCATION", closestLocation.toString());
             final Translation2d targetCentricTranslation = robotPose.getTranslation().minus(targetPose.getTranslation())
                 .rotateBy(targetPose.getRotation().unaryMinus());

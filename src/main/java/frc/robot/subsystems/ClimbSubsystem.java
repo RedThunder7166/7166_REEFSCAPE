@@ -175,6 +175,7 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
 
         cageClimbConfigs.CurrentLimits.StatorCurrentLimit = 120d / 3;
         cageClimbConfigs.CurrentLimits.SupplyCurrentLimit = 40d / 3;
+        cageClimbConfigs.CurrentLimits.SupplyCurrentLowerTime = 0;
 
         cageClimbConfigs.Slot0.kV = 0.155;
 
@@ -246,6 +247,7 @@ public class ClimbSubsystem extends SubsystemBase implements ClimbSubsystemInter
                         break;
                     default:
                         targetRequest = m_cagePositionControl.withPosition(m_position.m_position);
+                        break;
                 }
                 break;
             case MANUAL:

@@ -79,6 +79,11 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         public void resetPositionStuff() { }
 
         @Override
+        public boolean getIsTargetingAScoreLocation() {
+            return true;
+        }
+
+        @Override
         public boolean getIsAtPosition(TargetScorePosition position) {
             return true;
         }
@@ -105,6 +110,9 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         public Command getManualRightCommand() {
             return Commands.none();
         }
+
+        @Override
+        public void manualSeedThisPosition() { }
 
         @Override
         public Command getGantryResetPositionCommand() {
@@ -135,6 +143,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
     @Override
     public synchronized void setIdle() {
+        setDesiredControlType(DesiredControlType.AUTOMATIC);
         setAutomaticState(GantryState.IDLE);
         m_state = GantryState.IDLE;
         m_position = GantryPosition.IDLE;
@@ -243,10 +252,10 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
 
                     CANrangeConfiguration canRangeConfig = new CANrangeConfiguration();
 
-                    canRangeConfig.FovParams.FOVCenterX = 0;
-                    canRangeConfig.FovParams.FOVCenterY = 0;
-                    canRangeConfig.FovParams.FOVRangeX = 0;
-                    canRangeConfig.FovParams.FOVRangeY = 0;
+                    canRangeConfig.FovParams.FOVCenterX = 0.75;
+                    canRangeConfig.FovParams.FOVCenterY = 2.5;
+                    canRangeConfig.FovParams.FOVRangeX = 6.75;
+                    canRangeConfig.FovParams.FOVRangeY = 6.75;
 
                     OurUtils.tryApplyConfig(m_canRange, canRangeConfig);
 
@@ -280,7 +289,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
                     if (m_canRangeHealth.getValue() != MeasurementHealthValue.Good)
                         return Optional.empty();
 
-                    return Optional.of(m_canRangeDistance.getValueAsDouble());
+                    return Optional.of(m_canRangeDistance.getValueAsDouble() * 1000d);
             }
             return Optional.empty();
         }
@@ -318,7 +327,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_pidControllerD,
         new TrapezoidProfile.Constraints(
             5000,
-            5000)
+            10000) // 5000
     );
     // private final PIDController m_pidController = new PIDController(
     //     m_pidControllerP,
@@ -467,7 +476,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         if (influenceMotorPositionFromDistanceSensor)
             RobotState.addTelemetry(() -> {
                 m_distanceSensor.getDistance().ifPresent(
-                    (Double value) -> tryInfluencePosition(value.doubleValue())
+                    (Double value) -> tryInfluencePosition(value)
                 );
             }, 20);
     }
@@ -481,6 +490,17 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
     public void resetPositionStuff() {
         resetManualPosition();
         resetMotorPosition();
+    }
+
+    @Override
+    public boolean getIsTargetingAScoreLocation() {
+        if (m_desiredControlType == DesiredControlType.MANUAL)
+            return false;
+
+        if (m_state != GantryState.TARGET)
+            return false;
+
+        return true;
     }
 
     private boolean skipIsAtPositionCheck() {
@@ -521,7 +541,7 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         if (distance.isEmpty())
             return false;
 
-        final double err = Math.abs((distance.get() * 1000d) - getGantryPositionFromTargetScorePosition(position).m_position);
+        final double err = Math.abs(distance.get() - getGantryPositionFromTargetScorePosition(position).m_position);
         return err <= GantryConstants.POSITION_ERROR_THRESHOLD_MM;
     }
 
@@ -602,8 +622,6 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
         m_oldIsResettingPosition = m_isResettingPosition;
     }
 
-    private double m_feedForwardLastSpeed = 0;
-    private double m_feedForwardLastTime = Timer.getFPGATimestamp();
     private boolean trySetPositionMM(double position) {
         final Optional<Double> distance = m_distanceSensor.getDistance();
         if (distance.isEmpty())
@@ -614,19 +632,15 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             m_gantryTargetPositionRotations = GantryConstants.millimetersToEncoderUnits(position);
             m_gantryMotor.setControl(m_positionControl.withPosition(m_gantryTargetPositionRotations));
         } else {
-            var output = m_pidController.calculate(distance.get() * 1000d, position);
-            var velocity = m_pidController.getSetpoint().velocity;
-            var timeStamp = Timer.getFPGATimestamp();
+            double output = m_pidController.calculate(distance.get(), position);
+            output += m_feedForward.calculateWithVelocities(m_pidController.getSetpoint().velocity, m_pidController.getGoal().velocity);
 
-            double acceleration = (velocity - m_feedForwardLastSpeed) / (timeStamp - m_feedForwardLastTime);
-            output += m_feedForward.calculate(velocity, acceleration);
+            if (Math.abs(output) < 0.015)
+                return true;
 
             SmartDashboard.putNumber("GANTRY_PID_OUTPUT", output);
 
             m_gantryMotor.setControl(m_gantryDutyCycleOut.withOutput(output));
-
-            m_feedForwardLastSpeed = velocity;
-            m_feedForwardLastTime = timeStamp;
         }
 
         return true;
@@ -732,6 +746,13 @@ public class GantrySubsystem extends SubsystemBase implements GantrySubsystemInt
             targetRequest = m_scoreDutyCycleOut.withOutput(RobotState.getTargetScorePosition().getScoreOutput());
 
         m_scoreMotor.setControl(targetRequest);
+    }
+
+    public void manualSeedThisPosition() {
+        if (influenceMotorPositionFromDistanceSensor)
+            setManualPosition(GantryConstants.encoderUnitsToMillieters(m_gantryMotorPosition.getValueAsDouble()));
+        else
+            m_distanceSensor.getDistance().ifPresent((Double value) -> setManualPosition(value));
     }
 
     private final Command m_gantryResetPostionCommand = Commands.startEnd(() -> {

@@ -54,6 +54,8 @@ public class SubsystemInterfaces {
         public Command getManualUpCommand();
         public Command getManualDownCommand();
 
+        public void manualHoldThisPosition();
+
         public Command getTempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition);
         public Command getTempHoldPositionCommand();
         public Command getTimeTravelCommand(double targetPosition);
@@ -83,6 +85,8 @@ public class SubsystemInterfaces {
 
         public void resetPositionStuff();
 
+        public boolean getIsTargetingAScoreLocation();
+
         public boolean getIsAtPosition(TargetScorePosition position);
 
         public boolean getIsAtTargetPosition();
@@ -91,6 +95,8 @@ public class SubsystemInterfaces {
 
         public Command getManualLeftCommand();
         public Command getManualRightCommand();
+
+        public void manualSeedThisPosition();
 
         public Command getGantryResetPositionCommand();
     }

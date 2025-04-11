@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
@@ -384,6 +385,11 @@ public class CameraSubsystem extends SubsystemBase {
         return true;
     }
 
+    private boolean getCanSeeTag(int tagID) {
+        return LimelightHelpers.getFiducialID(limelightOneName) == tagID || (useLimelightTwo ?
+            LimelightHelpers.getFiducialID(limelightTwoName) == tagID : false);
+    }
+
     private void updateDistanceBooleans(Translation2d robotTranslation) {
         if (!aprilTagFieldLayoutSuccess)
             return;
@@ -423,6 +429,12 @@ public class CameraSubsystem extends SubsystemBase {
             boolean success = successOne || successTwo;
 
             RobotState.setVisionPoseSuccess(success);
+            if (success) {
+                final Optional<RelativeReefLocation> closestSection = RobotState.getClosestReefSection();
+                if (closestSection.isPresent())
+                    RobotState.setCanSeeClosestReefTag(getCanSeeTag(closestSection.get().m_tagID));
+            } else
+                RobotState.setCanSeeClosestReefTag(false);
 
             SmartDashboard.putBoolean("MegaTag2SuccessOne", successOne);
             if (useLimelightTwo) SmartDashboard.putBoolean("MegaTag2SuccessTwo", successTwo);

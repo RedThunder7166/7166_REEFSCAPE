@@ -88,6 +88,9 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         }
 
         @Override
+        public void manualHoldThisPosition() { }
+
+        @Override
         public Command getTempGoUntilTargetIncreaseCommand(double targetIncreaseInPosition) {
             return Commands.none();
         }
@@ -128,6 +131,7 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
 
     @Override
     public synchronized void setIdle() {
+        setDesiredControlType(DesiredControlType.AUTOMATIC);
         setAutomaticState(ElevatorState.IDLE);
         m_state = ElevatorState.IDLE;
         m_position = ElevatorPosition.IDLE;
@@ -250,14 +254,19 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         kV = 0.67
         kA = 0.03
         kP = 10
+
+        fifth iter:
+        kG = 0.2
+        kV = 0.3
+        kP = 6
      */
-    private double m_kg = 0.35;
-    private double m_kv = 0.67;
-    private double m_ka = 0.03;
+    private double m_kg = 0.2;
+    private double m_kv = 0.3;
+    private double m_ka = 0;
 
     private double m_ks = 0;
 
-    private double m_kp = 10;
+    private double m_kp = 6;
     private double m_ki = 0;
     private double m_kd = 0;
 
@@ -362,8 +371,8 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         // FIXME: tune elevator Motion Magic; may be different per motor?
         var motionMagicConfigs = motorConfig.MotionMagic;
 
-        motionMagicConfigs.MotionMagicCruiseVelocity = 15;
-        motionMagicConfigs.MotionMagicAcceleration = 25;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 18;
+        motionMagicConfigs.MotionMagicAcceleration = 40;
 
         OurUtils.tryApplyConfig(m_leaderMotor, motorConfig);
         OurUtils.tryApplyConfig(m_followerMotor, motorConfig);
@@ -443,9 +452,9 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
                 default:
                     setManualPosition(m_position.m_position);
             }
-            setDesiredControlType(DesiredControlType.MANUAL);
             setIdle();
             setManualDirection(desiredDirection);
+            setDesiredControlType(DesiredControlType.MANUAL);
         }, () -> {
             setManualDirection(ElevatorManualDirection.NONE);
         });
@@ -603,6 +612,13 @@ public class ElevatorSubsystem extends SubsystemBase implements ElevatorSubsyste
         }
 
         m_leaderMotor.setControl(m_positionControl.withPosition(m_manualPosition));
+    }
+
+    @Override
+    public void manualHoldThisPosition() {
+        setManualPosition(m_leaderMotorPosition.getValueAsDouble());
+        setIdle();
+        setDesiredControlType(DesiredControlType.MANUAL);
     }
 
     public class TempGoUntilTargetIncreaseCommand extends Command {
