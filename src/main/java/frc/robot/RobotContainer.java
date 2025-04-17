@@ -92,14 +92,19 @@ public class RobotContainer {
     }
 
     private Command createScoreCoralCommand() {
+        return Commands.startEnd(
+            () -> RobotState.setWantsToScoreCoral(true),
+            () -> RobotState.setWantsToScoreCoral(false)
+        );
+    }
+
+    private Command createAutoScoreCoralCommand() {
         return m_intakeOuttakeSubsystem.addToCommandRequirements(
-            Commands.waitUntil(() -> DriverStation.isTeleop() || (m_gantrySubsystem.getIsAtTargetPosition() && m_elevatorSubsystem.getIsAtTargetPosition()))
-            .withTimeout(1) // 0.5
+            Commands.waitUntil(() -> m_gantrySubsystem.getIsAtTargetPosition() && m_elevatorSubsystem.getIsAtTargetPosition())
+            .withTimeout(3) // 0.5; 1
+            .andThen(Commands.waitSeconds(0.2))
             .andThen(
-                Commands.startEnd(
-                    () -> RobotState.setWantsToScoreCoral(true),
-                    () -> RobotState.setWantsToScoreCoral(false)
-                )
+                createScoreCoralCommand()
                 .until(() -> !m_gantrySubsystem.getScoreExitSensorTripped())
             )
         ).andThen(Commands.waitSeconds(AutoConstants.TIME_UNTIL_CORAL_IS_SCORED_SECONDS));
@@ -164,7 +169,7 @@ public class RobotContainer {
             driveCommand
                 .deadlineFor(createPrepareScoreCommand(scorePosition)),
             AutomaticCommands.createGoToPositionCommand(scorePosition),
-            createScoreCoralCommand()
+            createAutoScoreCoralCommand()
         );
     }
     private SequentialCommandGroup createEntireScoreCommand(TargetScorePosition scorePosition, RelativeReefLocation reefPosition) {
@@ -240,7 +245,7 @@ public class RobotContainer {
 
         NamedCommands.registerCommand("GoToPosition", AutomaticCommands.createGoToPositionCommand());
 
-        NamedCommands.registerCommand("ScoreCoral", createScoreCoralCommand());
+        NamedCommands.registerCommand("ScoreCoral", createAutoScoreCoralCommand());
         NamedCommands.registerCommand("PickupCoral", createAutoPickupCoralCommand());
 
         NamedCommands.registerCommand("StartIntake", m_intakeOuttakeSubsystem.addToCommandRequirements(Commands.runOnce(() -> RobotState.startIntake(IntakeState.IN))));
@@ -256,7 +261,7 @@ public class RobotContainer {
             var config = RobotConfig.fromGUISettings();
             m_driveSubsystem.configureAutoBuilder(config);
         } catch (Exception ex) {
-            DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
+            DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder: " + ex.toString(), ex.getStackTrace());
         }
 
         for (var value : RelativeReefLocation.values())
@@ -585,7 +590,7 @@ public class RobotContainer {
 
         // if (!m_autoHasSetRotation && RobotState.initialSwerveRotation != null) {
         //     m_autoHasSetRotation = true;
-        //     m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
+            m_driveSubsystem.resetRotation(RobotState.initialSwerveRotation);
         // }
 
         if (m_deployIntakeFlap.isScheduled())

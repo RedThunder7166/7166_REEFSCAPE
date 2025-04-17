@@ -71,7 +71,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "CoralStationToC-D"
+                        "pathName": "CoralStationtoC-D"
                       }
                     },
                     {
@@ -99,7 +99,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "C-DtoCoralStation"
+                  "pathName": "C-DToCoralStation"
                 }
               },
               {
@@ -128,7 +128,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "CoralStationToC-D"
+                        "pathName": "CoralStationtoC-D"
                       }
                     },
                     {
@@ -162,7 +162,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "C-DtoCoralStation"
+                  "pathName": "C-DToCoralStation"
                 }
               },
               {
@@ -177,7 +177,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "CoralStationToC-D"
+            "pathName": "CoralStationtoC-D"
           }
         }
       ]

@@ -79,7 +79,7 @@ public class CameraSubsystem extends SubsystemBase {
                 PortForwarder.add(port + 10, limelightTwoName + ".local", port);
 
         try {
-            AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
+            AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
             for (var tag : fieldLayout.getTags()) {
                 aprilTagMap.put(tag.ID, tag);
             }
